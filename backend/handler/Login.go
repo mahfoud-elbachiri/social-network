@@ -19,7 +19,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
 		// Parse form data
-		err := r.ParseForm()
+		err := r.ParseMultipartForm(10 << 20) // 10 MB
+		fmt.Println("DEBUG r.Form:", r.Form)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(`{"error": "Failed to parse form data", "status":false}`))
@@ -28,33 +29,36 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 		email := r.FormValue("email")
 		password := r.FormValue("password")
+		fmt.Println("Email:", string(email), "Password:", string(password))
 		w.Header().Set("Content-Type", "application/json")
 		var boo bool
 		typ := ""
 		var hashedPassword string
-		if strings.Contains(email, "@") {
-			boo = db.CheckInfo(email, "email")
+		if strings.Contains(string(email), "@") {
+			boo = db.CheckInfo(string(email), "email")
 			typ = "email"
 		} else {
-			boo = db.CheckInfo(email, "nikname")
-			typ = "nikname"
+			boo = db.CheckInfo(string(email), "nikname")
+			typ = "nickname"
 		}
 
 		if !boo {
 			hashedPassword, err = db.Getpasswor(typ, email)
 		}
+		fmt.Println(boo)
 
 		if boo || err != nil || !utils.ComparePassAndHashedPass(hashedPassword, password) {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(`{"error": "Invalid ` + typ + ` or password", "status":false}`))
 			return
 		}
+		
 		SessionToken, erre := utils.GenerateSessionToken()
 		if erre != nil {
 			fmt.Println("err f sition")
 			return
 		}
-		err = db.Updatesession(typ, SessionToken, email) ////email mmkin ikon nikname mmkin ikon email
+		err = db.Updatesession(typ, SessionToken, email) ////email mmkin ikon nickname mmkin ikon email
 		if err != nil {
 			fmt.Println("ERRORE", err)
 			return

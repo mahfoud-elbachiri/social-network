@@ -1,4 +1,3 @@
-
 "use client"
 import { useState } from "react"
 
@@ -16,12 +15,14 @@ export default function LoginRegisterPage() {
   const handleLogin = async (e) => {
     e.preventDefault()
     const form = new FormData(e.target)
+    console.log("Login form data:", Object.fromEntries(form.entries()))
     const res = await fetch("http://localhost:8080/login", {
       method: "POST",
       body: form,
       credentials: 'include'
     })
     const data = await res.json()
+    console.log("Login response:", data)
     if (data.status) {
       window.location.href = "/Home"
     } else {
@@ -51,9 +52,9 @@ export default function LoginRegisterPage() {
 
     const data = await res.json()
     if (data.success) {
-      setRegisterError(data.message)
-    } else {
       window.location.href = "/"
+    } else {
+      setRegisterError(data.message)
     }
   }
 

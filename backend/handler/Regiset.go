@@ -26,6 +26,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		errore := json.NewDecoder(r.Body).Decode(&info)
 		if errore != nil {
 			fmt.Println(errore)
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": "Invalid request body"})
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -36,14 +38,15 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 		validatNikname := db.CheckInfo(info.Nickname, "nikname")
 		if !validatNikname {
-			message = "Nickname already exists"
-		}
-		if !validatEmail && !validatNikname {
-			message = "Email and nickname already exist"
+			if message != "" {
+				message = "Email and nickname already exist"
+			} else {
+				message = "Nickname already exists"
+			}
 		}
 		if message != "" {
 			w.WriteHeader(http.StatusConflict)
-			json.NewEncoder(w).Encode(map[string]interface{}{"success": true, "message": message})
+			json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": message})
 			return
 		}
 		var err error
@@ -60,7 +63,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": ""})
+		json.NewEncoder(w).Encode(map[string]interface{}{"success": true, "message": ""})
 
 		BroadcastUsers()
 	}

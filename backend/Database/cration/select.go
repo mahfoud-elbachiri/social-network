@@ -15,7 +15,6 @@ func CheckInfo(info string, input string) bool { ////hna kanoxofo wax email ola 
 		fmt.Println(err)
 		return false
 	}
-
 	return inter == 0
 }
 
