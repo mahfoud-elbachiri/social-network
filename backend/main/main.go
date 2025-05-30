@@ -22,20 +22,21 @@ func main() {
 	router.HandleFunc("/", handler.First)
 	router.HandleFunc("/resgester", handler.Register)
 	router.HandleFunc("/login", handler.Login)
-	router.HandleFunc("/statuts", handler.Statuts)
-	router.HandleFunc("/pubpost", handler.Post)
-	router.Handle("/static/", http.HandlerFunc(handler.Sta))
-	router.Handle("/javascript/", http.HandlerFunc(handler.Sta))
-	router.HandleFunc("/getpost", handler.Getpost)
-	router.HandleFunc("/getChats", handler.Getchats)
-	router.HandleFunc("/sendcomment", handler.Sendcomment)
-	router.HandleFunc("/getcomment", handler.Comments)
-	router.HandleFunc("/reactione", handler.Reaction)
-	router.HandleFunc("/logout", handler.Logout)
-	router.HandleFunc("/categories", handler.Categore)
+
+	router.Handle("/statuts", handler.AuthMiddleware(http.HandlerFunc(handler.Statuts)))
+router.Handle("/pubpost", handler.AuthMiddleware(http.HandlerFunc(handler.Post)))
+router.Handle("/getpost", handler.AuthMiddleware(http.HandlerFunc(handler.Getpost)))
+router.Handle("/getChats", handler.AuthMiddleware(http.HandlerFunc(handler.Getchats)))
+router.Handle("/sendcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Sendcomment)))
+router.Handle("/getcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Comments)))
+router.Handle("/reactione", handler.AuthMiddleware(http.HandlerFunc(handler.Reaction)))
+router.Handle("/logout", handler.AuthMiddleware(http.HandlerFunc(handler.Logout)))
+router.Handle("/categories", handler.AuthMiddleware(http.HandlerFunc(handler.Categore)))
+
 	// router.HandleFunc("/online-users", handler.OnlineUsers)
 	router.HandleFunc("/ws", handler.WebSocketHandler) // Add WebSocket route
-
+	router.Handle("/static/", http.HandlerFunc(handler.Sta))
+	router.Handle("/javascript/", http.HandlerFunc(handler.Sta))
 	go handler.HandleMessages() // Start WebSocket message handler in a goroutine
 	go handler.Typing()
 

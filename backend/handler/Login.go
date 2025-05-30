@@ -39,20 +39,18 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			typ = "email"
 		} else {
 			boo = db.CheckInfo(string(email), "nikname")
-			typ = "nickname"
+			typ = "nikname"
 		}
-
-		if !boo {
+		if boo {
 			hashedPassword, err = db.Getpasswor(typ, email)
 		}
-		fmt.Println(boo)
 
-		if boo || err != nil || !utils.ComparePassAndHashedPass(hashedPassword, password) {
+		if !boo || err != nil || !utils.ComparePassAndHashedPass(hashedPassword, password) {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(`{"error": "Invalid ` + typ + ` or password", "status":false}`))
 			return
 		}
-		
+
 		SessionToken, erre := utils.GenerateSessionToken()
 		if erre != nil {
 			fmt.Println("err f sition")
@@ -76,6 +74,5 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"message": "Login successful", "status":true}`))
 		// fmt.Println("Email:", email, "Password:", password)
-
 	}
 }

@@ -49,7 +49,6 @@ export default function LoginRegisterPage() {
       body: JSON.stringify(payload),
       credentials: 'include'
     })
-
     const data = await res.json()
     if (data.success) {
       window.location.href = "/"

@@ -15,7 +15,7 @@ func CheckInfo(info string, input string) bool { ////hna kanoxofo wax email ola 
 		fmt.Println(err)
 		return false
 	}
-	return inter == 0
+	return inter == 1
 }
 
 func Getpasswor(input string, typ string) (string, error) {
