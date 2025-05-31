@@ -53,6 +53,7 @@ func Getpost(w http.ResponseWriter, r *http.Request) {
 	Postes, err := db.GetPostes(str, end, userid)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error": "Internal server error", "status":false, "tocken":false}`))
 		return
 	}
 
