@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	data "social-network/Database/cration"
-	"social-network/handler"
+"social-network/handler"
 )
 
 func main() {
@@ -19,13 +19,14 @@ func main() {
 
 	router := http.NewServeMux()
 
-	router.HandleFunc("/", handler.First)
+	// router.HandleFunc("/", handler.First)
 	router.HandleFunc("/resgester", handler.Register)
 	router.HandleFunc("/login", handler.Login)
 
 	router.Handle("/statuts", handler.AuthMiddleware(http.HandlerFunc(handler.Statuts)))
 router.Handle("/pubpost", handler.AuthMiddleware(http.HandlerFunc(handler.Post)))
 router.Handle("/getpost", handler.AuthMiddleware(http.HandlerFunc(handler.Getpost)))
+// router.HandleFunc("/getpost", handler.Getpost)
 router.Handle("/getChats", handler.AuthMiddleware(http.HandlerFunc(handler.Getchats)))
 router.Handle("/sendcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Sendcomment)))
 router.Handle("/getcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Comments)))

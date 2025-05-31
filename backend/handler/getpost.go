@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	db "social-network/Database/cration"
@@ -14,6 +15,9 @@ var (
 )
 
 func Getpost(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Println("Getpost")
+	
 	var err error
 	_, err = servisse.IsHaveToken(r)
 	if err != nil {
@@ -64,7 +68,9 @@ func Getpost(w http.ResponseWriter, r *http.Request) {
 		str = end
 		end = 0
 	}
-
+	fmt.Println("Getpost: ", Postes)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(Postes)
+	
+	
 }

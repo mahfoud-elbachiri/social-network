@@ -66,9 +66,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			Name:     "SessionToken",
 			Value:    SessionToken,
 			Path:     "/",
-			HttpOnly: true,
-			Secure:   false, // Set to true in production with HTTPS
-			SameSite: http.SameSiteLaxMode,
+			// HttpOnly: true,
+			// Secure:   false, // Set to true in production with HTTPS
+			// SameSite: http.SameSiteLaxMode,
 		})
 
 		w.WriteHeader(http.StatusOK)

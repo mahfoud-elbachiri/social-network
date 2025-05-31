@@ -153,60 +153,6 @@ export const Homepage = (data) => {
     container.append(contacts);
     document.body.append(container);
 
-   
-    socket = new WebSocket(`/ws`)
-
-    socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-
-        if (data.type === "users") {
-
-            data.users.forEach(user => {
-               
-                if (user.username === username) {
-                    Users = user.sort
-                    updateUserList(user.allUsers)
-                }
-            })
-           
-           
-        } else if (data.type === "online-users") {
-
-            updatesOnline(data.users)
-
-        } else if (data.content === "is-typing") {
-            displayTyping(data)
-        } else if (data.content === "no-typing") {
-            displayTyping(data)
-        } else {
-            
-            const message = data;
-
-        if (message.receiver === username) {
-            const div = document.createElement("div")
-            div.className = "pop"
-
-            div.innerHTML = `
-            <h3> ${message.receiver} </h3>
-              <p> you have a new message from ${message.sender} </p>
-            `
-            document.body.append(div)
-
-            setTimeout(()=> {
-                document.querySelector(".pop").remove()
-            }, 3000)
-        }
-
-        if (message.receiver === username) {
-            contactOrder(message.sender)
-        } else if (message.sender === username) {
-            contactOrder(message.receiver)
-        }
-
-            
-            displayMessage(message.sender, message.content, message.Time, message.sender === username ? message.receiver : message.sender, 1)
-        }
-    }
 }
 let id 
 function displayTyping(data){
@@ -570,7 +516,7 @@ export const MoreData = (data) => {
                 if (element.Have === "like") {
                     let like = likes.querySelector("#like")
                     like.setAttribute("data-status", "on")
-                    like.parentNode.setAttribute("data-status", "on")
+                    like.parpostentNode.setAttribute("data-status", "on")
                 } else if (element.Have === "dislike") {
                     let dislike = likes.querySelector("#dislike")
                     dislike.setAttribute("data-status", "on")

@@ -42,7 +42,7 @@ export default function LoginRegisterPage() {
       Gender: form.get("gender"),
       Nickname: form.get("nickname"),
     }
-
+    
     const res = await fetch("http://localhost:8080/resgester", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

@@ -40,17 +40,10 @@ body {
   background: #fffffff2;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 2rem;
+  padding: .5rem 2rem;
   display: flex;
   position: sticky;
   top: 0;
-}
-
-.logo {
-  color: var(--primary-color);
-  letter-spacing: -.5px;
-  font-size: 1.75rem;
-  font-weight: 1000;
 }
 
 .header button {
