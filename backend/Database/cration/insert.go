@@ -3,7 +3,6 @@ package db
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -23,50 +22,23 @@ func Insertuser(first_name string, last_name string, email string, gender string
 	return nil
 }
 
-func InsertPostes(user_id int, title string, content string, catygory []string) error {
+func InsertPostes(user_id int, title string, content string) error {
 	created_at := time.Now().Format("2006-01-02 15:04:05")
 
-	info, err := DB.Prepare("INSERT INTO postes (user_id,title,content,created_at,categories) VALUES (?,?,?,?,?)")
+	info, err := DB.Prepare("INSERT INTO postes (user_id,title,content,created_at) VALUES (?,?,?,?)")
 	if err != nil {
 		fmt.Println("==> E : ", err)
 		return err
 	}
-	_, err = info.Exec(user_id, title, content, created_at, strings.Join(catygory, " "))
+	_, err = info.Exec(user_id, title, content, created_at)
 	if err != nil {
 		return err
-	}
-
-	var post_id string
-	err = DB.QueryRow(`SELECT id FROM postes WHERE user_id = ? AND title = ? AND content = ? AND created_at = ?`, user_id, title, content, created_at).Scan(&post_id)
-	if err != nil {
-		return err
-	}
-	id, err := strconv.Atoi(post_id)
-	if err != nil {
-		return err
-	}
-	
-	InsertCategory(id, catygory)
-	return nil
-}
-
-func InsertCategory(post_id int, catygory []string) error {
-	for _, v := range catygory {
-		info, err := DB.Prepare("INSERT INTO categories (post_id,category) VALUES (?,?)")
-		if err != nil {
-			return err
-		}
-		_, err = info.Exec(post_id, strings.ToLower(v))
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
 }
 
 func InsertReaction(user_id int, content_id int, content_type string, reaction_type string) error {
-
 	if content_type == "post" {
 		err := SelectPostid(content_id)
 		if err != nil {
@@ -138,7 +110,6 @@ func UpdateTocken(tocken string) error {
 	}
 	return nil
 }
-
 
 func InsertMessages(sender string, receiver string, content string, time string) error {
 	// time := time.Now().Format("2006-01-02 15:04:05")

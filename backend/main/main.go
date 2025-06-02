@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	data "social-network/Database/cration"
-"social-network/handler"
+	"social-network/handler"
 )
 
 func main() {
@@ -24,15 +24,14 @@ func main() {
 	router.HandleFunc("/login", handler.Login)
 
 	router.Handle("/statuts", handler.AuthMiddleware(http.HandlerFunc(handler.Statuts)))
-router.Handle("/pubpost", handler.AuthMiddleware(http.HandlerFunc(handler.Post)))
-router.Handle("/getpost", handler.AuthMiddleware(http.HandlerFunc(handler.Getpost)))
-// router.HandleFunc("/getpost", handler.Getpost)
-router.Handle("/getChats", handler.AuthMiddleware(http.HandlerFunc(handler.Getchats)))
-router.Handle("/sendcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Sendcomment)))
-router.Handle("/getcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Comments)))
-router.Handle("/reactione", handler.AuthMiddleware(http.HandlerFunc(handler.Reaction)))
-router.Handle("/logout", handler.AuthMiddleware(http.HandlerFunc(handler.Logout)))
-router.Handle("/categories", handler.AuthMiddleware(http.HandlerFunc(handler.Categore)))
+	router.Handle("/pubpost", handler.AuthMiddleware(http.HandlerFunc(handler.Post)))
+	router.Handle("/getpost", handler.AuthMiddleware(http.HandlerFunc(handler.Getpost)))
+	// router.HandleFunc("/getpost", handler.Getpost)
+	router.Handle("/getChats", handler.AuthMiddleware(http.HandlerFunc(handler.Getchats)))
+	router.Handle("/sendcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Sendcomment)))
+	router.Handle("/getcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Comments)))
+	router.Handle("/reactione", handler.AuthMiddleware(http.HandlerFunc(handler.Reaction)))
+	router.Handle("/logout", handler.AuthMiddleware(http.HandlerFunc(handler.Logout)))
 
 	// router.HandleFunc("/online-users", handler.OnlineUsers)
 	router.HandleFunc("/ws", handler.WebSocketHandler) // Add WebSocket route

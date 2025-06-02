@@ -32,12 +32,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		validatEmail := db.CheckInfo(info.Email, "email")
-		if !validatEmail {
+		if validatEmail {
 			message = "Email already exists"
 		}
 
 		validatNikname := db.CheckInfo(info.Nickname, "nikname")
-		if !validatNikname {
+		if validatNikname {
 			if message != "" {
 				message = "Email and nickname already exist"
 			} else {

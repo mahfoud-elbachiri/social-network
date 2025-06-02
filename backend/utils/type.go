@@ -1,17 +1,16 @@
 package utils
 
 type Postes struct {
-	ID         int
-	UserID     int
-	Username   string
-	Title      string
-	Content    string
-	Categories string
-	CreatedAt  string
-	Nembre     int
-	Like       int
-	DisLike    int
-	Have       string
+	ID        int
+	UserID    int
+	Username  string
+	Title     string
+	Content   string
+	CreatedAt string
+	Nembre    int
+	Like      int
+	DisLike   int
+	Have      string
 }
 
 type Comment struct {
@@ -48,10 +47,9 @@ type Reaction struct {
 	Reactione_type string
 }
 
-
 type Msg struct {
-	Sender string
+	Sender   string
 	Receiver string
-	Text string
-	Time string
+	Text     string
+	Time     string
 }

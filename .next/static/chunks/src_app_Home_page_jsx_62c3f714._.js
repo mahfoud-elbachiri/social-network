@@ -25,24 +25,30 @@ function Home() {
     const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(true);
     const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [showCreatePost, setShowCreatePost] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
-    const [selectedCategory, setSelectedCategory] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])('all');
     const [username, setUsername] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])('User'); // You can get this from auth context
-    const categories = [
-        'all',
-        'Tech Support',
-        'General Discussion',
-        'Tutorials',
-        'Gaming',
-        'Hobbies & Interests',
-        'Job Listings',
-        'Announcements'
-    ];
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "Home.useEffect": ()=>{
+            FetchUserStatus();
             // Call HomeHandeler when component mounts
             HomeHandeler(setPosts, setLoading, setError);
         }
     }["Home.useEffect"], []);
+    const FetchUserStatus = async ()=>{
+        try {
+            const res = await fetch('http://localhost:8080/statuts', {
+                method: 'GET',
+                credentials: 'include'
+            });
+            const data = await res.json();
+            if (data.status && data.name) {
+                setUsername(data.name);
+            } else {
+                console.error('Failed to fetch user status:', data.error);
+            }
+        } catch (error) {
+            console.error('Error fetching user status:', error);
+        }
+    };
     const handleLogout = async ()=>{
         try {
             await fetch('http://localhost:8080/logout', {
@@ -57,12 +63,9 @@ function Home() {
     const handleCreatePost = async (e)=>{
         e.preventDefault();
         const form = new FormData(e.target);
-        // Get selected categories
-        const selectedCategories = Array.from(e.target.querySelectorAll('input[name="categories"]:checked')).map((input)=>input.value);
         const formData = new FormData();
         formData.append('title', form.get('title'));
         formData.append('content', form.get('content'));
-        formData.append('categories', selectedCategories.join(','));
         try {
             const res = await fetch('http://localhost:8080/pubpost', {
                 method: 'POST',
@@ -109,7 +112,7 @@ function Home() {
             children: "Loading posts..."
         }, void 0, false, {
             fileName: "[project]/src/app/Home/page.jsx",
-            lineNumber: 99,
+            lineNumber: 108,
             columnNumber: 12
         }, this);
     }
@@ -121,7 +124,7 @@ function Home() {
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/Home/page.jsx",
-            lineNumber: 103,
+            lineNumber: 112,
             columnNumber: 12
         }, this);
     }
@@ -144,12 +147,12 @@ function Home() {
                             }
                         }, void 0, false, {
                             fileName: "[project]/src/app/Home/page.jsx",
-                            lineNumber: 113,
+                            lineNumber: 122,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/Home/page.jsx",
-                        lineNumber: 112,
+                        lineNumber: 121,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("nav", {
@@ -160,12 +163,12 @@ function Home() {
                                     children: "Followers"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/Home/page.jsx",
-                                    lineNumber: 125,
+                                    lineNumber: 134,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 125,
+                                lineNumber: 134,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
@@ -174,12 +177,12 @@ function Home() {
                                     children: "Profile"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/Home/page.jsx",
-                                    lineNumber: 126,
+                                    lineNumber: 135,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 126,
+                                lineNumber: 135,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
@@ -188,12 +191,12 @@ function Home() {
                                     children: "Groups"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/Home/page.jsx",
-                                    lineNumber: 127,
+                                    lineNumber: 136,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 127,
+                                lineNumber: 136,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
@@ -202,12 +205,12 @@ function Home() {
                                     children: "Notification"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/Home/page.jsx",
-                                    lineNumber: 128,
+                                    lineNumber: 137,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 128,
+                                lineNumber: 137,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
@@ -216,18 +219,18 @@ function Home() {
                                     children: "Chats"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/Home/page.jsx",
-                                    lineNumber: 129,
+                                    lineNumber: 138,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 129,
+                                lineNumber: 138,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/Home/page.jsx",
-                        lineNumber: 123,
+                        lineNumber: 132,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -236,13 +239,13 @@ function Home() {
                         children: "logout"
                     }, void 0, false, {
                         fileName: "[project]/src/app/Home/page.jsx",
-                        lineNumber: 133,
+                        lineNumber: 142,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/Home/page.jsx",
-                lineNumber: 110,
+                lineNumber: 119,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -250,66 +253,54 @@ function Home() {
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("aside", {
                         className: "sidebar",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
+                            href: "/Profile",
+                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "contact",
                                 children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                        className: "material-icons",
-                                        children: "account_circle"
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
+                                        src: "/icon.jpg",
+                                        alt: "Forum Logo",
+                                        width: 28,
+                                        height: 28,
+                                        priority: true,
+                                        style: {
+                                            cursor: 'pointer',
+                                            display: 'block'
+                                        }
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/Home/page.jsx",
-                                        lineNumber: 140,
+                                        lineNumber: 152,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                         children: username
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/Home/page.jsx",
-                                        lineNumber: 141,
+                                        lineNumber: 160,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                         className: "online-indicator"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/Home/page.jsx",
-                                        lineNumber: 142,
+                                        lineNumber: 161,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 139,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
-                                children: "Category"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 145,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "category-list",
-                                children: categories.map((cat)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-                                        className: `cat ${selectedCategory === cat ? 'active' : ''}`,
-                                        value: cat,
-                                        onClick: ()=>setSelectedCategory(cat),
-                                        children: cat === 'all' ? 'All' : cat
-                                    }, cat, false, {
-                                        fileName: "[project]/src/app/Home/page.jsx",
-                                        lineNumber: 148,
-                                        columnNumber: 15
-                                    }, this))
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 146,
+                                lineNumber: 150,
                                 columnNumber: 11
                             }, this)
-                        ]
-                    }, void 0, true, {
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/Home/page.jsx",
+                            lineNumber: 149,
+                            columnNumber: 12
+                        }, this)
+                    }, void 0, false, {
                         fileName: "[project]/src/app/Home/page.jsx",
-                        lineNumber: 138,
+                        lineNumber: 148,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
@@ -323,12 +314,12 @@ function Home() {
                                     children: "+ Create a post"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/Home/page.jsx",
-                                    lineNumber: 164,
+                                    lineNumber: 170,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 163,
+                                lineNumber: 169,
                                 columnNumber: 11
                             }, this),
                             showCreatePost && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -351,14 +342,14 @@ function Home() {
                                                         children: "close"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                        lineNumber: 173,
+                                                        lineNumber: 179,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
                                                         children: "Post Title"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                        lineNumber: 181,
+                                                        lineNumber: 187,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -369,18 +360,18 @@ function Home() {
                                                         required: true
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                        lineNumber: 182,
+                                                        lineNumber: 188,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/Home/page.jsx",
-                                                lineNumber: 172,
+                                                lineNumber: 178,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/Home/page.jsx",
-                                            lineNumber: 171,
+                                            lineNumber: 177,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -390,7 +381,7 @@ function Home() {
                                                     children: "Post Content"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/Home/page.jsx",
-                                                    lineNumber: 193,
+                                                    lineNumber: 199,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("textarea", {
@@ -401,62 +392,20 @@ function Home() {
                                                     required: true
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/Home/page.jsx",
-                                                    lineNumber: 194,
+                                                    lineNumber: 200,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/Home/page.jsx",
-                                            lineNumber: 192,
-                                            columnNumber: 17
-                                        }, this),
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            className: "form-group",
-                                            children: [
-                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                                    children: "Select Categories"
-                                                }, void 0, false, {
-                                                    fileName: "[project]/src/app/Home/page.jsx",
-                                                    lineNumber: 204,
-                                                    columnNumber: 19
-                                                }, this),
-                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    className: "category-grid",
-                                                    children: categories.slice(1).map((cat)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                                            className: "category-checkbox",
-                                                            children: [
-                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                                                                    type: "checkbox",
-                                                                    name: "categories",
-                                                                    value: cat
-                                                                }, void 0, false, {
-                                                                    fileName: "[project]/src/app/Home/page.jsx",
-                                                                    lineNumber: 208,
-                                                                    columnNumber: 25
-                                                                }, this),
-                                                                cat
-                                                            ]
-                                                        }, cat, true, {
-                                                            fileName: "[project]/src/app/Home/page.jsx",
-                                                            lineNumber: 207,
-                                                            columnNumber: 23
-                                                        }, this))
-                                                }, void 0, false, {
-                                                    fileName: "[project]/src/app/Home/page.jsx",
-                                                    lineNumber: 205,
-                                                    columnNumber: 19
-                                                }, this)
-                                            ]
-                                        }, void 0, true, {
-                                            fileName: "[project]/src/app/Home/page.jsx",
-                                            lineNumber: 203,
+                                            lineNumber: 198,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                             id: "error-message-creatpost"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/Home/page.jsx",
-                                            lineNumber: 215,
+                                            lineNumber: 209,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -465,18 +414,18 @@ function Home() {
                                             children: "Submit Post"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/Home/page.jsx",
-                                            lineNumber: 216,
+                                            lineNumber: 210,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/Home/page.jsx",
-                                    lineNumber: 170,
+                                    lineNumber: 176,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 169,
+                                lineNumber: 175,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -493,14 +442,14 @@ function Home() {
                                                         children: "account_circle"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                        lineNumber: 227,
+                                                        lineNumber: 221,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                         children: post.Username
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                        lineNumber: 228,
+                                                        lineNumber: 222,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -510,41 +459,27 @@ function Home() {
                                                         children: formatDate(post.CreatedAt)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                        lineNumber: 229,
+                                                        lineNumber: 223,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/Home/page.jsx",
-                                                lineNumber: 226,
+                                                lineNumber: 220,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
                                                 children: post.Title
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/Home/page.jsx",
-                                                lineNumber: 232,
+                                                lineNumber: 226,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                 children: post.Content
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/Home/page.jsx",
-                                                lineNumber: 233,
-                                                columnNumber: 19
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("i", {
-                                                style: {
-                                                    color: '#b3b3b3'
-                                                },
-                                                children: [
-                                                    "Categories: [",
-                                                    post.Categories,
-                                                    "]"
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/app/Home/page.jsx",
-                                                lineNumber: 234,
+                                                lineNumber: 227,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -566,20 +501,20 @@ function Home() {
                                                                         children: post.Have === 'like' ? 'thumb_up' : 'thumb_up_off_alt'
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                                        lineNumber: 239,
+                                                                        lineNumber: 232,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("b", {
                                                                         children: post.Like
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                                        lineNumber: 246,
+                                                                        lineNumber: 239,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/app/Home/page.jsx",
-                                                                lineNumber: 238,
+                                                                lineNumber: 231,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -595,26 +530,26 @@ function Home() {
                                                                         children: post.Have === 'dislike' ? 'thumb_down' : 'thumb_down_off_alt'
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                                        lineNumber: 250,
+                                                                        lineNumber: 243,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("b", {
                                                                         children: post.DisLike
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                                        lineNumber: 257,
+                                                                        lineNumber: 250,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/app/Home/page.jsx",
-                                                                lineNumber: 249,
+                                                                lineNumber: 242,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                        lineNumber: 237,
+                                                        lineNumber: 230,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -627,13 +562,13 @@ function Home() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                        lineNumber: 261,
+                                                        lineNumber: 254,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/Home/page.jsx",
-                                                lineNumber: 236,
+                                                lineNumber: 229,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -645,7 +580,7 @@ function Home() {
                                                         "data-idpost": post.ID
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                        lineNumber: 268,
+                                                        lineNumber: 261,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -664,7 +599,7 @@ function Home() {
                                                                     strokeLinejoin: "round"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/Home/page.jsx",
-                                                                    lineNumber: 275,
+                                                                    lineNumber: 268,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
@@ -674,30 +609,30 @@ function Home() {
                                                                     strokeLinejoin: "round"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/Home/page.jsx",
-                                                                    lineNumber: 276,
+                                                                    lineNumber: 269,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/Home/page.jsx",
-                                                            lineNumber: 274,
+                                                            lineNumber: 267,
                                                             columnNumber: 23
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/Home/page.jsx",
-                                                        lineNumber: 273,
+                                                        lineNumber: 266,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/Home/page.jsx",
-                                                lineNumber: 267,
+                                                lineNumber: 260,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, post.ID, true, {
                                         fileName: "[project]/src/app/Home/page.jsx",
-                                        lineNumber: 225,
+                                        lineNumber: 219,
                                         columnNumber: 17
                                     }, this)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "post",
@@ -705,23 +640,23 @@ function Home() {
                                         children: "No posts found"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/Home/page.jsx",
-                                        lineNumber: 284,
+                                        lineNumber: 277,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/Home/page.jsx",
-                                    lineNumber: 283,
+                                    lineNumber: 276,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 222,
+                                lineNumber: 216,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/Home/page.jsx",
-                        lineNumber: 161,
+                        lineNumber: 167,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("aside", {
@@ -741,20 +676,20 @@ function Home() {
                                         children: "cancel"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/Home/page.jsx",
-                                        lineNumber: 293,
+                                        lineNumber: 286,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
                                         children: "Chat"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/Home/page.jsx",
-                                        lineNumber: 294,
+                                        lineNumber: 287,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 292,
+                                lineNumber: 285,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -768,29 +703,29 @@ function Home() {
                                 }
                             }, void 0, false, {
                                 fileName: "[project]/src/app/Home/page.jsx",
-                                lineNumber: 296,
+                                lineNumber: 289,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/Home/page.jsx",
-                        lineNumber: 291,
+                        lineNumber: 284,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/Home/page.jsx",
-                lineNumber: 136,
+                lineNumber: 145,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/Home/page.jsx",
-        lineNumber: 107,
+        lineNumber: 116,
         columnNumber: 5
     }, this);
 }
-_s(Home, "XvP9o9auzF23lAF/5Vwk9scuio0=");
+_s(Home, "cuzwHfTfBz5TnoTPfnlCIBwe3n4=");
 _c = Home;
 async function HomeHandeler(setPosts, setLoading, setError) {
     try {

@@ -1,8 +1,8 @@
 package db
 
 import (
+	"database/sql"
 	"fmt"
-	"strings"
 
 	"social-network/utils"
 )
@@ -80,7 +80,7 @@ func GetUser(id int) string {
 
 func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 	var postes []utils.Postes
-	quire := "SELECT id, user_id, title, content, categories, created_at FROM postes WHERE id > ? AND id <= ? ORDER BY created_at DESC"
+	quire := "SELECT id, user_id, title, content, created_at FROM postes WHERE id > ? AND id <= ? ORDER BY created_at DESC"
 	rows, err := DB.Query(quire, end, str)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var post utils.Postes
-		err := rows.Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &post.Categories, &post.CreatedAt)
+		err := rows.Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &post.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -104,44 +104,6 @@ func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 	}
 
 	return postes, nil
-}
-
-func GetCategories(category string, start int, userid int) ([]utils.Postes, int, error) {
-	end := 0
-	var postes []utils.Postes
-	quire := "SELECT post_id FROM categories WHERE category = ? AND id <= ? ORDER BY id DESC LIMIT 10"
-	rows, err := DB.Query(quire, strings.ToLower(category), start)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-
-		var id int
-		err := rows.Scan(&id)
-		if err != nil {
-			return nil, 0, err
-		}
-		var post utils.Postes
-		quire := "SELECT id, user_id, title, content, categories, created_at FROM postes WHERE id = ?"
-		err = DB.QueryRow(quire, id).Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &post.Categories, &post.CreatedAt)
-		if err != nil {
-			return nil, 0, err
-		}
-		post.Nembre, err = LenghtComent(post.ID)
-		post.Username = GetUser(post.UserID)
-		if post.Username == "" {
-			return nil, 0, err
-		}
-		sl, _ := SelecReaction(post.ID)
-
-		post.Like, post.DisLike, post.Have = Liklength(sl, userid)
-		postes = append(postes, post)
-		end = id
-	}
-
-	return postes, end, nil
 }
 
 func LenghtComent(postid int) (nbr int, err error) {
@@ -209,16 +171,15 @@ func GetlastidChat(s string, r string) (int, error) {
 	return id, nil
 }
 
-func Getlastid(cat string) (int, error) {
+func Getlastid() (int, error) {
 	id := 0
 	query := "SELECT id FROM postes ORDER BY id DESC LIMIT 1"
 	err := DB.QueryRow(query).Scan(&id)
-	if cat != "" {
-		query = "SELECT id FROM categories WHERE category = ? ORDER BY id DESC LIMIT 1"
-		err = DB.QueryRow(query, strings.ToLower(cat)).Scan(&id)
-	}
-
 	if err != nil {
+		// If no rows found (empty table), return 0 without error
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
 		return 0, err
 	}
 	return id, nil

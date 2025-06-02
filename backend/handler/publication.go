@@ -19,14 +19,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		}
 		title := r.FormValue("title")
 		content := r.FormValue("content")
-		categories := r.Form["categories"]
-		if len(categories) == 0 || title == "" || content == "" {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error": "400", "status":false ,"tocken":true}`))
-			return
-		}
-		err := servisse.CategoriesValidator(categories)
-		if err != nil {
+		if title == "" || content == "" {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(`{"error": "400", "status":false ,"tocken":true}`))
 			return
@@ -34,12 +27,13 @@ func Post(w http.ResponseWriter, r *http.Request) {
 
 		tocken, _ := r.Cookie("SessionToken")
 		user_id := db.GetId("sessionToken", tocken.Value)
-		errore := db.InsertPostes(user_id, title, content, categories)
+		errore := db.InsertPostes(user_id, title, content)
 
 		if errore != nil {
 			fmt.Println("===> er : ", errore)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(`{"error": "500", "status":false ,"tocken":true}`))
+			fmt.Println("Error inserting post:", errore)	
 			return
 		}
 		w.WriteHeader(http.StatusOK)

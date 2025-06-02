@@ -10,18 +10,32 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreatePost, setShowCreatePost] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [username, setUsername] = useState('User'); // You can get this from auth context
-  
-  const categories = [
-    'all', 'Tech Support', 'General Discussion', 'Tutorials', 
-    'Gaming', 'Hobbies & Interests', 'Job Listings', 'Announcements'
-  ];
 
   useEffect(() => {
+    FetchUserStatus()
     // Call HomeHandeler when component mounts
     HomeHandeler(setPosts, setLoading, setError);
   }, []);
+
+
+  const FetchUserStatus = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/statuts', {
+        method: 'GET',
+        credentials: 'include'
+    })
+      const data = await res.json()
+      if (data.status && data.name) {
+        setUsername(data.name);
+      } else {
+        console.error('Failed to fetch user status:', data.error)
+      }
+    }catch (error) { 
+      console.error('Error fetching user status:', error);
+    }
+
+  }
 
   const handleLogout = async () => {
     try {
@@ -38,15 +52,10 @@ export default function Home() {
   const handleCreatePost = async (e) => {
     e.preventDefault();
     const form = new FormData(e.target);
-    
-    // Get selected categories
-    const selectedCategories = Array.from(e.target.querySelectorAll('input[name="categories"]:checked'))
-      .map(input => input.value);
 
     const formData = new FormData();
     formData.append('title', form.get('title'));
     formData.append('content', form.get('content'));
-    formData.append('categories', selectedCategories.join(','));
 
     try {
       const res = await fetch('http://localhost:8080/pubpost', {
@@ -135,28 +144,25 @@ export default function Home() {
 
       <div className="container">
         {/* Sidebar */}
+        
         <aside className="sidebar">
+           <Link href="/Profile">
           <div className="contact">
-            <span className="material-icons">account_circle</span>
+             
+            <Image 
+            src="/icon.jpg" 
+            alt="Forum Logo" 
+            width={28} 
+            height={28}
+            priority
+            style={{cursor: 'pointer',display: 'block'}}
+            />
             <span>{username}</span>
             <span className="online-indicator"></span>
           </div>
-          
-          <h3>Category</h3>
-          <div className="category-list">
-            {categories.map(cat => (
-              <button 
-                key={cat}
-                className={`cat ${selectedCategory === cat ? 'active' : ''}`}
-                value={cat}
-                onClick={() => setSelectedCategory(cat)}
-              >
-                {cat === 'all' ? 'All' : cat}
-              </button>
-            ))}
-          </div>
+          </Link>
         </aside>
-
+        
         {/* Main Content */}
         <main className="main-content" id="main-content">
           {/* Create Post Button */}
@@ -199,18 +205,6 @@ export default function Home() {
                     required
                   />
                 </div>
-
-                <div className="form-group">
-                  <label>Select Categories</label>
-                  <div className="category-grid">
-                    {categories.slice(1).map(cat => (
-                      <label key={cat} className="category-checkbox">
-                        <input type="checkbox" name="categories" value={cat} />
-                        {cat}
-                      </label>
-                    ))}
-                  </div>
-                </div>
                 
                 <p id="error-message-creatpost"></p>
                 <button type="submit" className="submit-btn">Submit Post</button>
@@ -231,7 +225,6 @@ export default function Home() {
                   
                   <h4>{post.Title}</h4>
                   <p>{post.Content}</p>
-                  <i style={{color: '#b3b3b3'}}>Categories: [{post.Categories}]</i>
                   
                   <div className="post-actions">
                     <div className="reactions">
