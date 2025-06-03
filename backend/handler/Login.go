@@ -11,7 +11,7 @@ import (
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	// Enable CORS for this endpoint
-	EnableCORS(w, r)
+	// EnableCORS(w, r)
 
 	if r.Method == "OPTIONS" {
 		return

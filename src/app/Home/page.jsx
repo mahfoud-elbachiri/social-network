@@ -1,5 +1,3 @@
-
-
 'use client';
 import Link from "next/link";
 import Image from "next/image";
@@ -77,29 +75,6 @@ export default function Home() {
     }
   };
 
-  const handleReaction = async (postId, type, currentStatus) => {
-    try {
-      const formData = new FormData();
-      formData.append('id', postId);
-      formData.append('type', 'post');
-      formData.append('reaction', type);
-
-      const res = await fetch('http://localhost:8080/reactione', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      });
-
-      const data = await res.json();
-      if (data.status) {
-        // Refresh posts to update reaction counts
-        HomeHandeler(setPosts, setLoading, setError);
-      }
-    } catch (error) {
-      console.error('Reaction error:', error);
-    }
-  };
-
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -128,15 +103,12 @@ export default function Home() {
             style={{cursor: 'pointer', display: 'block'}}
           />
         </Link>
-
         <nav>
-       
           <li><Link href="/Followers">Followers</Link></li>
           <li><Link href="/Profile">Profile</Link></li>
           <li><Link href="/Groups">Groups</Link></li>
           <li><Link href="/Notification">Notification</Link></li>
           <li><Link href="/Chats">Chats</Link></li>
-       
       </nav>
           
         <button id="logout" onClick={handleLogout}>logout</button>
@@ -144,18 +116,17 @@ export default function Home() {
 
       <div className="container">
         {/* Sidebar */}
-        
         <aside className="sidebar">
-           <Link href="/Profile">
+           <Link href="/Profile" style={{textDecoration: 'none'}}>
           <div className="contact">
              
-            <Image 
+            <Image
             src="/icon.jpg" 
             alt="Forum Logo" 
-            width={28} 
+            width={28}
             height={28}
             priority
-            style={{cursor: 'pointer',display: 'block'}}
+            // style={{cursor: 'pointer',display: 'block'}}
             />
             <span>{username}</span>
             <span className="online-indicator"></span>
@@ -227,30 +198,6 @@ export default function Home() {
                   <p>{post.Content}</p>
                   
                   <div className="post-actions">
-                    <div className="reactions">
-                      <div className="like-button" data-status={post.Have === 'like' ? 'on' : 'off'}>
-                        <span 
-                          className="material-icons"
-                          onClick={() => handleReaction(post.ID, 'like', post.Have)}
-                          style={{cursor: 'pointer'}}
-                        >
-                          {post.Have === 'like' ? 'thumb_up' : 'thumb_up_off_alt'}
-                        </span>
-                        <b>{post.Like}</b>
-                      </div>
-                      
-                      <div className="like-button" data-status={post.Have === 'dislike' ? 'on' : 'off'}>
-                        <span 
-                          className="material-icons"
-                          onClick={() => handleReaction(post.ID, 'dislike', post.Have)}
-                          style={{cursor: 'pointer'}}
-                        >
-                          {post.Have === 'dislike' ? 'thumb_down' : 'thumb_down_off_alt'}
-                        </span>
-                        <b>{post.DisLike}</b>
-                      </div>
-                    </div>
-                    
                     <div id="comment" className="of" posteid={post.ID}>
                       {post.Nembre} 💬
                     </div>
