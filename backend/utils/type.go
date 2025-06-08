@@ -8,9 +8,20 @@ type Postes struct {
 	Content   string
 	CreatedAt string
 	Nembre    int
-	Like      int
-	DisLike   int
 	Have      string
+}
+
+type UserProfile struct {
+	ID        int    `json:"id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
+	Gender    string `json:"gender"`
+	Age       int    `json:"age"`
+	Nickname  string `json:"nickname"`
+	Avatar    string `json:"avatar"`
+	AboutMe   string `json:"about_me"`
+	IsPrivate bool   `json:"is_private"`
 }
 
 type Comment struct {
@@ -25,8 +36,6 @@ type CommentPost struct {
 	Content   string
 	CreatedAt string
 	Username  string
-	Like      int
-	DisLike   int
 	Have      string
 }
 
@@ -38,14 +47,6 @@ var (
 	LastId = 0
 	Poste  []Postes
 )
-
-type Reaction struct {
-	ID             int
-	User_id        int
-	Content_type   string
-	Content_id     string
-	Reactione_type string
-}
 
 type Msg struct {
 	Sender   string

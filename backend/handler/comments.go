@@ -25,11 +25,11 @@ func Comments(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.Atoi(idpost.ID)
 		if err != nil {
 			w.WriteHeader(http.StatusUnprocessableEntity) // 422
-			w.Write([]byte(`{"error": "ID must be a number", "status": false}`))
+			w.Write([]byte(`{"error": "ID must be a number", "status":false}`))
 			return
 		}
 
-		_, err = servisse.IsHaveToken(r)
+		_,_, err = servisse.IsHaveToken(r)
 		if err != nil {
 			fmt.Println("token not found")
 			w.WriteHeader(http.StatusUnauthorized)
@@ -39,13 +39,16 @@ func Comments(w http.ResponseWriter, r *http.Request) {
 		token, _ := r.Cookie("SessionToken")
 		userid := db.GetId("sessionToken", token.Value)
 		allcoments, err := db.SelectComments(id, userid)
+		
 		if err != nil {
 			fmt.Println("err select")
-			w.WriteHeader(http.StatusOK)
+			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(`{"error": "` + err.Error() + `", "status":false}`))
 			return
 		}
 
+		// Send only the comments array as JSON
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(allcoments)
 	}
 }
@@ -55,7 +58,7 @@ func Sendcomment(w http.ResponseWriter, r *http.Request) {
 
 		var comment utils.Comment
 		w.Header().Set("Content-Type", "application/json")
-		_, ishave := servisse.IsHaveToken(r)
+		_,_, ishave := servisse.IsHaveToken(r)
 		if ishave != nil {
 			fmt.Println("token not found")
 			w.WriteHeader(http.StatusUnauthorized)

@@ -2,42 +2,72 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
+	"io"
 	"net/http"
+	"os"
 
 	db "social-network/Database/cration"
 	"social-network/utils"
 )
 
-type User struct {
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	Age       string `json:"age"`
-	Gender    string `json:"gender"`
-	Nickname  string `json:"nickname"`
-}
-
 func Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		message := ""
-		var info User
-		errore := json.NewDecoder(r.Body).Decode(&info)
-		if errore != nil {
-			fmt.Println(errore)
+
+		// Parse multipart form (10MB max memory)
+		err := r.ParseMultipartForm(10 << 20)
+		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": "Invalid request body"})
+			json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": "Invalid form data"})
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		validatEmail := db.CheckInfo(info.Email, "email")
-		if validatEmail {
-			message = "Email already exists"
+
+		// Get form values
+		firstName := r.FormValue("firstName")
+		lastName := r.FormValue("lastName")
+		email := r.FormValue("email")
+		password := r.FormValue("password")
+		age := r.FormValue("age")
+		gender := r.FormValue("gender")
+		nickname := r.FormValue("nickname")
+		aboutMe := r.FormValue("about_me")
+		isPrivate := r.FormValue("is_private") == "true" // Convert to boolean
+
+		// Handle avatar upload
+		var avatarPath string
+		file, handler, err := r.FormFile("avatar")
+		if err == nil && handler != nil {
+			defer file.Close()
+
+			// Create avatars directory in Next.js public folder (correct path from backend/main/)
+			nextjsAvatarsDir := "../../public/avatars"
+			os.MkdirAll(nextjsAvatarsDir, 0o755)
+
+			// Save to Next.js public directory but store relative path in DB
+			fullPath := nextjsAvatarsDir + "/" + handler.Filename
+			avatarPath = "avatars/" + handler.Filename // This is what gets stored in DB (without "public/" prefix)
+
+			dst, err := os.Create(fullPath)
+			if err != nil {
+				// Log the error and continue without avatar
+				println("Error creating avatar file:", err.Error())
+				avatarPath = ""
+			} else {
+				defer dst.Close()
+				_, err = io.Copy(dst, file)
+				if err != nil {
+					// Log the error and continue without avatar
+					println("Error copying avatar file:", err.Error())
+					avatarPath = "" // fallback if copy fails
+				}
+			}
 		}
 
-		validatNikname := db.CheckInfo(info.Nickname, "nikname")
-		if validatNikname {
+		// Validate email and nickname
+		if db.CheckInfo(email, "email") {
+			message = "Email already exists"
+		}
+		if db.CheckInfo(nickname, "nikname") {
 			if message != "" {
 				message = "Email and nickname already exist"
 			} else {
@@ -49,19 +79,23 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": message})
 			return
 		}
-		var err error
-		info.Password, err = utils.HashPassword(info.Password)
+
+		// Hash password
+		password, err = utils.HashPassword(password)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": "Internal server error"})
 			return
 		}
-		err = db.Insertuser(info.FirstName, info.LastName, info.Email, info.Gender, info.Age, info.Nickname, info.Password)
+
+		// Insert user (update your Insertuser to accept avatarPath and aboutMe)
+		err = db.Insertuser(firstName, lastName, email, gender, age, nickname, password, avatarPath, aboutMe, isPrivate)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": "Internal server error"})
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{"success": true, "message": ""})
 

@@ -1,16 +1,17 @@
 package handler
 
 import (
-	"social-network/servisse"
 	"encoding/json"
 	"net/http"
+
+	"social-network/servisse"
 )
 
 func Statuts(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		w.Header().Set("Content-Type", "application/json")
 
-		name, ishave := servisse.IsHaveToken(r)
+		name, avatar, ishave := servisse.IsHaveToken(r)
 
 		var response map[string]any
 
@@ -22,6 +23,7 @@ func Statuts(w http.ResponseWriter, r *http.Request) {
 		} else {
 			response = map[string]any{
 				"name":   name,
+				"avatar": avatar,
 				"status": true,
 			}
 		}

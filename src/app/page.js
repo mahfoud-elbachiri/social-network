@@ -33,20 +33,10 @@ export default function LoginRegisterPage() {
   const handleRegister = async (e) => {
     e.preventDefault()
     const form = new FormData(e.target)
-    const payload = {
-      FirstName: form.get("firstName"),
-      LastName: form.get("lastName"),
-      Email: form.get("email"),
-      Password: form.get("password"),
-      Age: form.get("age"),
-      Gender: form.get("gender"),
-      Nickname: form.get("nickname"),
-    }
-    
+    // No need to build a payload, just send the FormData directly
     const res = await fetch("http://localhost:8080/resgester", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: form,
       credentials: 'include'
     })
     const data = await res.json()
@@ -97,8 +87,8 @@ export default function LoginRegisterPage() {
                 </select>
               </div>
               <div className="form-group">
-                <label>Nickname</label>
-                <input type="text" name="nickname" placeholder="johndoe" required />
+                <label>Nickname (Optional)</label>
+                <input type="text" name="nickname" placeholder="johndoe" />
               </div>
               <div className="form-group">
                 <label>Email Address</label>
@@ -107,6 +97,27 @@ export default function LoginRegisterPage() {
               <div className="form-group">
                 <label>Password</label>
                 <input type="password" name="password" placeholder="••••••••" required />
+              </div>
+              <div className="form-group">
+                <label>Avatar/Image (Optional)</label>
+                <input type="file" name="avatar" accept="image/*" />
+              </div>
+              <div className="form-group">
+                <label>About Me (Optional)</label>
+                <textarea name="about_me" placeholder="Tell us about yourself..." rows="3" />
+              </div>
+              <div className="form-group">
+                <label>Account Privacy :</label>
+                <div className="radio-group-inline">
+                  <label className="radio-option-inline">
+                    <input type="radio" name="is_private" value="false" defaultChecked />
+                    <span> Public</span>
+                  </label>
+                  <label className="radio-option-inline">
+                    <input type="radio" name="is_private" value="true" />
+                    <span> Private</span>
+                  </label>
+                </div>
               </div>
               {registerError && <p id="error-reg">{registerError}</p>}
               <button type="submit" id="creat-btn" >Create Account</button>

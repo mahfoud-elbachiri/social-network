@@ -8,32 +8,167 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreatePost, setShowCreatePost] = useState(false);
+  const [showComments, setShowComments] = useState({});
+  const [comments, setComments] = useState({});
+  const [loadingComments, setLoadingComments] = useState({});
   const [username, setUsername] = useState('User'); // You can get this from auth context
+  const [userAvatar, setUserAvatar] = useState("");
 
   useEffect(() => {
-    FetchUserStatus()
+    FetchUserStatus();
     // Call HomeHandeler when component mounts
     HomeHandeler(setPosts, setLoading, setError);
   }, []);
 
+  useEffect(() => {
+    const handleScroll = async () => {
+      if ((document.body.offsetHeight - (window.innerHeight + window.scrollY)) < 100) {
+        const formData = new FormData();
+        formData.delete('lastdata');
+        try {
+          const res = await fetch('http://localhost:8080/getpost', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+          });
+
+          const data = await res.json();
+          if (data && data.length > 0) {
+            setPosts(prevPosts => [...prevPosts, ...data]);
+          }
+        } catch (error) {
+          console.error('Error fetching more posts:', error);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   const FetchUserStatus = async () => {
     try {
       const res = await fetch('http://localhost:8080/statuts', {
         method: 'GET',
         credentials: 'include'
-    })
-      const data = await res.json()
+      });
+      const data = await res.json();
       if (data.status && data.name) {
         setUsername(data.name);
+        setUserAvatar(data.avatar || "");
+        console.log("hhhhh",data.avatar)
       } else {
-        console.error('Failed to fetch user status:', data.error)
+        console.error('Failed to fetch user status:', data.error);
       }
-    }catch (error) { 
+    } catch (error) {
       console.error('Error fetching user status:', error);
     }
+  };
 
-  }
+  const fetchCommentsForPost = async (postId) => {
+    setLoadingComments(prev => ({ ...prev, [postId]: true }));
+    
+    try {
+      const response = await fetch('http://localhost:8080/getcomment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ post_id: postId.toString() }),
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+      
+      // Check for authentication errors
+      if (data && data.token === false) {
+        console.error('Unauthorized access, redirecting to login...');
+        window.location.href = "/";
+        return;
+      }
+      
+      // Check if data has error or status false
+      if (data && (data.error || data.status === false)) {
+        console.error('Error fetching comments:', data.error);
+        setError(data.error);
+      } else {
+        // Store comments for this post (data is the comments array)
+        setComments(prev => ({
+          ...prev,
+          [postId]: Array.isArray(data) ? data : []
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      setError('Failed to load comments');
+    } finally {
+      setLoadingComments(prev => ({ ...prev, [postId]: false }));
+    }
+  };
+
+  const handleComment = async (e) => {
+    const postId = e.target.getAttribute('posteid');
+    
+    // Toggle comments visibility
+    setShowComments(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+    
+    // If comments are being shown and we don't have them yet, fetch them
+    if (!showComments[postId] && !comments[postId]) {
+      await fetchCommentsForPost(postId);
+    }
+  };
+
+  const handleSendComment = async (postId, commentText) => {
+    if (!commentText.trim()) return;
+
+    try {
+      const response = await fetch('http://localhost:8080/sendcomment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          content: commentText, 
+          post_id: postId.toString() 
+        }),
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+      
+      if (data && data.token === false) {
+        console.error('Unauthorized access, redirecting to login...');
+        window.location.href = "/";
+        return;
+      }
+
+      if (data && data.status) {
+        // Refresh comments for this post using the reusable function
+        await fetchCommentsForPost(postId);
+          
+        // Update post comment count
+        setPosts(prevPosts => 
+          prevPosts.map(post => 
+            post.ID == postId 
+              ? { ...post, Nembre: post.Nembre + 1 }
+              : post
+          )
+        );
+      } else {
+        console.error('Error sending comment:', data.error);
+        setError(data.error);
+      }
+    } catch (error) {
+      console.error('Error sending comment:', error);
+      setError('Failed to send comment');
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -95,12 +230,12 @@ export default function Home() {
         
         <Link href="/Profile">
           <Image 
-            src="/icon.jpg" 
+             src={userAvatar ? `/${userAvatar}` : "/icon.jpg"}
             alt="Forum Logo" 
             width={52} 
             height={52}
             priority
-            style={{cursor: 'pointer', display: 'block'}}
+            style={{borderRadius : 50 ,cursor: 'pointer', display: 'block'}}
           />
         </Link>
         <nav>
@@ -121,12 +256,12 @@ export default function Home() {
           <div className="contact">
              
             <Image
-            src="/icon.jpg" 
-            alt="Forum Logo" 
-            width={28}
-            height={28}
-            priority
-            // style={{cursor: 'pointer',display: 'block'}}
+              src={userAvatar ? `/${userAvatar}` : "/icon.jpg"}
+              alt="User Avatar"
+              width={28}
+              height={28}
+              priority
+              style={{borderRadius : 50}}
             />
             <span>{username}</span>
             <span className="online-indicator"></span>
@@ -189,7 +324,6 @@ export default function Home() {
               posts.map((post) => (
                 <div key={post.ID} className="post" postid={post.ID}>
                   <div className="post-header">
-                    <span className="material-icons">account_circle</span>
                     <span>{post.Username}</span>
                     <span style={{color: '#6c757d'}}>{formatDate(post.CreatedAt)}</span>
                   </div>
@@ -197,11 +331,40 @@ export default function Home() {
                   <h4>{post.Title}</h4>
                   <p>{post.Content}</p>
                   
-                  <div className="post-actions">
-                    <div id="comment" className="of" posteid={post.ID}>
+                    <div id="comment" className="of" posteid={post.ID}
+                    onClick={handleComment}>
                       {post.Nembre} 💬
                     </div>
-                  </div>
+
+                  {/* Comments Section */}
+                  {showComments[post.ID] && (
+                    <div className="comments-section">
+                      {loadingComments[post.ID] ? (
+                        <div className="loading-comments">Loading comments...</div>
+                      ) : (
+                        <>
+                          {comments[post.ID] && comments[post.ID].length > 0 ? (
+                            <div className="comments-list">
+                              {comments[post.ID].map((comment) => (
+                                <div key={comment.ID} className="comment-item">
+                                  <div className="comment-header">
+                                    <strong>{comment.Username}</strong>
+                                    <span className="comment-date">
+                                      {formatDate(comment.CreatedAt)}
+                                    </span>
+                                  </div>
+                                  <p className="comment-text">{comment.Content}</p>
+                                  
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="no-comments">No comments yet</div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
 
                   {/* Comment Input */}
                   <div className="input-wrapper">
@@ -209,8 +372,25 @@ export default function Home() {
                       placeholder="Write a comment..." 
                       className="comment-input" 
                       data-idpost={post.ID}
+                      id={`comment-textarea-${post.ID}`}
                     />
-                    <button className="send-button">
+                    <button 
+                      className="send-button"
+                      onClick={(e) => {
+                        const textarea = document.getElementById(`comment-textarea-${post.ID}`);
+                        if (textarea && textarea.value) {
+                          const commentText = textarea.value;
+                          if (commentText.trim()) {
+                            handleSendComment(post.ID, commentText);
+                            textarea.value = '';
+                          } else {
+                          return
+                        }
+                        } else {
+                          return
+                        }
+                      }}
+                    >
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M22 2L11 13" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         <path d="M22 2L15 22L11 13L2 9L22 2Z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

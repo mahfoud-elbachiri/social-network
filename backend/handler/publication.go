@@ -10,7 +10,7 @@ import (
 
 func Post(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		_, ishave := servisse.IsHaveToken(r)
+		_,_, ishave := servisse.IsHaveToken(r)
 		if ishave != nil {
 			fmt.Println("token not found POST")
 			w.WriteHeader(http.StatusUnauthorized)

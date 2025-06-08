@@ -68,6 +68,18 @@ func GetId(input string, tocken string) int {
 	return id
 }
 
+func GetUserInfo(id int) (string, string) {
+	var name, avatar string
+	quire := "SELECT nikname, avatar FROM users WHERE id = ?"
+	err := DB.QueryRow(quire, id).Scan(&name, &avatar)
+	if err != nil {
+		fmt.Println("Error getting user info:", err)
+		return "", ""
+	}
+	fmt.Printf("User ID %d: name='%s', avatar='%s'\n", id, name, avatar)
+	return name, avatar
+}
+
 func GetUser(id int) string {
 	var name string
 	quire := "SELECT nikname FROM users WHERE id = ?"
@@ -97,13 +109,58 @@ func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 		if post.Username == "" {
 			return nil, err
 		}
-		sl, _ := SelecReaction(post.ID)
 
-		post.Like, post.DisLike, post.Have = Liklength(sl, userid)
 		postes = append(postes, post)
 	}
 
 	return postes, nil
+}
+
+func GetPostsByUserId(userId int) ([]utils.Postes, error) {
+	var postes []utils.Postes
+	quire := "SELECT id, user_id, title, content, created_at FROM postes WHERE user_id = ? ORDER BY created_at DESC"
+	rows, err := DB.Query(quire, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var post utils.Postes
+		err := rows.Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &post.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		post.Nembre, err = LenghtComent(post.ID)
+		post.Username = GetUser(post.UserID)
+		if post.Username == "" {
+			return nil, err
+		}
+
+		postes = append(postes, post)
+	}
+
+	return postes, nil
+}
+
+func GetUserProfile(userId int) (*utils.UserProfile, error) {
+	var profile utils.UserProfile
+	query := "SELECT id, first_name, last_name, email, gender, age, nikname, avatar, about_me, is_private FROM users WHERE id = ?"
+	err := DB.QueryRow(query, userId).Scan(
+		&profile.ID,
+		&profile.FirstName,
+		&profile.LastName,
+		&profile.Email,
+		&profile.Gender,
+		&profile.Age,
+		&profile.Nickname,
+		&profile.Avatar,
+		&profile.AboutMe,
+		&profile.IsPrivate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &profile, nil
 }
 
 func LenghtComent(postid int) (nbr int, err error) {
@@ -133,8 +190,6 @@ func SelectComments(postid int, userid int) ([]utils.CommentPost, error) {
 		}
 
 		comment.Username = GetUser(comment.UserID)
-		sl, _ := SelecReaction(comment.ID)
-		comment.Like, comment.DisLike, comment.Have = Liklength(sl, userid)
 		comments = append(comments, comment)
 	}
 
@@ -183,52 +238,6 @@ func Getlastid() (int, error) {
 		return 0, err
 	}
 	return id, nil
-}
-
-func SelecReaction(Contentid int) ([]utils.Reaction, error) {
-	var reactions []utils.Reaction
-	quire := "SELECT id, user_id, content_type, content_id, reaction_type FROM reactions WHERE content_id = ?"
-	rows, err := DB.Query(quire, Contentid)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var reaction utils.Reaction
-		err := rows.Scan(&reaction.ID, &reaction.User_id, &reaction.Content_type, &reaction.Content_id, &reaction.Reactione_type)
-		if err != nil {
-			return nil, err
-		}
-		reactions = append(reactions, reaction)
-	}
-	return reactions, nil
-}
-
-func GetReactionRow(userid int, postid int) (string, error) {
-	var reaction string
-	quire := "SELECT reaction_type FROM reactions WHERE user_id = ? AND content_id = ?"
-	err := DB.QueryRow(quire, userid, postid).Scan(&reaction)
-	if err != nil {
-		return "", err
-	}
-	return reaction, nil
-}
-
-func Liklength(sl []utils.Reaction, userid int) (int, int, string) {
-	like := 0
-	dislike := 0
-	reactin := ""
-	for i := 0; i < len(sl); i++ {
-		if sl[i].Reactione_type == "like" {
-			like++
-		} else if sl[i].Reactione_type == "dislike" {
-			dislike++
-		}
-		if sl[i].User_id == userid {
-			reactin = sl[i].Reactione_type
-		}
-	}
-	return like, dislike, reactin
 }
 
 func SelecChats(sender string, receiver string, num int) ([]utils.Msg, error) {
@@ -304,4 +313,13 @@ func contains(list []string, user string) bool {
 		}
 	}
 	return false
+}
+
+func UpdateUserPrivacy(userId int, isPrivate bool) error {
+	query := "UPDATE users SET is_private = ? WHERE id = ?"
+	_, err := DB.Exec(query, isPrivate, userId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

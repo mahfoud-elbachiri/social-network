@@ -1,4 +1,5 @@
 {
+  "/Chats/page": "app/Chats/page.js",
   "/Followers/page": "app/Followers/page.js",
   "/Home/page": "app/Home/page.js",
   "/Profile/page": "app/Profile/page.js",

@@ -10,9 +10,12 @@ func CreateTable() error {
 		email TEXT NOT NULL UNIQUE,
 		gender TEXT NOT NULL,
 		age INTEGER NOT NULL,
-		nikname TEXT NOT NULL UNIQUE,
+		nikname TEXT UNIQUE,
 		password TEXT NOT NULL,
-		sessionToken TEXT
+		sessionToken TEXT,
+		avatar TEXT,         
+		about_me TEXT,
+		is_private BOOLEAN DEFAULT FALSE  -- TRUE = private, FALSE = public
 	);
 	
 	CREATE TABLE IF NOT EXISTS postes (

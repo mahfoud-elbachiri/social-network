@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	db "social-network/Database/cration"
@@ -16,7 +15,7 @@ var (
 
 func Getpost(w http.ResponseWriter, r *http.Request) {
 	var err error
-	_, err = servisse.IsHaveToken(r)
+	_,_, err = servisse.IsHaveToken(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte(`{"error": "Unauthorized", "status":false, "tocken":false}`))
@@ -38,7 +37,6 @@ func Getpost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	fmt.Println("Getpost: ", str)
 
 	if str == 0 {
 		w.WriteHeader(http.StatusOK)
@@ -66,7 +64,6 @@ func Getpost(w http.ResponseWriter, r *http.Request) {
 		str = end
 		end = 0
 	}
-	fmt.Println("Getpost: ", Postes)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(Postes)
 }
