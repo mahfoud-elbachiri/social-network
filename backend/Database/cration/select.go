@@ -92,7 +92,7 @@ func GetUser(id int) string {
 
 func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 	var postes []utils.Postes
-	quire := "SELECT id, user_id, title, content, created_at FROM postes WHERE id > ? AND id <= ? ORDER BY created_at DESC"
+	quire := "SELECT id, user_id, title, content, created_at, avatar, privacy FROM postes WHERE id > ? AND id <= ? ORDER BY created_at DESC"
 	rows, err := DB.Query(quire, end, str)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var post utils.Postes
-		err := rows.Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &post.CreatedAt)
+		err := rows.Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &post.CreatedAt, &post.Avatar, &post.Privacy)
 		if err != nil {
 			return nil, err
 		}
@@ -109,6 +109,10 @@ func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 		if post.Username == "" {
 			return nil, err
 		}
+
+		// Get user's avatar
+		_, userAvatar := GetUserInfo(post.UserID)
+		post.UserAvatar = userAvatar
 
 		postes = append(postes, post)
 	}

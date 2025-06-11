@@ -22,40 +22,15 @@ func Insertuser(first_name string, last_name string, email string, gender string
 	return nil
 }
 
-func InsertPostes(user_id int, title string, content string) error {
+func InsertPostes(user_id int, title string, content string, privacy string, avatar string) error {
 	created_at := time.Now().Format("2006-01-02 15:04:05")
 
-	info, err := DB.Prepare("INSERT INTO postes (user_id,title,content,created_at) VALUES (?,?,?,?)")
+	info, err := DB.Prepare("INSERT INTO postes (user_id,title,content,created_at,avatar,privacy) VALUES (?,?,?,?,?,?)")
 	if err != nil {
 		fmt.Println("==> E : ", err)
 		return err
 	}
-	_, err = info.Exec(user_id, title, content, created_at)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func InsertReaction(user_id int, content_id int, content_type string, reaction_type string) error {
-	if content_type == "post" {
-		err := SelectPostid(content_id)
-		if err != nil {
-			return err
-		}
-	} else if content_type == "comment" {
-		err := SelectCommentid(content_id)
-		if err != nil {
-			return err
-		}
-	}
-
-	info, err := DB.Prepare("INSERT INTO reactions (user_id,content_type,content_id,reaction_type) VALUES (?,?,?,?)")
-	if err != nil {
-		return err
-	}
-	_, err = info.Exec(user_id, content_type, content_id, reaction_type)
+	_, err = info.Exec(user_id, title, content, created_at, avatar, privacy)
 	if err != nil {
 		return err
 	}
@@ -69,30 +44,6 @@ func InsertComment(post_id int, user_id int, comment string) error {
 		return err
 	}
 	_, err = info.Exec(post_id, user_id, comment, created_at)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func DeleteReaction(user_id int, content_id int) error {
-	info, err := DB.Prepare("DELETE FROM reactions WHERE user_id = ? AND content_id = ?")
-	if err != nil {
-		return err
-	}
-	_, err = info.Exec(user_id, content_id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func Update(userid int, postid int, reactiontype string) error {
-	info, err := DB.Prepare("UPDATE reactions SET reaction_type = ? WHERE user_id = ? AND content_id = ?")
-	if err != nil {
-		return err
-	}
-	_, err = info.Exec(reactiontype, userid, postid)
 	if err != nil {
 		return err
 	}

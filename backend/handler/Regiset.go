@@ -33,33 +33,28 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		aboutMe := r.FormValue("about_me")
 		isPrivate := r.FormValue("is_private") == "true" // Convert to boolean
 
-		// Handle avatar upload
+		// Handle avatar upload (simplified)
 		var avatarPath string
+
+		// Try to get the uploaded file
 		file, handler, err := r.FormFile("avatar")
 		if err == nil && handler != nil {
+			// User uploaded a file
 			defer file.Close()
 
-			// Create avatars directory in Next.js public folder (correct path from backend/main/)
-			nextjsAvatarsDir := "../../public/avatars"
-			os.MkdirAll(nextjsAvatarsDir, 0o755)
+			// Make sure the avatars folder exists
+			os.MkdirAll("../../public/avatars", 0o755)
 
-			// Save to Next.js public directory but store relative path in DB
-			fullPath := nextjsAvatarsDir + "/" + handler.Filename
-			avatarPath = "avatars/" + handler.Filename // This is what gets stored in DB (without "public/" prefix)
+			// Save the file to public/avatars folder
+			savePath := "../../public/avatars/" + handler.Filename
+			newFile, err := os.Create(savePath)
+			if err == nil {
+				// Copy the uploaded file to our folder
+				io.Copy(newFile, file)
+				newFile.Close()
 
-			dst, err := os.Create(fullPath)
-			if err != nil {
-				// Log the error and continue without avatar
-				println("Error creating avatar file:", err.Error())
-				avatarPath = ""
-			} else {
-				defer dst.Close()
-				_, err = io.Copy(dst, file)
-				if err != nil {
-					// Log the error and continue without avatar
-					println("Error copying avatar file:", err.Error())
-					avatarPath = "" // fallback if copy fails
-				}
+				// Store just "avatars/filename.jpg" in database (not full path)
+				avatarPath = "avatars/" + handler.Filename
 			}
 		}
 

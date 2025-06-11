@@ -13,7 +13,6 @@ export default function Home() {
   const [loadingComments, setLoadingComments] = useState({});
   const [username, setUsername] = useState('User'); // You can get this from auth context
   const [userAvatar, setUserAvatar] = useState("");
-
   useEffect(() => {
     FetchUserStatus();
     // Call HomeHandeler when component mounts
@@ -186,14 +185,10 @@ export default function Home() {
     e.preventDefault();
     const form = new FormData(e.target);
 
-    const formData = new FormData();
-    formData.append('title', form.get('title'));
-    formData.append('content', form.get('content'));
-
     try {
       const res = await fetch('http://localhost:8080/pubpost', {
         method: 'POST',
-        body: formData,
+        body: form,
         credentials: 'include'
       });
 
@@ -300,6 +295,28 @@ export default function Home() {
                     />
                   </div>
                 </div>
+                <br />
+                <div className="post-imagee">
+                <label>add Image or gif (Optional)</label>
+                <br />
+                <input type="file" name="avatar" accept="image/*" />
+                </div>
+<br />
+                <div className="radio-group-inline">
+                  <label className="radio-option-inline">
+                    <input type="radio" name="privacy" value="public" defaultChecked />
+                    <span> Public</span>
+                  </label>
+                  <label className="radio-option-inline">
+                    <input type="radio" name="privacy" value="private" />
+                    <span> Private</span>
+                  </label>
+                  <label className="radio-option-inline">
+                    <input type="radio" name="privacy" value="almost private" />
+                    <span> almost private</span>
+                  </label>
+                </div>
+
 
                 <div className="form-group">
                   <label>Post Content</label>
@@ -324,12 +341,42 @@ export default function Home() {
               posts.map((post) => (
                 <div key={post.ID} className="post" postid={post.ID}>
                   <div className="post-header">
-                    <span>{post.Username}</span>
-                    <span style={{color: '#6c757d'}}>{formatDate(post.CreatedAt)}</span>
+                    <Image
+                      src={post.UserAvatar ? `/${post.UserAvatar}` : "/icon.jpg"}
+                      alt="Post Author Avatar"
+                      width={28}
+                      height={28}
+                      priority
+                      style={{borderRadius: 50}}
+                    />
+                    <div className="post-header-text">
+                      <span>{post.Username}</span>
+                      <span style={{color: '#6c757d'}}> {formatDate(post.CreatedAt)}</span>
+                    </div>
                   </div>
                   
                   <h4>{post.Title}</h4>
                   <p>{post.Content}</p>
+                  
+                  {/* Display post image if it exists */}
+                  {post.Avatar && (
+                    <div className="post-image">
+                      <Image
+                        src={`/${post.Avatar}`}
+                        alt="Post Image"
+                        width={400}
+                        height={300}
+                        style={{
+                          width: '100%',
+                          height: 'auto',
+                          maxHeight: '400px',
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          marginTop: '10px'
+                        }}
+                      />
+                    </div>
+                  )}
                   
                     <div id="comment" className="of" posteid={post.ID}
                     onClick={handleComment}>
@@ -442,12 +489,9 @@ export async function HomeHandeler(setPosts, setLoading, setError) {
             credentials: 'include'
         });
 
-        console.log('Response status:', res.status);
-        console.log('Response headers:', res.headers.get('content-type'));
-        
+      
         // Check if response is empty or not JSON
         const text = await res.text();
-        console.log('Raw response:', text);
         
         if (!text) {
             console.error('Empty response from server, redirecting to login...');
@@ -480,6 +524,7 @@ export async function HomeHandeler(setPosts, setLoading, setError) {
             setLoading(false);
             return;
         }
+        
         // Success - update posts state
         setPosts(data || []);
         setLoading(false);

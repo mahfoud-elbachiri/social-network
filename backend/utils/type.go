@@ -1,14 +1,17 @@
 package utils
 
 type Postes struct {
-	ID        int
-	UserID    int
-	Username  string
-	Title     string
-	Content   string
-	CreatedAt string
-	Nembre    int
-	Have      string
+	ID         int
+	UserID     int
+	Username   string
+	UserAvatar string // User's profile avatar
+	Title      string
+	Content    string
+	CreatedAt  string
+	Nembre     int
+	Have       string
+	Avatar     string // Post image (optional)
+	Privacy    string
 }
 
 type UserProfile struct {
