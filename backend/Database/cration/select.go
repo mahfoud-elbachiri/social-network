@@ -329,3 +329,27 @@ func UpdateUserPrivacy(userId int, isPrivate bool) error {
 	}
 	return nil
 }
+func CheckPublic(id int) (bool, error) {
+	var result bool
+	query := "SELECT is_public FROM users WHERE id = ?"
+
+	row := DB.QueryRow(query, id)
+
+	err := row.Scan(&result)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+	return result, nil
+}
+
+func BeforInsertion(follower_id int, following_id int) bool {
+	var exist bool
+	query := "SELECT EXISTS(SELECT 1 FROM followers WHERE follower_id = ? AND following_id = ?)"
+
+	DB.QueryRow(query, follower_id, following_id).Scan(&exist)
+
+	return exist
+}
