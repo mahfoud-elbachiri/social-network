@@ -331,7 +331,7 @@ func UpdateUserPrivacy(userId int, isPrivate bool) error {
 }
 func CheckPublic(id int) (bool, error) {
 	var result bool
-	query := "SELECT is_public FROM users WHERE id = ?"
+	query := "SELECT is_private FROM users WHERE id = ?"
 
 	row := DB.QueryRow(query, id)
 
