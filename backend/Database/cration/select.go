@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	"social-network/utils"
+	"social-network/Database/sqlite"
 )
 
+var DB = sqlite.GetDB()
 func CheckInfo(info string, input string) bool { ////hna kanoxofo wax email ola wax nikname kayn 3la hsab input xno fiha wax email ola wax nikname
 	var inter int
 	quire := "SELECT COUNT(*) FROM users WHERE " + input + " = ?"

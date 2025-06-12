@@ -6,6 +6,24 @@ import (
 	"time"
 )
 
+func GetAllUsers() ([]string, error) {
+	rows, err := DB.Query("SELECT nikname FROM users ORDER BY nikname ASC;") 
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []string
+	for rows.Next() {
+		var nickname string
+		if err := rows.Scan(&nickname); err != nil {
+			return nil, err
+		}
+		users = append(users, nickname)
+	}
+	return users, nil
+}
+
 func Insertuser(first_name string, last_name string, email string, gender string, age string, nikname string, password string, avatar string, about_me string, is_private bool) error {
 	infiuser, err := DB.Prepare("INSERT INTO users (first_name, last_name, email, gender, age, nikname, password, avatar, about_me, is_private) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {

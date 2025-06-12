@@ -4,18 +4,15 @@ import (
 	"fmt"
 	"net/http"
 
-	data "social-network/Database/cration"
+	data "social-network/Database/sqlite"
 	"social-network/handler"
 )
 
 func main() {
-	Db, err := data.Db()
-	if err != nil {
-		fmt.Println("====Z", err)
-		return
-	}
 
+	Db := data.GetDB()
 	defer Db.Close()
+
 
 	router := http.NewServeMux()
 
@@ -41,7 +38,7 @@ func main() {
 	corsRouter := handler.CorsMiddleware(router)
 
 	fmt.Println("✅ Server running on: http://localhost:8080")
-	err = http.ListenAndServe(":8080", corsRouter)
+	err := http.ListenAndServe(":8080", corsRouter)
 	if err != nil {
 		fmt.Println(err)
 		return

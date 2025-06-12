@@ -1,5 +1,5 @@
 package db
-
+/*
 func CreateTable() error {
 	// Code to create a table
 	tables := `
@@ -61,3 +61,4 @@ func CreateTable() error {
 	}
 	return nil
 }
+*/
