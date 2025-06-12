@@ -11,6 +11,7 @@ import (
 func main() {
 
 	Db := data.GetDB()
+	
 	defer Db.Close()
 
 
