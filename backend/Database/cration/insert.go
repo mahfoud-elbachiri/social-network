@@ -125,3 +125,4 @@ func DeleteFollow(followerId, followingId int) {
 		log.Println("Error deleting follow:", err)
 	}
 }
+

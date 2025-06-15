@@ -12,3 +12,5 @@
 		about_me TEXT,
 		is_private BOOLEAN DEFAULT FALSE  -- TRUE = private, FALSE = public
 	);
+
+

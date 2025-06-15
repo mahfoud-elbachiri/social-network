@@ -87,7 +87,7 @@ func Unfollowreq(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idInt, _ := strconv.Atoi(targetID.FollowingId)
-
+//|| idInt == userid
 	if targetID.FollowingId == "" || idInt == userid {
 		utils.JsonResponse(w, http.StatusBadRequest, "Invalid following ID", nil)
 		return
@@ -107,12 +107,15 @@ func Unfollowreq(w http.ResponseWriter, r *http.Request) {
 
 
 func CheckFollow(w http.ResponseWriter ,  r *http.Request){
-	fmt.Println("wslat targetid")
+	
 		token, _ := r.Cookie("SessionToken")
 	currentID := db.GetId("sessionToken", token.Value)
 
-	targetIDStr := r.URL.Query().Get("targetId")
+	targetIDStr := r.URL.Query().Get("id")
 	targetID, _ := strconv.Atoi(targetIDStr)
+    fmt.Println("wslat targetid" , targetID)
+
+
 
 	isFollowing := db.BeforInsertion(currentID, targetID)
 

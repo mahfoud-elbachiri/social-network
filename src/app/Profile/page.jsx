@@ -1,35 +1,210 @@
 'use client';
-import Link from "next/link";
+
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useSearchParams } from 'next/navigation';
+
+
+// Import reusable components and utilities
+import Header from '@/components/Header';
+import PostCard from '@/components/PostCard';
+import { useComments } from '@/hooks/useComments';
+import { userApi } from '@/utils/api';
+import FollowButton from '@/components/FollowButton';
+
+const ProfileCard = ({ profile, isOwnProfile, onPrivacyToggle, updatingPrivacy, isPrivateView = false ,targetid }) => (
+  <div className="profile-card">
+
+    <div className="profile-header">
+      <Image
+        src={profile.avatar ? `/${profile.avatar}` : "/icon.jpg"}
+        alt="Profile Avatar"
+        width={80}
+        height={80}
+        priority
+        style={{borderRadius: 50}}
+      />
+      <div className="profile-info">
+        <h2>{profile.first_name} {profile.last_name}</h2>
+        <p className="nickname">@{profile.nickname}</p>
+        
+        {/* Only show privacy toggle for own profile */}
+        {isOwnProfile && (
+          <div className="privacy-toggle">
+            <span className={`privacy-badge ${profile.is_private ? 'private' : 'public'}`}>
+              {profile.is_private ? '🔒 Private' : '🌍 Public'}
+            </span>
+            <label className="switch">
+              <input 
+                type="checkbox" 
+                checked={profile.is_private}
+                onChange={onPrivacyToggle}
+                disabled={updatingPrivacy}
+              />
+              <span className="slider"></span>
+            </label>
+            {updatingPrivacy && <span className="updating-text">Updating...</span>}
+          </div>
+        )}
+        
+        {/* Show privacy status for other users */}
+        {!isOwnProfile && (
+          <div className="privacy-status">
+            <span className={`privacy-badge ${profile.is_private ? 'private' : 'public'}`}>
+              {profile.is_private ? '🔒 Private' : '🌍 Public'}
+            </span>
+            <FollowButton   targetUserid={targetid} ></FollowButton>
+          </div>
+        )}
+      </div>
+      
+    </div>
+    
+    {/* Show detailed info only if !isPrivateView or if is own profile */}
+    {(!isPrivateView || isOwnProfile) && profile.email && (
+      <div className="profile-details">
+        <div className="detail-item">
+          <strong>Email:</strong> {profile.email}
+        </div>
+        <div className="detail-item">
+          <strong>Age:</strong> {profile.age}
+        </div>
+        <div className="detail-item">
+          <strong>Gender:</strong> {profile.gender}
+        </div>
+        {profile.about_me && (
+          <div className="detail-item">
+            <strong>About:</strong> {profile.about_me}
+          </div>
+        )}
+      </div>
+    )}
+    
+    {/* Show message for private profile */}
+    {isPrivateView && !isOwnProfile && (
+      <div className="private-details-message" style={{
+        padding: '1rem',
+        background: '#f8f9fa',
+        borderRadius: '8px',
+        marginTop: '1rem',
+        textAlign: 'center',
+        color: '#6c757d'
+      }}>
+        <p>🔒 Additional details are private</p>
+      </div>
+    )}
+  </div>
+);
+
+const PrivatePostsMessage = () => (
+  <div className="private-posts-message" style={{
+    textAlign: 'center',
+    padding: '2rem',
+    background: '#f8f9fa',
+    borderRadius: '8px',
+    margin: '2rem 0',
+    color: '#6c757d'
+  }}>
+    <h3>🔒 Private Posts</h3>
+    <p>This user's posts are private and only visible to them.</p>
+  </div>
+);
+
+const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile }) => (
+  <aside className="contacts">
+    <div style={{marginBottom: '1rem'}}>
+      <h3>Profile Stats</h3>
+    </div>
+    <div className="profile-stats">
+      <div className="stat-item">
+        <strong>{isPrivateView && !isOwnProfile ? '?' : postsCount}</strong>
+        <span>Posts</span>
+      </div>
+      <div className="stat-item">
+        <strong>0</strong>
+        <span>Followers</span>
+      </div>
+      <div className="stat-item">
+        <strong>0</strong>
+        <span>Following</span>
+      </div>
+    </div>
+    {isPrivateView && !isOwnProfile && (
+      <div style={{
+        marginTop: '1rem',
+        padding: '0.5rem',
+        background: '#f8f9fa',
+        borderRadius: '4px',
+        fontSize: '0.9rem',
+        color: '#6c757d',
+        textAlign: 'center'
+      }}>
+        Some stats are private
+      </div>
+    )}
+  </aside>
+);
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showComments, setShowComments] = useState({});
-  const [comments, setComments] = useState({});
-  const [loadingComments, setLoadingComments] = useState({});
   const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [isPrivateView, setIsPrivateView] = useState(false);
+  const [currentUserAvatar, setCurrentUserAvatar] = useState("");
+
+  const searchParams = useSearchParams();
+  const targetUserId = searchParams.get('id');
+
+  // Use custom comment hook
+  const {
+    showComments,
+    comments,
+    loadingComments,
+    handleComment,
+    handleSendComment
+  } = useComments(setPosts);
 
   useEffect(() => {
+    // Fetch current user info first for the header
+    fetchCurrentUserInfo();
+    // Then fetch the profile
     fetchProfile();
-  }, []);
+  }, [targetUserId]);
+
+  const fetchCurrentUserInfo = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/statuts', {
+        method: 'GET',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      console.log("yooo dataa :",data);
+      
+      if (data && data.status && data.avatar) {
+        setCurrentUserAvatar(data.avatar);
+      }
+    } catch (error) {
+      console.error('Error fetching current user info:', error);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch('http://localhost:8080/profile', {
-        method: 'POST',
-        credentials: 'include'
-      });
+      const data = await userApi.fetchProfile(targetUserId);
+      console.log('Profile data received:', data); 
       
-      const data = await res.json();
-      if (data.status) {
+      if (data && data.status) {
         setProfile(data.profile);
         setPosts(data.posts || []);
+        setIsOwnProfile(data.is_own_profile || false);
+        setIsPrivateView(data.is_private_view || false);
+        setError(null);
       } else {
-        setError(data.error);
+        console.error('Profile fetch failed:', data);
+        setError(data?.error || 'Failed to load profile');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -40,32 +215,19 @@ export default function Profile() {
   };
 
   const togglePrivacy = async () => {
-    if (updatingPrivacy) return;
+    if (updatingPrivacy || !isOwnProfile) return;
     
     setUpdatingPrivacy(true);
     try {
-      const response = await fetch('http://localhost:8080/profile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          action: 'update_privacy',
-          is_private: !profile.is_private 
-        }),
-        credentials: 'include'
-      });
-
-      const data = await response.json();
+      const data = await userApi.updatePrivacy(!profile.is_private);
       
-      if (data.status) {
-        // Update the profile state locally
+      if (data && data.status) {
         setProfile(prev => ({
           ...prev,
           is_private: !prev.is_private
         }));
       } else {
-        setError(data.error || 'Failed to update privacy setting');
+        setError(data?.error || 'Failed to update privacy setting');
       }
     } catch (error) {
       console.error('Error updating privacy:', error);
@@ -75,315 +237,101 @@ export default function Profile() {
     }
   };
 
-  const fetchCommentsForPost = async (postId) => {
-    setLoadingComments(prev => ({ ...prev, [postId]: true }));
-    
-    try {
-      const response = await fetch('http://localhost:8080/getcomment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ post_id: postId.toString() }),
-        credentials: 'include'
-      });
-
-      const data = await response.json();
-      
-      if (data && data.token === false) {
-        console.error('Unauthorized access, redirecting to login...');
-        window.location.href = "/";
-        return;
-      }
-      
-      if (data && (data.error || data.status === false)) {
-        console.error('Error fetching comments:', data.error);
-        setError(data.error);
-      } else {
-        setComments(prev => ({
-          ...prev,
-          [postId]: Array.isArray(data) ? data : []
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-      setError('Failed to load comments');
-    } finally {
-      setLoadingComments(prev => ({ ...prev, [postId]: false }));
+  // Determine which avatar to use for header
+  const getHeaderAvatar = () => {
+    if (profile && profile.avatar) {
+      return profile.avatar;
     }
-  };
-
-  const handleComment = async (e) => {
-    const postId = e.target.getAttribute('posteid');
-    
-    setShowComments(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
-    }));
-    
-    if (!showComments[postId] && !comments[postId]) {
-      await fetchCommentsForPost(postId);
-    }
-  };
-
-  const handleSendComment = async (postId, commentText) => {
-    if (!commentText.trim()) return;
-
-    try {
-      const response = await fetch('http://localhost:8080/sendcomment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          content: commentText, 
-          post_id: postId.toString() 
-        }),
-        credentials: 'include'
-      });
-
-      const data = await response.json();
-      
-      if (data && data.token === false) {
-        console.error('Unauthorized access, redirecting to login...');
-        window.location.href = "/";
-        return;
-      }
-
-      if (data && data.status) {
-        await fetchCommentsForPost(postId);
-        setPosts(prevPosts => 
-          prevPosts.map(post => 
-            post.ID == postId 
-              ? { ...post, Nembre: post.Nembre + 1 }
-              : post
-          )
-        );
-      } else {
-        console.error('Error sending comment:', data.error);
-        setError(data.error);
-      }
-    } catch (error) {
-      console.error('Error sending comment:', error);
-      setError('Failed to send comment');
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await fetch('http://localhost:8080/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
-      window.location.href = "/";
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
+    return currentUserAvatar || "icon.jpg";
   };
 
   if (loading) {
-    return <div>Loading profile...</div>;
+    return (
+      <div>
+        <Header userAvatar={currentUserAvatar || "icon.jpg"} currentPage="profile" />
+        <div>Loading profile...</div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <div>
+        <Header userAvatar={currentUserAvatar || "icon.jpg"} currentPage="profile" />
+        <div className="container">
+          <main className="main-content">
+            <div>Error: {error}</div>
+          </main>
+        </div>
+      </div>
+    );
   }
 
   if (!profile) {
-    return <div>Profile not found</div>;
+    return (
+      <div>
+        <Header userAvatar={currentUserAvatar || "icon.jpg"} currentPage="profile" />
+        <div>Profile not found</div>
+      </div>
+    );
   }
 
   return (
     <div>
-      {/* Header */}
-      <header className="header">
-        <Link href="/Home">
-          <Image 
-            src={profile.avatar ? `/${profile.avatar}` : "/icon.jpg"}
-            alt="Profile Avatar" 
-            width={52} 
-            height={52}
-            priority
-            style={{borderRadius: 50, cursor: 'pointer', display: 'block'}}
-          />
-        </Link>
-        <nav>
-          <li><Link href="/Followers">Followers</Link></li>
-          <li><Link href="/Groups">Groups</Link></li>
-          <li><Link href="/Notification">Notification</Link></li>
-          <li><Link href="/Chats">Chats</Link></li>
-          <li><Link href="/Home">Home</Link></li>
-        </nav>
-        <button id="logout" onClick={handleLogout}>logout</button>
-      </header>
+      <Header userAvatar={getHeaderAvatar()} currentPage="profile" />
 
       <div className="container">
         {/* Profile Info Sidebar */}
         <aside className="sidebar">
-          <div className="profile-card">
-            <div className="profile-header">
-              <Image
-                src={profile.avatar ? `/${profile.avatar}` : "/icon.jpg"}
-                alt="Profile Avatar"
-                width={80}
-                height={80}
-                priority
-                style={{borderRadius: 50}}
-              />
-              <div className="profile-info">
-                <h2>{profile.first_name} {profile.last_name}</h2>
-                <p className="nickname">@{profile.nickname}</p>
-                
-                <div className="privacy-toggle">
-                  <span className={`privacy-badge ${profile.is_private ? 'private' : 'public'}`}>
-                  {profile.is_private ? '🔒 Private' : '🌍 Public'}
-                </span>
-                  <label className="switch">
-                    <input 
-                      type="checkbox" 
-                      checked={profile.is_private}
-                      onChange={togglePrivacy}
-                      disabled={updatingPrivacy}
-                    />
-                    <span className="slider"></span>
-                  </label>
-                  {updatingPrivacy && <span className="updating-text">Updating...</span>}
-                </div>
-              </div>
-            </div>
-            
-            <div className="profile-details">
-              <div className="detail-item">
-                <strong>Email:</strong> {profile.email}
-              </div>
-              <div className="detail-item">
-                <strong>Age:</strong> {profile.age}
-              </div>
-              <div className="detail-item">
-                <strong>Gender:</strong> {profile.gender}
-              </div>
-              {profile.about_me && (
-                <div className="detail-item">
-                  <strong>About:</strong> {profile.about_me}
-                </div>
-              )}
-            </div>
-          </div>
+          <ProfileCard
+            profile={profile}
+            isOwnProfile={isOwnProfile}
+            onPrivacyToggle={togglePrivacy}
+            updatingPrivacy={updatingPrivacy}
+            isPrivateView={isPrivateView}
+            targetid={targetUserId}
+          />
         </aside>
         
         {/* Main Content - Posts */}
         <main className="main-content" id="main-content">
           <div className="profile-posts-header">
-            <h3>Posts by {profile.first_name} ({posts.length})</h3>
+            <h3>Posts by {profile.first_name} {isPrivateView && !isOwnProfile ? '(Private)' : `(${posts.length})`}</h3>
           </div>
 
           <div className="posts-container">
-            {posts.length > 0 ? (
-              posts.map((post) => (
-                <div key={post.ID} className="post" postid={post.ID}>
-                  <div className="post-header">
-                    <span>{post.Username}</span>
-                    <span style={{color: '#6c757d'}}>{formatDate(post.CreatedAt)}</span>
-                  </div>
-                  
-                  <h4>{post.Title}</h4>
-                  <p>{post.Content}</p>
-                  
-                  <div id="comment" className="of" posteid={post.ID}
-                    onClick={handleComment}>
-                    {post.Nembre} 💬
-                  </div>
-
-                  {/* Comments Section */}
-                  {showComments[post.ID] && (
-                    <div className="comments-section">
-                      {loadingComments[post.ID] ? (
-                        <div className="loading-comments">Loading comments...</div>
-                      ) : (
-                        <>
-                          {comments[post.ID] && comments[post.ID].length > 0 ? (
-                            <div className="comments-list">
-                              {comments[post.ID].map((comment) => (
-                                <div key={comment.ID} className="comment-item">
-                                  <div className="comment-header">
-                                    <strong>{comment.Username}</strong>
-                                    <span className="comment-date">
-                                      {formatDate(comment.CreatedAt)}
-                                    </span>
-                                  </div>
-                                  <p className="comment-text">{comment.Content}</p>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="no-comments">No comments yet</div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Comment Input */}
-                  <div className="input-wrapper">
-                    <textarea 
-                      placeholder="Write a comment..." 
-                      className="comment-input" 
-                      data-idpost={post.ID}
-                      id={`comment-textarea-${post.ID}`}
-                    />
-                    <button 
-                      className="send-button"
-                      onClick={(e) => {
-                        const textarea = document.getElementById(`comment-textarea-${post.ID}`);
-                        if (textarea && textarea.value) {
-                          const commentText = textarea.value;
-                          if (commentText.trim()) {
-                            handleSendComment(post.ID, commentText);
-                            textarea.value = '';
-                          }
-                        }
-                      }}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M22 2L11 13" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M22 2L15 22L11 13L2 9L22 2Z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))
+            {isPrivateView && !isOwnProfile ? (
+              <PrivatePostsMessage />
             ) : (
-              <div className="post">
-                <p>No posts found for this user</p>
-              </div>
+              <>
+                {posts.length > 0 ? (
+                  posts.map((post) => (
+                    <PostCard
+                      key={post.ID}
+                      post={post}
+                      currentUserId={null}
+                      showComments={showComments}
+                      comments={comments}
+                      loadingComments={loadingComments}
+                      onCommentClick={handleComment}
+                      onSendComment={handleSendComment}
+                    />
+                  ))
+                ) : (
+                  <div className="post">
+                    <p>No posts found for this user</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </main>
 
-        {/* Right Sidebar - could be used for other info or stats */}
-        <aside className="contacts">
-          <div style={{marginBottom: '1rem'}}>
-            <h3>Profile Stats</h3>
-          </div>
-          <div className="profile-stats">
-            <div className="stat-item">
-              <strong>{posts.length}</strong>
-              <span>Posts</span>
-            </div>
-            <div className="stat-item">
-              <strong>0</strong>
-              <span>Followers</span>
-            </div>
-            <div className="stat-item">
-              <strong>0</strong>
-              <span>Following</span>
-            </div>
-          </div>
-        </aside>
+        <ProfileStats 
+          postsCount={posts.length} 
+          isPrivateView={isPrivateView}
+          isOwnProfile={isOwnProfile}
+        />
       </div>
     </div>
   );

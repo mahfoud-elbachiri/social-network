@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	db "social-network/Database/cration"
@@ -19,7 +18,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			json.NewEncoder(w).Encode(map[string]interface{}{"login": false})
 			return
 		}
-		fmt.Println("Cookie Value:", cookie.Value)
 
 		if !db.HaveToken(cookie.Value) {
 			w.Header().Set("Content-Type", "application/json")

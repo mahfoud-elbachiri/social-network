@@ -30,6 +30,13 @@ func main() {
 	router.Handle("/getcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Comments)))
 	router.Handle("/logout", handler.AuthMiddleware(http.HandlerFunc(handler.Logout)))
 
+
+	//follow sytyem
+		router.Handle("/followRequest", handler.AuthMiddleware(http.HandlerFunc(handler.Followreq)))
+	router.Handle("/unfollowRequest", handler.AuthMiddleware(http.HandlerFunc(handler.Unfollowreq)))
+	router.Handle("/isFollowing", handler.AuthMiddleware(http.HandlerFunc(handler.CheckFollow)))
+
+
 	// router.HandleFunc("/online-users", handler.OnlineUsers)
 	router.HandleFunc("/ws", handler.WebSocketHandler) // Add WebSocket route
 	go handler.HandleMessages() // Start WebSocket message handler in a goroutine

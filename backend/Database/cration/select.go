@@ -78,7 +78,7 @@ func GetUserInfo(id int) (string, string) {
 		fmt.Println("Error getting user info:", err)
 		return "", ""
 	}
-	fmt.Printf("User ID %d: name='%s', avatar='%s'\n", id, name, avatar)
+//	fmt.Printf("User ID %d: name='%s', avatar='%s'\n", id, name, avatar)
 	return name, avatar
 }
 
@@ -164,6 +164,7 @@ func GetUserProfile(userId int) (*utils.UserProfile, error) {
 		&profile.IsPrivate,
 	)
 	if err != nil {
+		fmt.Println("eerooor :",err)
 		return nil, err
 	}
 	return &profile, nil
@@ -353,3 +354,6 @@ func BeforInsertion(follower_id int, following_id int) bool {
 
 	return exist
 }
+
+
+
