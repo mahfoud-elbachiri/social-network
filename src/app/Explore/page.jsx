@@ -133,7 +133,9 @@ export default function Explore() {
                         </span>
                       </div>
                     </div>
-                   
+                    <button className="follow-btn">
+                      Follow
+                    </button>
                   </div>
                 ))}
               </div>
