@@ -34,6 +34,7 @@ const Header = ({ userAvatar, currentPage = 'home' }) => {
       </Link>
       <nav>
         <li><Link href="/Followers">Followers</Link></li>
+        <li><Link href="/Explore">Explore</Link></li>
         <li><Link href={getProfileLink()}>{getProfileLinkText()}</Link></li>
         <li><Link href="/Groups">Groups</Link></li>
         <li><Link href="/Notification">Notification</Link></li>

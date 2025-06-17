@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 
-	"social-network/utils"
 	"social-network/Database/sqlite"
+	"social-network/utils"
 )
 
 var DB = sqlite.GetDB()
+
 func CheckInfo(info string, input string) bool { ////hna kanoxofo wax email ola wax nikname kayn 3la hsab input xno fiha wax email ola wax nikname
 	var inter int
 	quire := "SELECT COUNT(*) FROM users WHERE " + input + " = ?"
@@ -78,7 +79,7 @@ func GetUserInfo(id int) (string, string) {
 		fmt.Println("Error getting user info:", err)
 		return "", ""
 	}
-//	fmt.Printf("User ID %d: name='%s', avatar='%s'\n", id, name, avatar)
+	//	fmt.Printf("User ID %d: name='%s', avatar='%s'\n", id, name, avatar)
 	return name, avatar
 }
 
@@ -164,7 +165,7 @@ func GetUserProfile(userId int) (*utils.UserProfile, error) {
 		&profile.IsPrivate,
 	)
 	if err != nil {
-		fmt.Println("eerooor :",err)
+		fmt.Println("eerooor :", err)
 		return nil, err
 	}
 	return &profile, nil
@@ -330,6 +331,7 @@ func UpdateUserPrivacy(userId int, isPrivate bool) error {
 	}
 	return nil
 }
+
 func CheckPublic(id int) (bool, error) {
 	var result bool
 	query := "SELECT is_private FROM users WHERE id = ?"
@@ -355,5 +357,79 @@ func BeforInsertion(follower_id int, following_id int) bool {
 	return exist
 }
 
+// SearchUsersByName searches users by first name or last name
+func SearchUsersByName(searchTerm string) ([]utils.UserProfile, error) {
+	query := `SELECT id, first_name, last_name, nikname, avatar, is_private 
+	          FROM users 
+	          WHERE first_name LIKE ? OR last_name LIKE ? 
+	          ORDER BY first_name ASC, last_name ASC;`
 
+	searchPattern := "%" + searchTerm + "%"
+	rows, err := DB.Query(query, searchPattern, searchPattern)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
+	var users []utils.UserProfile
+	for rows.Next() {
+		var user utils.UserProfile
+		var nickname sql.NullString
+		var avatar sql.NullString
+		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &nickname, &avatar, &user.IsPrivate); err != nil {
+			return nil, err
+		}
+
+		if nickname.Valid {
+			user.Nickname = nickname.String
+		} else {
+			user.Nickname = ""
+		}
+
+		// Handle null avatar
+		if avatar.Valid {
+			user.Avatar = avatar.String
+		} else {
+			user.Avatar = ""
+		}
+
+		users = append(users, user)
+	}
+	return users, nil
+}
+
+// GetAllUsersWithAvatars returns all users with their basic info including avatars
+func GetAllUsersWithAvatars() ([]utils.UserProfile, error) {
+	rows, err := DB.Query("SELECT id, first_name, last_name, nikname, avatar, is_private FROM users ORDER BY nikname ASC;")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []utils.UserProfile
+	for rows.Next() {
+		var user utils.UserProfile
+		var nickname sql.NullString
+		var avatar sql.NullString
+		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &nickname, &avatar, &user.IsPrivate); err != nil {
+			return nil, err
+		}
+
+		// Handle null nickname
+		if nickname.Valid {
+			user.Nickname = nickname.String
+		} else {
+			user.Nickname = ""
+		}
+
+		// Handle null avatar
+		if avatar.Valid {
+			user.Avatar = avatar.String
+		} else {
+			user.Avatar = ""
+		}
+
+		users = append(users, user)
+	}
+	return users, nil
+}
