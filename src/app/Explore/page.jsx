@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
+import Header from '@/components/Header';
 
 export default function Explore() {
   const [users, setUsers] = useState([]);
@@ -41,21 +41,6 @@ export default function Explore() {
     const searchValue = formData.get('search');
     await fetchUsers(searchValue);
   };
-
- 
-
-  const handleLogout = async () => {
-    try {
-      await fetch('http://localhost:8080/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
-      window.location.href = "/";
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
  
 
   if (error) {
@@ -64,28 +49,7 @@ export default function Explore() {
 
   return (
     <div>
-      {/* Header */}
-      <header className="header">
-        <Link href="/Home">
-          <Image 
-            src="/icon.jpg"
-            alt="Logo" 
-            width={52} 
-            height={52}
-            priority
-            style={{borderRadius: 50, cursor: 'pointer', display: 'block'}}
-          />
-        </Link>
-        <nav>
-          <li><Link href="/Home">Home</Link></li>
-          <li><Link href="/Followers">Followers</Link></li>
-          <li><Link href="/Profile">Profile</Link></li>
-          <li><Link href="/Groups">Groups</Link></li>
-          <li><Link href="/Notification">Notification</Link></li>
-          <li><Link href="/Chats">Chats</Link></li>
-        </nav>
-        <button id="logout" onClick={handleLogout}>logout</button>
-      </header>
+      <Header />
 
       <div className="container">
         <main className="main-content">

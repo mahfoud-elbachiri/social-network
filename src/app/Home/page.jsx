@@ -110,7 +110,7 @@ export default function Home() {
 
   return (
     <div>
-      <Header userAvatar={userAvatar} currentPage="home" />
+      <Header />
 
       <div className="container">
         {/* Sidebar */}
@@ -172,7 +172,7 @@ export default function Home() {
         {/* Contacts Sidebar */}
         <aside className="contacts" style={{paddingTop: '0'}}>
           <div style={{marginBottom: '1rem'}}>
-            <span className="material-icons" id="cancel">cancel</span>
+            <span className="material-icons" id="cancel"></span>
             <h3>Chat</h3>
           </div>
           <div 

@@ -1,31 +1,38 @@
+"use client";
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { handleLogout } from '@/utils/helpers';
+import { userApi } from '@/utils/api';
 
-const Header = ({ userAvatar, currentPage = 'home' }) => {
-  const getProfileLink = () => {
-    return currentPage === 'profile' ? '/Home' : '/Profile';
+const Header = () => {
+  const [userAvatar, setUserAvatar] = useState("");
+
+  useEffect(() => {
+    fetchUserInfo();
+  }, []);
+
+  const fetchUserInfo = async () => {
+    try {
+      const data = await userApi.fetchUserStatus();
+      if (data && data.status && data.avatar) {
+        setUserAvatar(data.avatar);
+      }
+    } catch (error) {
+      console.error('Error fetching user info in header:', error);
+    }
   };
-
-  const getProfileLinkText = () => {
-    return currentPage === 'profile' ? 'Home' : 'Profile';
-  };
-
   // Ensure we have a valid avatar path
   const getAvatarSrc = () => {
-    if (!userAvatar || userAvatar === "") {
-      return "/icon.jpg";
-    }
-    // If userAvatar already starts with /, use as is, otherwise add /
-    return userAvatar.startsWith('/') ? userAvatar : `/${userAvatar}`;
+    return userAvatar ? `/${userAvatar}` : "/icon.jpg";
   };
 
   return (
     <header className="header">
-      <Link href={getProfileLink()}>
+      <Link href="/Profile">
         <Image 
           src={getAvatarSrc()}
-          alt="Navigation Logo" 
+          alt="User Avatar" 
           width={52} 
           height={52}
           priority
@@ -33,13 +40,12 @@ const Header = ({ userAvatar, currentPage = 'home' }) => {
         />
       </Link>
       <nav>
-        <li><Link href="/Followers">Followers</Link></li>
+        <li><Link href="/Home">Home</Link></li>
         <li><Link href="/Explore">Explore</Link></li>
-        <li><Link href={getProfileLink()}>{getProfileLinkText()}</Link></li>
+        <li><Link href="/Followers">Followers</Link></li>
         <li><Link href="/Groups">Groups</Link></li>
         <li><Link href="/Notification">Notification</Link></li>
         <li><Link href="/Chats">Chats</Link></li>
-       
       </nav>
       <button id="logout" onClick={handleLogout}>logout</button>
     </header>

@@ -153,7 +153,6 @@ export default function Profile() {
   const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [isPrivateView, setIsPrivateView] = useState(false);
-  const [currentUserAvatar, setCurrentUserAvatar] = useState("");
 
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('id');
@@ -168,9 +167,7 @@ export default function Profile() {
   } = useComments(setPosts);
 
   useEffect(() => {
-    // Fetch current user info first for the header
-    fetchCurrentUserInfo();
-    // Then fetch the profile
+    // Fetch the profile
     fetchProfile();
   }, [targetUserId]);
 
@@ -182,10 +179,6 @@ export default function Profile() {
       });
       const data = await response.json();
       console.log("yooo dataa :",data);
-      
-      if (data && data.status && data.avatar) {
-        setCurrentUserAvatar(data.avatar);
-      }
     } catch (error) {
       console.error('Error fetching current user info:', error);
     }
@@ -237,18 +230,10 @@ export default function Profile() {
     }
   };
 
-  // Determine which avatar to use for header
-  const getHeaderAvatar = () => {
-    if (profile && profile.avatar) {
-      return profile.avatar;
-    }
-    return currentUserAvatar || "icon.jpg";
-  };
-
   if (loading) {
     return (
       <div>
-        <Header userAvatar={currentUserAvatar || "icon.jpg"} currentPage="profile" />
+        <Header />
         <div>Loading profile...</div>
       </div>
     );
@@ -257,7 +242,7 @@ export default function Profile() {
   if (error) {
     return (
       <div>
-        <Header userAvatar={currentUserAvatar || "icon.jpg"} currentPage="profile" />
+        <Header />
         <div className="container">
           <main className="main-content">
             <div>Error: {error}</div>
@@ -270,7 +255,7 @@ export default function Profile() {
   if (!profile) {
     return (
       <div>
-        <Header userAvatar={currentUserAvatar || "icon.jpg"} currentPage="profile" />
+        <Header />
         <div>Profile not found</div>
       </div>
     );
@@ -278,7 +263,7 @@ export default function Profile() {
 
   return (
     <div>
-      <Header userAvatar={getHeaderAvatar()} currentPage="profile" />
+      <Header />
 
       <div className="container">
         {/* Profile Info Sidebar */}
