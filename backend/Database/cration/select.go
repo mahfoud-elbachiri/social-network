@@ -3,7 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
-
+ 
 	"social-network/Database/sqlite"
 	"social-network/utils"
 )
@@ -432,4 +432,85 @@ func GetAllUsersWithAvatars() ([]utils.UserProfile, error) {
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+func CheckPendingRequest(followerID, followingID int) bool {
+	var count int
+	query := "SELECT COUNT(*) FROM followers WHERE follower_id = ? AND following_id = ? AND status = 'pending'"
+	err := DB.QueryRow(query, followerID, followingID).Scan(&count)
+	if err != nil {
+		fmt.Println("Error checking pending request:", err)
+		return false
+	}
+	return count > 0
+}
+
+
+
+ 
+func GetfollowerList(userID int) (*utils.FollowResult, error) {
+	var users []utils.FollowUser
+	
+	query := `
+		SELECT u.id, u.first_name, u.last_name, u.nikname, u.avatar 
+		FROM users u 
+		INNER JOIN followers f ON u.id = f.follower_id 
+		WHERE f.following_id = ? AND f.status = 'accepted'
+		ORDER BY u.first_name
+	`
+	
+	rows, err := DB.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+     for rows.Next() {
+		var user utils.FollowUser
+		err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Nickname, &user.Avatar)
+		if err != nil {
+			return nil, err
+	  	}
+		users = append(users, user)
+	}
+	
+	 
+	return &utils.FollowResult{
+		Users: users,
+		Count: len(users),
+	}, nil
+}
+
+ 
+func GetFollowinglist(userID int) (*utils.FollowResult, error) {
+	var users []utils.FollowUser
+	
+	query := `
+		SELECT u.id, u.first_name, u.last_name, u.nikname, u.avatar 
+		FROM users u 
+		INNER JOIN followers f ON u.id = f.following_id 
+		WHERE f.follower_id = ? AND f.status = 'accepted'
+		ORDER BY u.first_name
+	`
+	 
+	rows, err := DB.Query(query, userID)
+	if err != nil {
+	    	return nil, err
+	}
+	defer rows.Close()
+	
+	 for rows.Next() {
+			var user utils.FollowUser
+			err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Nickname, &user.Avatar)
+			if err != nil {
+				return nil, err
+			}
+			users = append(users, user)
+		}
+		 
+
+	 return &utils.FollowResult{
+		Users: users,
+		Count: len(users),
+	}, nil
 }

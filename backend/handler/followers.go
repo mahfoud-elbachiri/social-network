@@ -61,7 +61,7 @@ func Followreq(w http.ResponseWriter, r *http.Request) {
 		log.Println("follow succesfullyy")
 	} else {
 		db.InsertFOllow(userid, idInt, "pending")
-		log.Println("follow succesfully")
+		log.Println("follow 'pending' succesfully")
 	}
 }
 
@@ -115,11 +115,16 @@ func CheckFollow(w http.ResponseWriter ,  r *http.Request){
 	targetID, _ := strconv.Atoi(targetIDStr)
     fmt.Println("wslat targetid" , targetID)
 
+	isPrivate ,_:= db.CheckPublic(targetID)
 
+	
 
 	isFollowing := db.BeforInsertion(currentID, targetID)
 
+	ispanding := db.CheckPendingRequest(currentID,targetID) 
 	json.NewEncoder(w).Encode(map[string]bool{
 		"isFollowing": isFollowing,
+		"isPrivate": isPrivate,
+		"IsPanding":ispanding,
 	})
 }

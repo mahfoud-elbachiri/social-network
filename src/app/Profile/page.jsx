@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from 'next/navigation';
 
 
-// Import reusable components and utilities
+
 import Header from '@/components/Header';
 import PostCard from '@/components/PostCard';
 import { useComments } from '@/hooks/useComments';
@@ -53,7 +53,8 @@ const ProfileCard = ({ profile, isOwnProfile, onPrivacyToggle, updatingPrivacy, 
             <span className={`privacy-badge ${profile.is_private ? 'private' : 'public'}`}>
               {profile.is_private ? '🔒 Private' : '🌍 Public'}
             </span>
-            <FollowButton   targetUserid={targetid} ></FollowButton>
+            <FollowButton targetUserid={targetid} isPrivateView={isPrivateView} />
+
           </div>
         )}
       </div>
@@ -171,6 +172,41 @@ export default function Profile() {
     fetchProfile();
   }, [targetUserId]);
 
+const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile }) => (
+  <aside className="contacts">
+    <div style={{marginBottom: '1rem'}}>
+      <h3>Profile Stats</h3>
+    </div>
+    <div className="profile-stats">
+      <div className="stat-item">
+        <strong>{isPrivateView && !isOwnProfile ? '?' : postsCount}</strong>
+        <span>Posts</span>
+      </div>
+      <div className="stat-item">
+        <strong>0</strong>
+        <span>Followers</span>
+      </div>
+      <div className="stat-item">
+        <strong>0</strong>
+        <span>Following</span>
+      </div>
+    </div>
+    {isPrivateView && !isOwnProfile && (
+      <div style={{
+        marginTop: '1rem',
+        padding: '0.5rem',
+        background: '#f8f9fa',
+        borderRadius: '4px',
+        fontSize: '0.9rem',
+        color: '#6c757d',
+        textAlign: 'center'
+      }}>
+        Some stats are private
+      </div>
+    )}
+  </aside>
+);
+
   const fetchCurrentUserInfo = async () => {
     try {
       const response = await fetch('http://localhost:8080/statuts', {
@@ -178,7 +214,7 @@ export default function Profile() {
         credentials: 'include'
       });
       const data = await response.json();
-      console.log("yooo dataa :",data);
+      
     } catch (error) {
       console.error('Error fetching current user info:', error);
     }
