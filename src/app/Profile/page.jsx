@@ -111,40 +111,7 @@ const PrivatePostsMessage = () => (
   </div>
 );
 
-const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile }) => (
-  <aside className="contacts">
-    <div style={{marginBottom: '1rem'}}>
-      <h3>Profile Stats</h3>
-    </div>
-    <div className="profile-stats">
-      <div className="stat-item">
-        <strong>{isPrivateView && !isOwnProfile ? '?' : postsCount}</strong>
-        <span>Posts</span>
-      </div>
-      <div className="stat-item">
-        <strong>0</strong>
-        <span>Followers</span>
-      </div>
-      <div className="stat-item">
-        <strong>0</strong>
-        <span>Following</span>
-      </div>
-    </div>
-    {isPrivateView && !isOwnProfile && (
-      <div style={{
-        marginTop: '1rem',
-        padding: '0.5rem',
-        background: '#f8f9fa',
-        borderRadius: '4px',
-        fontSize: '0.9rem',
-        color: '#6c757d',
-        textAlign: 'center'
-      }}>
-        Some stats are private
-      </div>
-    )}
-  </aside>
-);
+
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
