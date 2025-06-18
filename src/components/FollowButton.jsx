@@ -53,7 +53,7 @@ const [IsPanding , setIsPanding] = useState(null)
        
          if (!isPrivat){
 
-           setFollowing(!following)
+           setFollowing(!following);
          }
       }
     } catch (err) {

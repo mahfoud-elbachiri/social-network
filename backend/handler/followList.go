@@ -5,10 +5,9 @@ import (
 	"net/http"
 
 	db "social-network/Database/cration"
-	"social-network/servisse"
 )
 
- func GetFollowDataHandler(w http.ResponseWriter, r *http.Request) {
+func GetFollowDataHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -18,18 +17,6 @@ import (
 		return
 	}
 
- 
-	_, _, err := servisse.IsHaveToken(r)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status": false,
-			"error":  "Unauthorized",
-		})
-		return
-	}
-
-	 
 	cookie, err := r.Cookie("SessionToken")
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -40,16 +27,15 @@ import (
 		return
 	}
 
-   currentUserID := db.GetId("sessionToken", cookie.Value)
+	currentUserID := db.GetId("sessionToken", cookie.Value)
 
- 
 	followers, err := db.GetfollowerList(currentUserID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"status": false,
-				"error":  "Failed to get followers",
-		 })
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": false,
+			"error":  "Failed to get followers",
+		})
 		return
 	}
 
@@ -63,11 +49,10 @@ import (
 		return
 	}
 
- 
 	w.WriteHeader(http.StatusOK)
-json.NewEncoder(w).Encode(map[string]interface{}{
+	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status": true,
-	  	"followers": map[string]interface{}{
+		"followers": map[string]interface{}{
 			"users": followers.Users,
 			"count": followers.Count,
 		},

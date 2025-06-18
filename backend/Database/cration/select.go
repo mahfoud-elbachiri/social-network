@@ -125,7 +125,8 @@ func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 
 func GetPostsByUserId(userId int) ([]utils.Postes, error) {
 	var postes []utils.Postes
-	quire := "SELECT id, user_id, title, content, created_at FROM postes WHERE user_id = ? ORDER BY created_at DESC"
+ 
+	quire := "SELECT id, user_id, title, content, created_at, avatar, privacy FROM postes WHERE user_id = ? ORDER BY created_at DESC"
 	rows, err := DB.Query(quire, userId)
 	if err != nil {
 		return nil, err
@@ -133,7 +134,8 @@ func GetPostsByUserId(userId int) ([]utils.Postes, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var post utils.Postes
-		err := rows.Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &post.CreatedAt)
+		 
+		err := rows.Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &post.CreatedAt, &post.Avatar, &post.Privacy)
 		if err != nil {
 			return nil, err
 		}
@@ -142,6 +144,10 @@ func GetPostsByUserId(userId int) ([]utils.Postes, error) {
 		if post.Username == "" {
 			return nil, err
 		}
+
+		 
+		_, userAvatar := GetUserInfo(post.UserID)
+		post.UserAvatar = userAvatar
 
 		postes = append(postes, post)
 	}
@@ -400,6 +406,11 @@ func SearchUsersByName(searchTerm string) ([]utils.UserProfile, error) {
 
 // GetAllUsersWithAvatars returns all users with their basic info including avatars
 func GetAllUsersWithAvatars() ([]utils.UserProfile, error) {
+	/*
+	if withFollowers {
+
+	}
+	*/
 	rows, err := DB.Query("SELECT id, first_name, last_name, nikname, avatar, is_private FROM users ORDER BY nikname ASC;")
 	if err != nil {
 		return nil, err

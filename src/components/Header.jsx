@@ -42,7 +42,7 @@ const Header = () => {
       <nav>
         <li><Link href="/Home">Home</Link></li>
         <li><Link href="/Explore">Explore</Link></li>
-        <li><Link href="/Followers">Followers</Link></li>
+        
         <li><Link href="/Groups">Groups</Link></li>
         <li><Link href="/Notification">Notification</Link></li>
         <li><Link href="/Chats">Chats</Link></li>

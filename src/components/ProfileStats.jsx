@@ -12,7 +12,7 @@ const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile }) => {
 
   const fetchFollowData = async () => {
     try {
-      const response = await fetch('http://localhost:8080/follow-data', {
+      const response = await fetch(`http://localhost:8080/follow-data`, {
         method: 'GET',
         credentials: 'include'
       });

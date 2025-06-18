@@ -1,117 +1,16 @@
 'use client';
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useSearchParams } from 'next/navigation';
 
-
-import ProfileStats from '@/components/ProfileStats'; 
+// Import all components
 import Header from '@/components/Header';
 import PostCard from '@/components/PostCard';
+import ProfileStats from '@/components/ProfileStats';
+import ProfileCard from '@/components/ProfileCard';
+import PrivatePostsMessage from '@/components/PrivatePostsMessage';
 import { useComments } from '@/hooks/useComments';
 import { userApi } from '@/utils/api';
-import FollowButton from '@/components/FollowButton';
-
-const ProfileCard = ({ profile, isOwnProfile, onPrivacyToggle, updatingPrivacy, isPrivateView = false ,targetid }) => (
-  <div className="profile-card">
-
-    <div className="profile-header">
-      <Image
-        src={profile.avatar ? `/${profile.avatar}` : "/icon.jpg"}
-        alt="Profile Avatar"
-        width={80}
-        height={80}
-        priority
-        style={{borderRadius: 50}}
-      />
-      <div className="profile-info">
-        <h2>{profile.first_name} {profile.last_name}</h2>
-        <p className="nickname">@{profile.nickname}</p>
-        
-        {/* Only show privacy toggle for own profile */}
-        {isOwnProfile && (
-          <div className="privacy-toggle">
-            <span className={`privacy-badge ${profile.is_private ? 'private' : 'public'}`}>
-              {profile.is_private ? '🔒 Private' : '🌍 Public'}
-            </span>
-            <label className="switch">
-              <input 
-                type="checkbox" 
-                checked={profile.is_private}
-                onChange={onPrivacyToggle}
-                disabled={updatingPrivacy}
-              />
-              <span className="slider"></span>
-            </label>
-            {updatingPrivacy && <span className="updating-text">Updating...</span>}
-          </div>
-        )}
-        
-        {/* Show privacy status for other users */}
-        {!isOwnProfile && (
-          <div className="privacy-status">
-            <span className={`privacy-badge ${profile.is_private ? 'private' : 'public'}`}>
-              {profile.is_private ? '🔒 Private' : '🌍 Public'}
-            </span>
-            <FollowButton targetUserid={targetid} isPrivateView={isPrivateView} />
-
-          </div>
-        )}
-      </div>
-      
-    </div>
-    
-    {/* Show detailed info only if !isPrivateView or if is own profile */}
-    {(!isPrivateView || isOwnProfile) && profile.email && (
-      <div className="profile-details">
-        <div className="detail-item">
-          <strong>Email:</strong> {profile.email}
-        </div>
-        <div className="detail-item">
-          <strong>Age:</strong> {profile.age}
-        </div>
-        <div className="detail-item">
-          <strong>Gender:</strong> {profile.gender}
-        </div>
-        {profile.about_me && (
-          <div className="detail-item">
-            <strong>About:</strong> {profile.about_me}
-          </div>
-        )}
-      </div>
-    )}
-    
-    {/* Show message for private profile */}
-    {isPrivateView && !isOwnProfile && (
-      <div className="private-details-message" style={{
-        padding: '1rem',
-        background: '#f8f9fa',
-        borderRadius: '8px',
-        marginTop: '1rem',
-        textAlign: 'center',
-        color: '#6c757d'
-      }}>
-        <p>🔒 Additional details are private</p>
-      </div>
-    )}
-  </div>
-);
-
-const PrivatePostsMessage = () => (
-  <div className="private-posts-message" style={{
-    textAlign: 'center',
-    padding: '2rem',
-    background: '#f8f9fa',
-    borderRadius: '8px',
-    margin: '2rem 0',
-    color: '#6c757d'
-  }}>
-    <h3>🔒 Private Posts</h3>
-    <p>This user's posts are private and only visible to them.</p>
-  </div>
-);
-
-
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
@@ -135,22 +34,8 @@ export default function Profile() {
   } = useComments(setPosts);
 
   useEffect(() => {
-    // Fetch the profile
     fetchProfile();
   }, [targetUserId]);
-
-  const fetchCurrentUserInfo = async () => {
-    try {
-      const response = await fetch('http://localhost:8080/statuts', {
-        method: 'GET',
-        credentials: 'include'
-      });
-      const data = await response.json();
-      
-    } catch (error) {
-      console.error('Error fetching current user info:', error);
-    }
-  };
 
   const fetchProfile = async () => {
     try {
