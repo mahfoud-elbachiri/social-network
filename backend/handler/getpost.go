@@ -15,7 +15,7 @@ var (
 
 func Getpost(w http.ResponseWriter, r *http.Request) {
 	var err error
-	_,_, err = servisse.IsHaveToken(r)
+	_,_, _,err = servisse.IsHaveToken(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte(`{"error": "Unauthorized", "status":false, "tocken":false}`))

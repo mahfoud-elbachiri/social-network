@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,10 +10,9 @@ import (
 	"social-network/utils"
 )
 
-
 func Followreq(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		utils.JsonResponse(w, http.StatusMethodNotAllowed, "Method not allowed",nil)
+		utils.JsonResponse(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
 		return
 	}
 
@@ -29,7 +27,7 @@ func Followreq(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&targetID); err != nil {
 		utils.JsonResponse(w, http.StatusBadRequest, "invalid Profile id", nil)
-		fmt.Println("wslat follow", err)
+
 		return
 
 	}
@@ -37,7 +35,7 @@ func Followreq(w http.ResponseWriter, r *http.Request) {
 	idInt, _ := strconv.Atoi(targetID.FollowingId)
 
 	if targetID.FollowingId == "" || idInt == userid {
-		fmt.Println("hnaaa")
+
 		utils.JsonResponse(w, http.StatusBadRequest, "Invalid followeing ID", nil)
 		return
 	}
@@ -57,7 +55,7 @@ func Followreq(w http.ResponseWriter, r *http.Request) {
 
 	if !public {
 		db.InsertFOllow(userid, idInt, "accepted")
-		fmt.Println(exist)
+
 		log.Println("follow succesfullyy")
 	} else {
 		db.InsertFOllow(userid, idInt, "pending")
@@ -66,7 +64,6 @@ func Followreq(w http.ResponseWriter, r *http.Request) {
 }
 
 func Unfollowreq(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("unfoloooow ")
 	if r.Method != http.MethodPost {
 		utils.JsonResponse(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
 		return
@@ -87,7 +84,7 @@ func Unfollowreq(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idInt, _ := strconv.Atoi(targetID.FollowingId)
-//|| idInt == userid
+	//|| idInt == userid
 	if targetID.FollowingId == "" || idInt == userid {
 		utils.JsonResponse(w, http.StatusBadRequest, "Invalid following ID", nil)
 		return
@@ -105,26 +102,21 @@ func Unfollowreq(w http.ResponseWriter, r *http.Request) {
 	utils.JsonResponse(w, http.StatusOK, "Unfollow successfully", "success")
 }
 
-
-func CheckFollow(w http.ResponseWriter ,  r *http.Request){
-	
-		token, _ := r.Cookie("SessionToken")
+func CheckFollow(w http.ResponseWriter, r *http.Request) {
+	token, _ := r.Cookie("SessionToken")
 	currentID := db.GetId("sessionToken", token.Value)
 
 	targetIDStr := r.URL.Query().Get("id")
 	targetID, _ := strconv.Atoi(targetIDStr)
-    fmt.Println("wslat targetid" , targetID)
 
-	isPrivate ,_:= db.CheckPublic(targetID)
-
-	
+	isPrivate, _ := db.CheckPublic(targetID)
 
 	isFollowing := db.BeforInsertion(currentID, targetID)
 
-	ispanding := db.CheckPendingRequest(currentID,targetID) 
+	ispanding := db.CheckPendingRequest(currentID, targetID)
 	json.NewEncoder(w).Encode(map[string]bool{
 		"isFollowing": isFollowing,
-		"isPrivate": isPrivate,
-		"IsPanding":ispanding,
+		"isPrivate":   isPrivate,
+		"IsPanding":   ispanding,
 	})
 }

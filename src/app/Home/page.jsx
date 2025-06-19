@@ -66,11 +66,16 @@ export default function Home() {
 
   const fetchUserStatus = async () => {
     try {
+      
       const data = await userApi.fetchUserStatus();
       if (data && data.status && data.name) {
+        console.log("dkhlat");
+        
         setUsername(data.name);
         setUserAvatar(data.avatar || "");
         setCurrentUserId(data.user_id);
+        
+        
         return data;
       } else {
         console.error('Failed to fetch user status:', data?.error);
@@ -110,12 +115,12 @@ export default function Home() {
 
   return (
     <div>
-      <Header />
+      <Header  targetUserId ={currentUserId}/>
 
       <div className="container">
         {/* Sidebar */}
         <aside className="sidebar">
-          <Link href="/Profile" style={{textDecoration: 'none'}}>
+          <Link href={`/Profile?id=${currentUserId}`} style={{textDecoration: 'none'}}>
             <div className="contact">
               <Image
                 src={userAvatar ? `/${userAvatar}` : "/icon.jpg"}

@@ -21,7 +21,7 @@ func Profile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate session token and get current user info
-	_, _, err := servisse.IsHaveToken(r)
+	_, _, _,err := servisse.IsHaveToken(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]interface{}{

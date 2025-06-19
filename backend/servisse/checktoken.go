@@ -7,12 +7,12 @@ import (
 	db "social-network/Database/cration"
 )
 
-func IsHaveToken(r *http.Request) (string, string, error) {
+func IsHaveToken(r *http.Request) (string, string, int, error) {
 	sesiontoken, err := r.Cookie("SessionToken")
 	if err != nil || sesiontoken.Value == "" || !db.HaveToken(sesiontoken.Value) {
-		return "", "", errors.New("Unauthorized")
+		return "", "", 0,errors.New("Unauthorized")
 	}
 	id := db.GetId("sessionToken", sesiontoken.Value)
 	name ,avatar := db.GetUserInfo(id)
-	return name, avatar , nil
+	return name, avatar ,id, nil
 }

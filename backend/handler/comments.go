@@ -29,7 +29,7 @@ func Comments(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		_,_, err = servisse.IsHaveToken(r)
+		_,_, _,err = servisse.IsHaveToken(r)
 		if err != nil {
 			fmt.Println("token not found")
 			w.WriteHeader(http.StatusUnauthorized)
@@ -58,7 +58,7 @@ func Sendcomment(w http.ResponseWriter, r *http.Request) {
 
 		var comment utils.Comment
 		w.Header().Set("Content-Type", "application/json")
-		_,_, ishave := servisse.IsHaveToken(r)
+		_,_, _,ishave := servisse.IsHaveToken(r)
 		if ishave != nil {
 			fmt.Println("token not found")
 			w.WriteHeader(http.StatusUnauthorized)
