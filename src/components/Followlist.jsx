@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Image from "next/image";
 import { useRouter } from 'next/navigation';
 
-const FollowList = ({ isOpen, onClose, activeTab = 'followers' }) => {
+const FollowList = ({ isOpen, onClose, activeTab = 'followers',targetUserId }) => {
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [currentTab, setCurrentTab] = useState(activeTab);
@@ -13,11 +13,15 @@ const FollowList = ({ isOpen, onClose, activeTab = 'followers' }) => {
       fetchFollowData();
       setCurrentTab(activeTab);
     }
-  }, [isOpen, activeTab]);
+  }, [isOpen, activeTab, targetUserId]);
 
   const fetchFollowData = async () => {
     try {
-      const response = await fetch('http://localhost:8080/follow-data', {
+      const url = targetUserId 
+        ? `http://localhost:8080/follow-data?id=${targetUserId}`
+        : 'http://localhost:8080/follow-data';
+        
+      const response = await fetch(url, {
         method: 'GET',
         credentials: 'include'
       });

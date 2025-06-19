@@ -5,11 +5,11 @@ export const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString();
 };
 
-// Generate profile link based on user ID
+ 
 export const getProfileLink = (userId, currentUserId) => {
-  if (userId === currentUserId) {
-    return '/Profile'; // Own profile
-  }
+  // if (userId === currentUserId) {
+  //   return '/Profile'; // Own profile
+  // }
   return `/Profile?id=${userId}`; // Other user's profile
 };
 

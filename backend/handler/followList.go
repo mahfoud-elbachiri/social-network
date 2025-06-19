@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	db "social-network/Database/cration"
 )
@@ -29,7 +30,25 @@ func GetFollowDataHandler(w http.ResponseWriter, r *http.Request) {
 
 	currentUserID := db.GetId("sessionToken", cookie.Value)
 
-	followers, err := db.GetfollowerList(currentUserID)
+	userIDStr := r.URL.Query().Get("id")
+	var targetUserID int
+
+	if userIDStr != "" {
+
+		targetUserID, err = strconv.Atoi(userIDStr)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"status": false,
+				"error":  "Invalid user ID",
+			})
+			return
+		}
+	} else {
+		targetUserID = currentUserID
+	}
+
+	followers, err := db.GetfollowerList(targetUserID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -39,7 +58,7 @@ func GetFollowDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	following, err := db.GetFollowinglist(currentUserID)
+	following, err := db.GetFollowinglist(targetUserID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]interface{}{

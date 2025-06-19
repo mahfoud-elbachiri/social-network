@@ -86,7 +86,7 @@ export default function Profile() {
   if (loading) {
     return (
       <div>
-        <Header />
+        <Header targetUserId= {targetUserId}/>
         <div>Loading profile...</div>
       </div>
     );
@@ -95,7 +95,7 @@ export default function Profile() {
   if (error) {
     return (
       <div>
-        <Header />
+        <Header targetUserId= {targetUserId}/>
         <div className="container">
           <main className="main-content">
             <div>Error: {error}</div>
@@ -108,7 +108,7 @@ export default function Profile() {
   if (!profile) {
     return (
       <div>
-        <Header />
+        <Header targetUserId= {targetUserId}/>
         <div>Profile not found</div>
       </div>
     );
@@ -116,7 +116,7 @@ export default function Profile() {
 
   return (
     <div>
-      <Header />
+      <Header targetUserId={targetUserId}/>
 
       <div className="container">
         {/* Profile Info Sidebar */}
@@ -169,6 +169,7 @@ export default function Profile() {
           postsCount={posts.length} 
           isPrivateView={isPrivateView}
           isOwnProfile={isOwnProfile}
+          targetUserId={targetUserId} 
         />
       </div>
     </div>

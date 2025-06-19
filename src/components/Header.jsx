@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { handleLogout } from '@/utils/helpers';
 import { userApi } from '@/utils/api';
 
-const Header = () => {
+const Header = ( {targetUserId}) => {
   const [userAvatar, setUserAvatar] = useState("");
 
   useEffect(() => {
@@ -29,7 +29,7 @@ const Header = () => {
 
   return (
     <header className="header">
-      <Link href="/Profile">
+      <Link href={`/Profile?id=${targetUserId}`}>
         <Image 
           src={getAvatarSrc()}
           alt="User Avatar" 

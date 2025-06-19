@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import FollowList from '@/components/Followlist';
 
-const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile }) => {
+const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile ,targetUserId }) => {
   const [followData, setFollowData] = useState({ 
     followers: { count: 0 }, 
     following: { count: 0 } 
@@ -15,12 +15,14 @@ const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile }) => {
 
   const fetchFollowData = async () => {
     try {
-      const response = await fetch(`http://localhost:8080/follow-data`, {
+      const response = await fetch(`http://localhost:8080/follow-data?id=${targetUserId}`, {
         method: 'GET',
         credentials: 'include'
       });
       const data = await response.json();
       if (data && data.status) {
+        console.log("data for follow :",data);
+        
         setFollowData(data);
       }
     } catch (error) {
@@ -72,6 +74,7 @@ const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile }) => {
         isOpen={showPopup}
         onClose={() => setShowPopup(false)}
         activeTab={popupTab}
+        targetUserId={targetUserId}
       />
     </>
   );
