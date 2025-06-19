@@ -18,6 +18,7 @@ func main() {
 	router.HandleFunc("/resgester", handler.Register)
 	router.HandleFunc("/login", handler.Login)
 
+	
 	router.Handle("/statuts", handler.AuthMiddleware(http.HandlerFunc(handler.Statuts)))
 	router.Handle("/profile", handler.AuthMiddleware(http.HandlerFunc(handler.Profile)))
 	router.Handle("/pubpost", handler.AuthMiddleware(http.HandlerFunc(handler.Post)))
