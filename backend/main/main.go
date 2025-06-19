@@ -27,13 +27,27 @@ func main() {
 	router.Handle("/getcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Comments)))
 	router.Handle("/logout", handler.AuthMiddleware(http.HandlerFunc(handler.Logout)))
 	router.Handle("/getusers", handler.AuthMiddleware(http.HandlerFunc(handler.GetUsers)))
+	// Group system
+	router.Handle("/groupPage", handler.AuthMiddleware(http.HandlerFunc(handler.HomepageGroup)))
+	router.Handle("/group", handler.AuthMiddleware(http.HandlerFunc(handler.GroupPageHandler)))
+	router.Handle("/create-group", handler.AuthMiddleware(http.HandlerFunc(handler.CreateGroupHandler)))
+	router.Handle("/join-group", handler.AuthMiddleware(http.HandlerFunc(handler.JoinGroupHandler)))
+	router.Handle("/group/accept", handler.AuthMiddleware(http.HandlerFunc(handler.AcceptJoinRequestHandler)))
+	router.Handle("/group/reject", handler.AuthMiddleware(http.HandlerFunc(handler.RejectJoinRequestHandler)))
+	router.Handle("/group/invite", handler.AuthMiddleware(http.HandlerFunc(handler.GroupInviteHandler)))
+	router.Handle("/group/accept-invite", handler.AuthMiddleware(http.HandlerFunc(handler.AcceptInviteHandler)))
+	router.Handle("/group/reject-invite", handler.AuthMiddleware(http.HandlerFunc(handler.RejectInviteHandler)))
+	router.Handle("/group/create-event", handler.AuthMiddleware(http.HandlerFunc(handler.CreateEventHandler)))
+	router.Handle("/group/event-respond", handler.AuthMiddleware(http.HandlerFunc(handler.EventResponseHandler)))
+	router.Handle("/group/create-post", handler.AuthMiddleware(http.HandlerFunc(handler.CreateGroupPostHandler)))
+	router.Handle("/group/create-comment", handler.AuthMiddleware(http.HandlerFunc(handler.CreateGroupCommentHandler)))
 
 	// follow sytyem
 	router.Handle("/followRequest", handler.AuthMiddleware(http.HandlerFunc(handler.Followreq)))
 	router.Handle("/unfollowRequest", handler.AuthMiddleware(http.HandlerFunc(handler.Unfollowreq)))
 	router.Handle("/isFollowing", handler.AuthMiddleware(http.HandlerFunc(handler.CheckFollow)))
 	router.Handle("/follow-data", handler.AuthMiddleware(http.HandlerFunc(handler.GetFollowDataHandler)))
-	
+
 	// router.HandleFunc("/online-users", handler.OnlineUsers)
 	router.HandleFunc("/ws", handler.WebSocketHandler) // Add WebSocket route
 	go handler.HandleMessages()                        // Start WebSocket message handler in a goroutine

@@ -1,0 +1,964 @@
+package handler
+
+import (
+	"bytes"
+	"database/sql"
+	"encoding/json"
+	"io"
+	"log"
+	"net/http"
+	"strconv"
+
+	db "social-network/Database/cration"
+	"social-network/Database/sqlite"
+)
+
+type Event struct {
+	ID           int
+	Title        string
+	Description  string
+	DateTime     string
+	UserResponse string
+}
+
+type Group struct {
+	ID          int
+	Title       string
+	Description string
+	CreatorID   int
+	IsCreator   bool
+	IsMember    bool
+	IsRequested bool
+	IsInvited   bool
+}
+
+type JoinRequest struct {
+	UserID   int
+	Username string
+	Status   string
+}
+
+type Member struct {
+	Username string
+	Role     string
+}
+
+type InvitableUser struct {
+	UserID   int
+	Username string
+	Invited  bool
+}
+
+type GroupPost struct {
+	ID        int
+	GroupID   int
+	UserID    int
+	Content   string
+	Username  string
+	CreatedAt string
+	Comments  []GroupComment
+}
+
+type GroupComment struct {
+	ID        int
+	PostID    int
+	UserID    int
+	Content   string
+	Username  string
+	CreatedAt string
+}
+
+type CreateGroup struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
+func HomepageGroup(w http.ResponseWriter, r *http.Request) {
+	dvb := sqlite.GetDB()
+	token, _ := r.Cookie("SessionToken")
+	userID := db.GetId("sessionToken", token.Value)
+	username := db.GetUsernameByToken(token.Value)
+	dvb.QueryRow("SELECT username FROM users WHERE id = ?", userID).Scan(&username)
+
+	groups, _ := GetGroups(userID)
+
+	data := struct {
+		Username string
+		UserID   int
+
+		Groups []Group
+	}{
+		Username: username,
+		UserID:   userID,
+		Groups:   groups,
+	}
+	json.NewEncoder(w).Encode(data)
+}
+
+func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
+	dvb := sqlite.GetDB()
+
+	cookie, _ := r.Cookie("SessionToken")
+
+	userID := db.GetId("SessionToken", cookie.Value)
+
+	if r.Method != http.MethodPost {
+		return
+	}
+
+	var group CreateGroup
+	err := json.NewDecoder(r.Body).Decode(&group)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"error": "Invalid JSON", "status":false}`))
+		return
+	}
+
+	tx, err := dvb.Begin()
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	res, err := tx.Exec(`INSERT INTO groups (title, description, creator_id) VALUES (?, ?, ?)`,
+		group.Title, group.Description, userID,
+	)
+	if err != nil {
+		log.Println("Insert group error:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	groupID, err := res.LastInsertId()
+	if err != nil {
+		log.Println("Get last insert ID error:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = tx.Exec(`
+        INSERT INTO group_members (group_id, user_id, role, status)
+        VALUES (?, ?, 'admin', 'accepted')`,
+		groupID, userID,
+	)
+	if err != nil {
+		log.Println("Insert group member error:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Println("Transaction commit error:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+}
+
+func GetGroups(userID int) ([]Group, error) {
+	dvb := sqlite.GetDB()
+
+	rows, err := dvb.Query(`
+        SELECT g.id, g.title, g.description,
+               CASE WHEN g.creator_id = ? THEN 1 ELSE 0 END AS is_creator,
+               CASE WHEN gm.user_id IS NOT NULL AND gm.status = 'accepted' THEN 1 ELSE 0 END AS is_member,
+               CASE WHEN gm.user_id IS NOT NULL AND gm.status = 'requested' THEN 1 ELSE 0 END AS is_requested,
+               CASE WHEN gm.user_id IS NOT NULL AND gm.status = 'invited' THEN 1 ELSE 0 END AS is_invited
+        FROM groups g
+        LEFT JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = ?
+    `, userID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var groups []Group
+	for rows.Next() {
+		var g Group
+		var isCreatorInt, isMemberInt, isRequestedInt, isInvitedInt int
+		err := rows.Scan(&g.ID, &g.Title, &g.Description, &isCreatorInt, &isMemberInt, &isRequestedInt, &isInvitedInt)
+		if err != nil {
+			return nil, err
+		}
+		g.IsCreator = isCreatorInt == 1
+		g.IsMember = isMemberInt == 1
+		g.IsRequested = isRequestedInt == 1
+		g.IsInvited = isInvitedInt == 1
+		groups = append(groups, g)
+	}
+	return groups, nil
+}
+
+func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
+	// Step 1: Get user ID from cookie
+	dvb := sqlite.GetDB()
+	cookie, _ := r.Cookie("SessionToken")
+
+	userID := db.GetId("SessionToken", cookie.Value)
+
+	// Step 2: Get group ID from URL
+	groupIDStr := r.URL.Query().Get("id")
+	groupID, err := strconv.Atoi(groupIDStr)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	// Step 3: Fetch group info
+	var group Group
+	err = dvb.QueryRow(`SELECT id, title, description, creator_id FROM groups WHERE id = ?`, groupID).
+		Scan(&group.ID, &group.Title, &group.Description, &group.CreatorID)
+	if err != nil {
+		http.Error(w, "Group not found", http.StatusNotFound)
+		return
+	}
+	group.IsCreator = group.CreatorID == userID
+
+	// Step 4: Check if user is accepted member
+	var exists int
+	err = dvb.QueryRow(`
+		SELECT COUNT(*) FROM group_members 
+		WHERE group_id = ? AND user_id = ? AND status = 'accepted'
+	`, groupID, userID).Scan(&exists)
+	if err != nil {
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	group.IsMember = exists > 0
+
+	// Step 5: Only allow access if creator or member
+	if !group.IsCreator && !group.IsMember {
+		http.Error(w, "You are not a member of this group", http.StatusForbidden)
+		return
+	}
+
+	// Step 6a: Fetch accepted group members
+	rows, err := dvb.Query(`
+		SELECT u.nikname, gm.role
+		FROM users u
+		JOIN group_members gm ON u.id = gm.user_id
+		WHERE gm.group_id = ? AND gm.status = 'accepted'
+	`, groupID)
+	if err != nil {
+		http.Error(w, "Unable to fetch members", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+	var members []Member
+	for rows.Next() {
+		var m Member
+		err := rows.Scan(&m.Username, &m.Role)
+		if err != nil {
+			http.Error(w, "Error reading members", http.StatusInternalServerError)
+			return
+		}
+		members = append(members, m)
+	}
+
+	// Step 6b: Fetch join requests (only for group creator)
+	var requestedMembers []JoinRequest
+	if group.IsCreator {
+		reqRows, err := dvb.Query(`
+			SELECT u.id, u.nikname, gm.status
+			FROM users u
+			JOIN group_members gm ON u.id = gm.user_id
+			WHERE gm.group_id = ? AND gm.status = 'requested'
+		`, groupID)
+		if err != nil {
+			http.Error(w, "Unable to fetch join requests", http.StatusInternalServerError)
+			return
+		}
+		defer reqRows.Close()
+
+		for reqRows.Next() {
+			var jr JoinRequest
+			err := reqRows.Scan(&jr.UserID, &jr.Username, &jr.Status)
+			if err != nil {
+				http.Error(w, "Error reading join requests", http.StatusInternalServerError)
+				return
+			}
+			requestedMembers = append(requestedMembers, jr)
+		}
+	}
+
+	// Step 6c: Fetch invitable users (only for group creator)
+	var invitableUsers []InvitableUser
+	if group.IsCreator {
+		inviteRows, err := dvb.Query(`
+			SELECT u.id, u.nikname,
+			CASE WHEN gm.status IS NOT NULL THEN 1 ELSE 0 END AS invited
+			FROM users u
+			LEFT JOIN group_members gm ON gm.user_id = u.id AND gm.group_id = ?
+			WHERE u.id != ? 
+			  AND (gm.status IS NULL OR gm.status NOT IN ('accepted'))
+		`, group.ID, userID)
+		if err != nil {
+			http.Error(w, "Unable to fetch invitable users", http.StatusInternalServerError)
+			return
+		}
+		defer inviteRows.Close()
+
+		for inviteRows.Next() {
+			var u InvitableUser
+			var invitedInt int
+			err := inviteRows.Scan(&u.UserID, &u.Username, &invitedInt)
+			if err != nil {
+				http.Error(w, "Error reading invitable users", http.StatusInternalServerError)
+				return
+			}
+			u.Invited = invitedInt == 1
+			invitableUsers = append(invitableUsers, u)
+		}
+	}
+
+	// Step 7: Fetch group events and RSVP responses
+	var events []Event
+	eventRows, err := dvb.Query(`
+		SELECT id, title, description, datetime 
+		FROM group_events 
+		WHERE group_id = ? 
+		ORDER BY datetime ASC
+	`, groupID)
+	if err != nil {
+		http.Error(w, "Unable to fetch group events", http.StatusInternalServerError)
+		return
+	}
+	defer eventRows.Close()
+
+	for eventRows.Next() {
+		var ev Event
+		err := eventRows.Scan(&ev.ID, &ev.Title, &ev.Description, &ev.DateTime)
+		if err != nil {
+			http.Error(w, "Error reading events", http.StatusInternalServerError)
+			return
+		}
+
+		// Get user's response
+		err = dvb.QueryRow(`
+			SELECT response FROM event_responses 
+			WHERE event_id = ? AND user_id = ?
+		`, ev.ID, userID).Scan(&ev.UserResponse)
+		if err != nil && err != sql.ErrNoRows {
+			http.Error(w, "Error fetching event responses", http.StatusInternalServerError)
+			return
+		}
+
+		events = append(events, ev)
+	}
+
+	// Step 8: Fetch group posts and comments (FIXED)
+	var posts []GroupPost
+	postRows, err := dvb.Query(`
+		SELECT p.id, p.group_id, p.user_id, p.content, p.created_at, u.nikname
+		FROM group_posts p
+		JOIN users u ON p.user_id = u.id
+		WHERE p.group_id = ?
+		ORDER BY p.created_at DESC
+	`, groupID)
+	if err != nil {
+		log.Println("Failed to load posts:", err) 
+		http.Error(w, "Failed to load posts", http.StatusInternalServerError)
+		return
+	}
+	defer postRows.Close()
+
+	for postRows.Next() {
+		var post GroupPost
+		err := postRows.Scan(&post.ID, &post.GroupID, &post.UserID, &post.Content, &post.CreatedAt, &post.Username)
+		if err != nil {
+			log.Println("Failed to read post:", err)
+			http.Error(w, "Failed to read post", http.StatusInternalServerError)
+			return
+		}
+
+		// Fetch comments for each post
+		commentRows, err := dvb.Query(`
+			SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.nikname
+			FROM group_comments c
+			JOIN users u ON c.user_id = u.id
+			WHERE c.post_id = ?
+			ORDER BY c.created_at ASC
+		`, post.ID)
+		if err != nil {
+
+			log.Println("Failed to load comments:", err) 
+			http.Error(w, "Failed to load comments", http.StatusInternalServerError)
+			return
+		}
+
+		for commentRows.Next() {
+			var comment GroupComment
+			err := commentRows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.CreatedAt, &comment.Username)
+			if err != nil {
+				log.Println("Failed to read comment:", err) 
+				http.Error(w, "Failed to read comment", http.StatusInternalServerError)
+				return
+			}
+			post.Comments = append(post.Comments, comment)
+		}
+		commentRows.Close() 
+
+		posts = append(posts, post)
+	}
+
+	// Step 9: Render template with all group data
+	data := struct {
+		Group            Group
+		Members          []Member
+		IsAdmin          bool
+		RequestedMembers []JoinRequest
+		InvitableUsers   []InvitableUser
+		Events           []Event
+		Posts            []GroupPost
+	}{
+		Group:            group,
+		Members:          members,
+		IsAdmin:          group.IsCreator,
+		RequestedMembers: requestedMembers,
+		InvitableUsers:   invitableUsers,
+		Events:           events,
+		Posts:            posts,
+	}
+	json.NewEncoder(w).Encode(data)
+}
+
+func JoinGroupHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
+		return
+	}
+
+	userID := db.GetId("SessionToken", cookie.Value)
+	if userID == 0 {
+		http.Error(w, "Unauthorized - invalid session", http.StatusUnauthorized)
+		return
+	}
+
+	var data struct {
+		GroupID int `json:"group_id"`
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read body", http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if data.GroupID == 0 {
+		http.Error(w, "Group ID is required", http.StatusBadRequest)
+		return
+	}
+
+	dvb := sqlite.GetDB()
+
+	var exists bool
+	err = dvb.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?
+		)
+	`, data.GroupID, userID).Scan(&exists)
+	if err != nil {
+		log.Println("Error checking group membership:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		http.Error(w, "Already a member", http.StatusBadRequest)
+		return
+	}
+
+	_, err = dvb.Exec(`
+		INSERT INTO group_members (group_id, user_id, role, status)
+		VALUES (?, ?, 'member', 'requested')
+	`, data.GroupID, userID)
+	if err != nil {
+		log.Println("Error inserting group member:", err)
+		http.Error(w, "Failed to join group", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "Join request submitted"}`))
+}
+
+func AcceptJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
+		return
+	}
+
+	dvb := sqlite.GetDB()
+
+	adminID := db.GetId("SessionToken", cookie.Value)
+
+	var data struct {
+		UserID  int `json:"user_id"`
+		GroupID int `json:"group_id"`
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read body", http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if data.UserID == 0 || data.GroupID == 0 {
+		http.Error(w, "Missing user_id or group_id", http.StatusBadRequest)
+		return
+	}
+
+	var creatorID int
+	err = dvb.QueryRow(`SELECT creator_id FROM groups WHERE id = ?`, data.GroupID).Scan(&creatorID)
+	if err != nil {
+		log.Println("Group lookup error:", err)
+		http.Error(w, "Group not found", http.StatusNotFound)
+		return
+	}
+
+	if creatorID != adminID {
+		http.Error(w, "You are not authorized to accept join requests for this group", http.StatusForbidden)
+		return
+	}
+
+	_, err = dvb.Exec(`
+		UPDATE group_members
+		SET status = 'accepted'
+		WHERE group_id = ? AND user_id = ?
+	`, data.GroupID, data.UserID)
+	if err != nil {
+		log.Println("Error updating group member:", err)
+		http.Error(w, "Failed to accept request", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "User accepted"}`))
+}
+
+func RejectJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
+		return
+	}
+
+	dvb := sqlite.GetDB()
+
+	adminID := db.GetId("SessionToken", cookie.Value)
+
+	var data struct {
+		UserID  int `json:"user_id"`
+		GroupID int `json:"group_id"`
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if data.UserID == 0 || data.GroupID == 0 {
+		http.Error(w, "Missing user_id or group_id", http.StatusBadRequest)
+		return
+	}
+
+	var creatorID int
+	err = dvb.QueryRow(`SELECT creator_id FROM groups WHERE id = ?`, data.GroupID).Scan(&creatorID)
+	if err != nil {
+		log.Println("Group not found:", err)
+		http.Error(w, "Group not found", http.StatusNotFound)
+		return
+	}
+	if creatorID != adminID {
+		http.Error(w, "You are not authorized to reject members for this group", http.StatusForbidden)
+		return
+	}
+
+	_, err = dvb.Exec(`DELETE FROM group_members WHERE group_id = ? AND user_id = ?`, data.GroupID, data.UserID)
+	if err != nil {
+		log.Println("Failed to reject join request:", err)
+		http.Error(w, "Failed to reject request", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"Join request rejected"}`))
+}
+
+func GroupInviteHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
+		return
+	}
+
+	dvb := sqlite.GetDB()
+
+	adminID := db.GetId("SessionToken", cookie.Value)
+
+	var data struct {
+		UserID  int `json:"user_id"`
+		GroupID int `json:"group_id"`
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if data.UserID == 0 || data.GroupID == 0 {
+		http.Error(w, "Missing user_id or group_id", http.StatusBadRequest)
+		return
+	}
+
+	var creatorID int
+	err = dvb.QueryRow(`SELECT creator_id FROM groups WHERE id = ?`, data.GroupID).Scan(&creatorID)
+	if err != nil {
+		http.Error(w, "Group not found", http.StatusNotFound)
+		return
+	}
+	if creatorID != adminID {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
+	_, err = dvb.Exec(`
+		INSERT INTO group_members (group_id, user_id, role, status)
+		VALUES (?, ?, 'member', 'invited')
+	`, data.GroupID, data.UserID)
+	if err != nil {
+		http.Error(w, "Failed to invite user", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"User invited successfully"}`))
+}
+
+func AcceptInviteHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
+		return
+	}
+
+	dvb := sqlite.GetDB()
+
+	userID := db.GetId("sessionToken", cookie.Value)
+
+	var data struct {
+		GroupID int `json:"group_id"`
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read body", http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
+	if err != nil || data.GroupID == 0 {
+		http.Error(w, "Invalid or missing group_id", http.StatusBadRequest)
+		return
+	}
+
+	_, err = dvb.Exec(`UPDATE group_members SET status = 'accepted' WHERE group_id = ? AND user_id = ? AND status = 'invited'`, data.GroupID, userID)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"Invite accepted"}`))
+}
+
+func RejectInviteHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
+		return
+	}
+
+	dvb := sqlite.GetDB()
+
+	userID := db.GetId("sessionToken", cookie.Value)
+
+	var data struct {
+		GroupID int `json:"group_id"`
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read body", http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
+	if err != nil || data.GroupID == 0 {
+		http.Error(w, "Invalid or missing group_id", http.StatusBadRequest)
+		return
+	}
+
+	_, err = dvb.Exec(`DELETE FROM group_members WHERE group_id = ? AND user_id = ? AND status = 'invited'`, data.GroupID, userID)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"Invite rejected"}`))
+}
+
+func CreateEventHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
+		return
+	}
+
+	dvb := sqlite.GetDB()
+
+	userID := db.GetId("sessionToken", cookie.Value)
+
+	var data struct {
+		GroupID     int    `json:"group_id"`
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		Datetime    string `json:"datetime"`
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if data.GroupID == 0 || data.Title == "" || data.Datetime == "" {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	_, err = dvb.Exec(`
+		INSERT INTO group_events (group_id, title, description, datetime, created_by)
+		VALUES (?, ?, ?, ?, ?)`,
+		data.GroupID, data.Title, data.Description, data.Datetime, userID,
+	)
+	if err != nil {
+		log.Println("Insert error:", err)
+		http.Error(w, "Could not create event", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"Event created successfully"}`))
+}
+
+func EventResponseHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
+		return
+	}
+
+	dvb := sqlite.GetDB()
+
+	userID := db.GetId("sessionToken", cookie.Value)
+
+	var data struct {
+		EventID  int    `json:"event_id"`
+		Response string `json:"response"`
+	}
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read body", http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
+	if err != nil || data.EventID == 0 || data.Response == "" {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	_, err = dvb.Exec(`
+		INSERT INTO event_responses (event_id, user_id, response)
+		VALUES (?, ?, ?)
+		ON CONFLICT(event_id, user_id)
+		DO UPDATE SET response = excluded.response, responded_at = CURRENT_TIMESTAMP
+	`, data.EventID, userID, data.Response)
+	if err != nil {
+		log.Println("Event response insert error:", err)
+		http.Error(w, "Could not save response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"Response recorded successfully"}`))
+}
+
+
+func CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
+		return
+	}
+
+	dvb := sqlite.GetDB()
+
+	userID := db.GetId("sessionToken", cookie.Value)
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		return
+	}
+
+	var data struct {
+		GroupID int    `json:"group_id"`
+		Content string `json:"content"`
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
+	if err != nil || data.GroupID == 0 || data.Content == "" {
+		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		return
+	}
+
+	_, err = dvb.Exec(`INSERT INTO group_posts (group_id, user_id, content) VALUES (?, ?, ?)`, data.GroupID, userID, data.Content)
+	if err != nil {
+		log.Println("CreateGroupPostHandler insert error:", err)
+		http.Error(w, "Unable to create post", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"Post created successfully"}`))
+}
+
+func CreateGroupCommentHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
+		return
+	}
+
+	dvb := sqlite.GetDB()
+
+	userID := db.GetId("sessionToken", cookie.Value)
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		return
+	}
+
+	var data struct {
+		PostID  int    `json:"post_id"`
+		GroupID int    `json:"group_id"`
+		Content string `json:"content"`
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
+	if err != nil || data.PostID == 0 || data.GroupID == 0 || data.Content == "" {
+		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		return
+	}
+
+	_, err = dvb.Exec(`INSERT INTO group_comments (post_id, user_id, content) VALUES (?, ?, ?)`, data.PostID, userID, data.Content)
+	if err != nil {
+		log.Println("CreateGroupCommentHandler insert error:", err)
+		http.Error(w, "Unable to create comment", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"Comment created successfully"}`))
+}
