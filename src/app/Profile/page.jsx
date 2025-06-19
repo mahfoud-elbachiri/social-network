@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from 'next/navigation';
 
-// Import all components
+ 
 import Header from '@/components/Header';
 import PostCard from '@/components/PostCard';
 import ProfileStats from '@/components/ProfileStats';
@@ -24,7 +24,7 @@ export default function Profile() {
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('id');
 
-  // Use custom comment hook
+ 
   const {
     showComments,
     comments,

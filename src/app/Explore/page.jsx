@@ -2,10 +2,14 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Header from '@/components/Header';
+import FollowButton from "@/components/FollowButton";
+import { useRouter } from 'next/navigation';
+
 
 export default function Explore() {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
     fetchUsers();
@@ -35,6 +39,13 @@ export default function Explore() {
     }
   };
 
+  const handleCardClick = (userId, e) => {
+    
+    if (e.target.closest('.follow-button')) {
+      return;
+    }
+    router.push(`/Profile?id=${userId}`);
+  };
   const handleSearch = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -78,7 +89,7 @@ export default function Explore() {
               <div className="users-grid">
                 {users.map((user) => (
                   <div key={user.id} className="user-card">
-                    <div className="user-info">
+                    <div className="user-info" onClick={ (e) => handleCardClick(user.id ,e )}>
                       <Image 
                         src={user.avatar ? `/${user.avatar}` : "/icon.jpg"} 
                         alt={`${user.nickname || user.first_name} avatar`}
@@ -96,11 +107,12 @@ export default function Explore() {
                           {user.is_private ? '🔒 Private' : '🌍 Public'}
                         </span>
                       </div>
+                      {console.log("id",user)}
                     </div>
-                    <button className="follow-btn">
-                      Follow
-                    </button>
-                  </div>
+                     <FollowButton 
+                      targetUserid={String(user.id)} 
+                      isPrivateView={user.is_private}
+                    />                  </div>
                 ))}
               </div>
             ) : (

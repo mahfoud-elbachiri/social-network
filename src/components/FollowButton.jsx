@@ -7,9 +7,12 @@ import { FaUserPlus, FaUserXmark,FaUserClock } from 'react-icons/fa6';
   const [following, setFollowing] = useState(null);
 const [isPrivat , setIsprivat] = useState(null)
 const [IsPanding , setIsPanding] = useState(null)
+
+
   useEffect(()=> {
     
       const checkfollow = async () => {
+        
         try {
           const res = await fetch (`/api/isFollowing?id=${targetUserid}`,{
             credentials : 'include'
@@ -30,6 +33,7 @@ const [IsPanding , setIsPanding] = useState(null)
   },[targetUserid , isPrivateView])
 
   const handleClick = async () => {
+    console.log("1",targetUserid);
     try {
       const url = following ? `/api/unfollowRequest` : `/api/followRequest`;
 
@@ -50,10 +54,19 @@ const [IsPanding , setIsPanding] = useState(null)
         throw new Error('Request failed');
       } else {
 
-       
-         if (!isPrivat){
+        if ( isPrivat ) {
+           setFollowing(false)
 
-           setFollowing(!following);
+          setIsPanding(true)
+        }else {
+          console.log("ee");
+                    setIsPanding(false)
+
+        }
+        
+        if (!isPrivat){
+
+           setFollowing(!following)
          }
       }
     } catch (err) {
@@ -84,6 +97,7 @@ const getButtonClass = () => {
            )
 
        }else {
+       
          return (
                <>
               <FaUserClock /> panding

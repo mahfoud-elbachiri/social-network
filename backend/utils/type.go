@@ -66,7 +66,7 @@ type FollowUser struct {
 	Avatar    string `json:"avatar"`
 }
 
-// Result struct with list and count
+ 
 type FollowResult struct {
 	Users []FollowUser `json:"users"`
 	Count int          `json:"count"`
