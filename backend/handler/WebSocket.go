@@ -13,8 +13,8 @@ import (
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		origin := r.Header.Get("Origin")
-		return origin == "http://localhost:8080"
+		// origin := r.Header.Get("Origin")
+		return true
 	},
 }
 
@@ -44,7 +44,7 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		clientsMutex.Unlock()
 
 		BroadcastUsers()
-		BroadcastOnlineUsers()
+		// BroadcastOnlineUsers()
 		conn.Close()
 	}()
 
@@ -73,8 +73,8 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	clients[conn] = username
 	clientsMutex.Unlock()
-	BroadcastUsers()
-	BroadcastOnlineUsers()
+	// BroadcastUsers()
+	// BroadcastOnlineUsers()
 
 	for {
 
@@ -83,6 +83,10 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println("WebSocket read error:", err)
 			break
+		}
+
+		if msg.Content == "broadcast" {
+			BroadcastUsers()
 		}
 
 		if msg.Content == "is-typing" || msg.Content == "no-typing" {
@@ -224,3 +228,29 @@ func Typing() {
 		clientsMutex.RUnlock()
 	}
 }
+
+
+
+// allUsers, err := db.GetAllUsers()
+// 	if err != nil {
+// 		fmt.Println("Error fetching all users:", err)
+// 		return
+// 	}
+
+// 	allPublicUsers, err := db.GetAllPublicUsers()
+// 	if err != nil {
+// 		fmt.Println("Error fetching all users:", err)
+// 		return
+// 	}
+
+// 	allPrivateUsers, err := db.GetAllPrivateUsers()
+// 	if err != nil {
+// 		fmt.Println("Error fetching all users:", err)
+// 		return
+// 	}
+
+// 	res, err := 
+// 	if err != nil {
+// 		fmt.Println("Error fetching all users:", err)
+// 		return
+// 	}

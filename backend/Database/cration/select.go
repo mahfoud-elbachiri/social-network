@@ -10,6 +10,66 @@ import (
 
 var DB = sqlite.GetDB()
 
+func GetAllPublicUsers() ([]string, error) {
+	rows, err := DB.Query("SELECT nikname FROM users WHERE is_private = 0 ORDER BY nikname ASC;")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []string
+	for rows.Next() {
+		var nickname string
+		if err := rows.Scan(&nickname); err != nil {
+			return nil, err
+		}
+		users = append(users, nickname)
+	}
+	return users, nil
+}
+
+func GetAllPrivateUsers() ([]string, error) {
+	rows, err := DB.Query("SELECT nikname FROM users WHERE is_private = 1 ORDER BY nikname ASC;")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []string
+	for rows.Next() {
+		var nickname string
+		if err := rows.Scan(&nickname); err != nil {
+			return nil, err
+		}
+		users = append(users, nickname)
+	}
+	return users, nil
+}
+
+
+
+func GetAllUsers() ([]string, error) {
+	rows, err := DB.Query("SELECT nikname FROM users ORDER BY nikname ASC;")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []string
+	for rows.Next() {
+		var nickname string
+		if err := rows.Scan(&nickname); err != nil {
+			return nil, err
+		}
+		users = append(users, nickname)
+	}
+	return users, nil
+}
+
+
+
+
+
 func CheckInfo(info string, input string) bool { ////hna kanoxofo wax email ola wax nikname kayn 3la hsab input xno fiha wax email ola wax nikname
 	var inter int
 	quire := "SELECT COUNT(*) FROM users WHERE " + input + " = ?"

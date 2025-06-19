@@ -2,13 +2,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import "./style.css"
 
- 
 import Header from '@/components/Header';
 import PostCard from '@/components/PostCard';
 import CreatePostForm from '@/components/CreatePostForm';
 import { useComments } from '@/hooks/useComments';
 import { userApi, postApi } from '@/utils/api'
+import ChatWebSocket from "@/components/ChatWebSocket";
+
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -66,16 +68,16 @@ export default function Home() {
 
   const fetchUserStatus = async () => {
     try {
-      
+
       const data = await userApi.fetchUserStatus();
       if (data && data.status && data.name) {
         console.log("dkhlat");
-        
+
         setUsername(data.name);
         setUserAvatar(data.avatar || "");
         setCurrentUserId(data.user_id);
-        
-        
+
+
         return data;
       } else {
         console.error('Failed to fetch user status:', data?.error);
@@ -120,7 +122,7 @@ export default function Home() {
       <div className="container">
         {/* Sidebar */}
         <aside className="sidebar">
-          <Link href={`/Profile?id=${currentUserId}`} style={{textDecoration: 'none'}}>
+          <Link href={`/Profile?id=${currentUserId}`} style={{ textDecoration: 'none' }}>
             <div className="contact">
               <Image
                 src={userAvatar ? `/${userAvatar}` : "/icon.jpg"}
@@ -128,14 +130,14 @@ export default function Home() {
                 width={28}
                 height={28}
                 priority
-                style={{borderRadius: 50}}
+                style={{ borderRadius: 50 }}
               />
               <span>{username}</span>
               <span className="online-indicator"></span>
             </div>
           </Link>
         </aside>
-        
+
         {/* Main Content */}
         <main className="main-content" id="main-content">
           {/* Create Post Button */}
@@ -174,25 +176,11 @@ export default function Home() {
           </div>
         </main>
 
-        {/* Contacts Sidebar */}
-        <aside className="contacts" style={{paddingTop: '0'}}>
-          <div style={{marginBottom: '1rem'}}>
-            <span className="material-icons" id="cancel"></span>
-            <h3>Chat</h3>
-          </div>
-          <div 
-            id="contact-list"
-            style={{
-              height: `${typeof window !== 'undefined' ? window.innerHeight / 4 : 200}px`,
-              overflowY: 'auto',
-              border: '3px solid rgb(226, 226, 226)',
-              padding: '15px',
-              borderRadius: '20px'
-            }}
-          >
-            {/* Contact list content */}
-          </div>
-        </aside>
+        <div className="side-chat">
+
+          <ChatWebSocket username={username} />
+
+        </div>
       </div>
     </div>
   );
