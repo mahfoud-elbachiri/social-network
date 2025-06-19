@@ -16,9 +16,7 @@ export const apiRequest = async (endpoint, options = {}) => {
       console.error('Empty response from server, redirecting to login...');
       window.location.href = "/";
       return null;
-    }
-
-    let data;
+    }    let data;
     try {
       data = JSON.parse(text);
     } catch (e) {
@@ -28,8 +26,8 @@ export const apiRequest = async (endpoint, options = {}) => {
       return null;
     }
 
-    // Check for authentication errors
-    if (data.login === false || data.token === false) {
+    // Check for authentication errors - ensure data is not null
+    if (data && (data.login === false || data.token === false)) {
       console.error('Unauthorized access, redirecting to login...');
       window.location.href = "/";
       return null;

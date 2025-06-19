@@ -22,7 +22,7 @@ export default function Profile() {
   const [isPrivateView, setIsPrivateView] = useState(false);
 
   const searchParams = useSearchParams();
-  const targetUserId = searchParams.get('id');
+  const targetUserId = searchParams.get('id') || null;
 
  
   const {
@@ -86,7 +86,7 @@ export default function Profile() {
   if (loading) {
     return (
       <div>
-        <Header targetUserId= {targetUserId}/>
+        <Header />
         <div>Loading profile...</div>
       </div>
     );
@@ -95,7 +95,7 @@ export default function Profile() {
   if (error) {
     return (
       <div>
-        <Header targetUserId= {targetUserId}/>
+        <Header />
         <div className="container">
           <main className="main-content">
             <div>Error: {error}</div>
@@ -108,7 +108,7 @@ export default function Profile() {
   if (!profile) {
     return (
       <div>
-        <Header targetUserId= {targetUserId}/>
+        <Header />
         <div>Profile not found</div>
       </div>
     );
@@ -116,7 +116,7 @@ export default function Profile() {
 
   return (
     <div>
-      <Header targetUserId={targetUserId}/>
+      <Header />
 
       <div className="container">
         {/* Profile Info Sidebar */}

@@ -24,12 +24,19 @@ const PostCard = ({
             priority
             style={{borderRadius: 50, cursor: 'pointer'}}
           />
-        </Link>
-        <div className="post-header-text">
+        </Link>        <div className="post-header-text">
           <Link href={getProfileLink(post.UserID, currentUserId)} style={{textDecoration: 'none', color: 'inherit'}}>
             <span style={{cursor: 'pointer'}}>{post.Username}</span>
           </Link>
           <span style={{color: '#6c757d'}}> {formatDate(post.CreatedAt)}</span>
+          {/* Privacy indicator */}
+          {post.Privacy && post.Privacy !== 'public' && (
+            <span className={`privacy-badge ${post.Privacy.replace(' ', '-')}`}>
+              {post.Privacy === 'private' && '🔒'}
+              {post.Privacy === 'almost private' && '👥'}
+              {post.Privacy}
+            </span>
+          )}
         </div>
       </div>
       

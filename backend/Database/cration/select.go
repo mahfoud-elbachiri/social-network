@@ -93,6 +93,47 @@ func GetUser(id int) string {
 	return name
 }
 
+
+
+// Helper function to check if user is following the post author
+func IsFollowing(followerID, followingID int) bool {
+	var exist bool
+	query := "SELECT EXISTS(SELECT 1 FROM followers WHERE follower_id = ? AND following_id = ? AND status = 'accepted')"
+	DB.QueryRow(query, followerID, followingID).Scan(&exist)
+	return exist
+}
+
+// Check if a user has permission to see a private post
+func HasPrivatePostPermission(postID, userID int) bool {
+	var exists bool
+	query := "SELECT EXISTS(SELECT 1 FROM private_post_permissions WHERE post_id = ? AND user_id = ?)"
+	DB.QueryRow(query, postID, userID).Scan(&exists)
+	return exists
+}
+
+// Function to check if a user can view a post based on privacy settings
+func CanViewPost(viewerID, postAuthorID int, privacy string, postID int) bool {
+	// User can always see their own posts
+	if viewerID == postAuthorID {
+		return true
+	}
+
+	switch privacy {
+	case "public":
+		return true
+	case "almost private":
+		// Only followers can see
+		return IsFollowing(viewerID, postAuthorID)
+	case "private":
+		// Only specifically selected followers can see
+		return HasPrivatePostPermission(postID, viewerID)
+	default:
+		return false
+	}
+}
+
+
+
 func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 	var postes []utils.Postes
 	quire := "SELECT id, user_id, title, content, created_at, avatar, privacy FROM postes WHERE id > ? AND id <= ? ORDER BY created_at DESC"
@@ -107,6 +148,12 @@ func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// Check if user can view this post based on privacy settings
+		if !CanViewPost(userid, post.UserID, post.Privacy, post.ID) {
+			continue // Skip this post if user can't view it
+		}
+
 		post.Nembre, err = LenghtComent(post.ID)
 		post.Username = GetUser(post.UserID)
 		if post.Username == "" {
@@ -123,9 +170,8 @@ func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 	return postes, nil
 }
 
-func GetPostsByUserId(userId int) ([]utils.Postes, error) {
+func GetPostsByUserId(userId int, viewerID int) ([]utils.Postes, error) {
 	var postes []utils.Postes
- 
 	quire := "SELECT id, user_id, title, content, created_at, avatar, privacy FROM postes WHERE user_id = ? ORDER BY created_at DESC"
 	rows, err := DB.Query(quire, userId)
 	if err != nil {
@@ -134,18 +180,23 @@ func GetPostsByUserId(userId int) ([]utils.Postes, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var post utils.Postes
-		 
 		err := rows.Scan(&post.ID, &post.UserID, &post.Title, &post.Content, &post.CreatedAt, &post.Avatar, &post.Privacy)
 		if err != nil {
 			return nil, err
 		}
+
+		// Check if viewer can see this post based on privacy settings
+		if !CanViewPost(viewerID, post.UserID, post.Privacy, post.ID) {
+			continue // Skip this post if viewer can't see it
+		}
+
 		post.Nembre, err = LenghtComent(post.ID)
 		post.Username = GetUser(post.UserID)
 		if post.Username == "" {
 			return nil, err
 		}
 
-		 
+		// Get user's avatar
 		_, userAvatar := GetUserInfo(post.UserID)
 		post.UserAvatar = userAvatar
 
@@ -154,6 +205,7 @@ func GetPostsByUserId(userId int) ([]utils.Postes, error) {
 
 	return postes, nil
 }
+
 
 func GetUserProfile(userId int) (*utils.UserProfile, error) {
 	var profile utils.UserProfile
@@ -469,13 +521,11 @@ func GetfollowerList(userID int) (*utils.FollowResult, error) {
 		WHERE f.following_id = ? AND f.status = 'accepted'
 		ORDER BY u.first_name
 	`
-	
 	rows, err := DB.Query(query, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
      for rows.Next() {
 		var user utils.FollowUser
 		err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Nickname, &user.Avatar)
@@ -525,3 +575,4 @@ func GetFollowinglist(userID int) (*utils.FollowResult, error) {
 		Count: len(users),
 	}, nil
 }
+

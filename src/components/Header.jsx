@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 import { handleLogout } from '@/utils/helpers';
 import { userApi } from '@/utils/api';
 
-const Header = ( {targetUserId}) => {
+const Header = () => {
   const [userAvatar, setUserAvatar] = useState("");
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
     fetchUserInfo();
@@ -15,8 +16,13 @@ const Header = ( {targetUserId}) => {
   const fetchUserInfo = async () => {
     try {
       const data = await userApi.fetchUserStatus();
-      if (data && data.status && data.avatar) {
-        setUserAvatar(data.avatar);
+      if (data && data.status) {
+        if (data.avatar) {
+          setUserAvatar(data.avatar);
+        }
+        if (data.user_id) {
+          setCurrentUserId(data.user_id);
+        }
       }
     } catch (error) {
       console.error('Error fetching user info in header:', error);
@@ -29,7 +35,7 @@ const Header = ( {targetUserId}) => {
 
   return (
     <header className="header">
-      <Link href={`/Profile?id=${targetUserId}`}>
+      <Link href={`/Profile?id=${currentUserId}`}>
         <Image 
           src={getAvatarSrc()}
           alt="User Avatar" 

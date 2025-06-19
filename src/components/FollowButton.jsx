@@ -31,7 +31,6 @@ const [IsPanding , setIsPanding] = useState(null)
       }
     checkfollow()
   },[targetUserid , isPrivateView])
-
   const handleClick = async () => {
     console.log("1",targetUserid);
     try {
@@ -49,30 +48,29 @@ const [IsPanding , setIsPanding] = useState(null)
       });
       
       if (!response.ok) {
-       
         console.log("response:",await response.json());
         throw new Error('Request failed');
       } else {
-
-        if ( isPrivat ) {
-           setFollowing(false)
-
-          setIsPanding(true)
-        }else {
-          console.log("ee");
-                    setIsPanding(false)
-
+        if (following) {
+          // User is unfollowing
+          setFollowing(false);
+          setIsPanding(false);
+        } else {
+          // User is following
+          if (isPrivat) {
+            // Private profile - set as pending
+            setFollowing(false);
+            setIsPanding(true);
+          } else {
+            // Public profile - follow immediately
+            setFollowing(true);
+            setIsPanding(false);
+          }
         }
-        
-        if (!isPrivat){
-
-           setFollowing(!following)
-         }
       }
     } catch (err) {
       console.error('Error:', err)
     }
-
   };
 
 

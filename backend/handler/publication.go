@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 
 func Post(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		_, _, _,ishave := servisse.IsHaveToken(r)
+		_, _, _, ishave := servisse.IsHaveToken(r)
 		if ishave != nil {
 			fmt.Println("token not found POST")
 			w.WriteHeader(http.StatusUnauthorized)
@@ -22,7 +23,8 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		title := r.FormValue("title")
 		content := r.FormValue("content")
 		privacy := r.FormValue("privacy")
-		// avatar := r.FormValue("avatar")
+		selectedFollowers := r.FormValue("selected_followers")
+
 		// Handle avatar upload (simplified)
 		var avatarPath string
 
@@ -56,7 +58,9 @@ func Post(w http.ResponseWriter, r *http.Request) {
 
 		tocken, _ := r.Cookie("SessionToken")
 		user_id := db.GetId("sessionToken", tocken.Value)
-		errore := db.InsertPostes(user_id, title, content, privacy, avatarPath)
+
+		// Insert the post first
+		postID, errore := db.InsertPostesWithID(user_id, title, content, privacy, avatarPath)
 
 		if errore != nil {
 			fmt.Println("===> er : ", errore)
@@ -65,6 +69,21 @@ func Post(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error inserting post:", errore)
 			return
 		}
+
+		// If it's a private post and followers are selected, add permissions
+		if privacy == "private" && selectedFollowers != "" {
+			var followerIDs []int
+			err := json.Unmarshal([]byte(selectedFollowers), &followerIDs)
+			if err == nil && len(followerIDs) > 0 {
+				for _, followerID := range followerIDs {
+					err := db.InsertPrivatePostPermission(postID, followerID)
+					if err != nil {
+						fmt.Printf("Error adding permission for follower %d: %v\n", followerID, err)
+					}
+				}
+			}
+		}
+
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"error": "200", "status":true ,"tocken":true}`))
 

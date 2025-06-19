@@ -4,18 +4,47 @@ import Image from "next/image";
 import Header from '@/components/Header';
 import FollowButton from "@/components/FollowButton";
 import { useRouter } from 'next/navigation';
+import { userApi } from '../../utils/api';
 
 
 export default function Explore() {
   const [users, setUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]); // Store all users from backend
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [error, setError] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
-    fetchUsers();
+    initializeData();
   }, []);
 
-  const fetchUsers = async (search = '') => {
+  // Filter users whenever allUsers or currentUserId changes
+  useEffect(() => {
+    if (allUsers.length > 0 && currentUserId !== null) {
+      const filteredUsers = allUsers.filter(user => user.id !== currentUserId);
+      setUsers(filteredUsers);
+    }
+  }, [allUsers, currentUserId]);
+
+  const initializeData = async () => {
+    await Promise.all([
+      fetchCurrentUser(),
+      fetchAllUsers()
+    ]);
+  };
+
+  const fetchCurrentUser = async () => {
+    try {
+      const userData = await userApi.fetchUserStatus();
+      if (userData && userData.user_id) {
+        setCurrentUserId(userData.user_id);
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
+
+  const fetchAllUsers = async (search = '') => {
     try {
       const url = search 
         ? `http://localhost:8080/getusers?search=${encodeURIComponent(search)}`
@@ -28,14 +57,14 @@ export default function Explore() {
 
       if (response.ok) {
         const data = await response.json();
-          setUsers(Array.isArray(data) ? data : []);
+        const usersArray = Array.isArray(data) ? data : [];
+        setAllUsers(usersArray);
       } else {
         setError('Failed to fetch users');
       }
     } catch (error) {
       console.error('Error fetching users:', error);
       setError('Error fetching users');
-    } finally {
     }
   };
 
@@ -50,7 +79,7 @@ export default function Explore() {
     e.preventDefault();
     const formData = new FormData(e.target);
     const searchValue = formData.get('search');
-    await fetchUsers(searchValue);
+    await fetchAllUsers(searchValue);
   };
  
 

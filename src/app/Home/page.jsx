@@ -115,7 +115,7 @@ export default function Home() {
 
   return (
     <div>
-      <Header  targetUserId ={currentUserId}/>
+      <Header />
 
       <div className="container">
         {/* Sidebar */}

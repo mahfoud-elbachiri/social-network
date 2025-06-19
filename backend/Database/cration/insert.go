@@ -56,6 +56,37 @@ func InsertPostes(user_id int, title string, content string, privacy string, ava
 	return nil
 }
 
+// InsertPostesWithID inserts a post and returns the post ID
+func InsertPostesWithID(user_id int, title string, content string, privacy string, avatar string) (int, error) {
+	created_at := time.Now().Format("2006-01-02 15:04:05")
+
+	info, err := DB.Prepare("INSERT INTO postes (user_id,title,content,created_at,avatar,privacy) VALUES (?,?,?,?,?,?)")
+	if err != nil {
+		fmt.Println("==> E : ", err)
+		return 0, err
+	}
+
+	result, err := info.Exec(user_id, title, content, created_at, avatar, privacy)
+	if err != nil {
+		return 0, err
+	}
+
+	// Get the last inserted ID
+	postID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return int(postID), nil
+}
+
+// InsertPrivatePostPermission adds permission for a user to see a private post
+func InsertPrivatePostPermission(postID int, userID int) error {
+	query := "INSERT INTO private_post_permissions (post_id, user_id) VALUES (?, ?)"
+	_, err := DB.Exec(query, postID, userID)
+	return err
+}
+
 func InsertComment(post_id int, user_id int, comment string) error {
 	created_at := time.Now().Format("2006-01-02 15:04:05")
 	info, err := DB.Prepare("INSERT INTO comments (post_id , user_id , comment , created_at) VALUES (?,?,?,?)")

@@ -21,7 +21,7 @@ func Profile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate session token and get current user info
-	_, _, _,err := servisse.IsHaveToken(r)
+	_, _, _, err := servisse.IsHaveToken(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -54,8 +54,8 @@ func Profile(w http.ResponseWriter, r *http.Request) {
 
 	// Parse request body
 	var requestData struct {
-		Action    string `json:"action"`              // "get_profile" or "update_privacy"
-		UserID    string `json:"user_id,omitempty"`   // Target user ID to view
+		Action    string `json:"action"`            // "get_profile" or "update_privacy"
+		UserID    string `json:"user_id,omitempty"` // Target user ID to view
 		IsPrivate *bool  `json:"is_private,omitempty"`
 	}
 
@@ -135,7 +135,6 @@ func Profile(w http.ResponseWriter, r *http.Request) {
 			"nickname":   userProfile.Nickname,
 			"avatar":     userProfile.Avatar,
 			"is_private": userProfile.IsPrivate,
-			
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -150,9 +149,9 @@ func Profile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get user's posts (only if can view full profile)
-	var userPosts [] utils.Postes
+	var userPosts []utils.Postes
 	if canViewFullProfile {
-		userPosts, err = db.GetPostsByUserId(targetUserID)
+		userPosts, err = db.GetPostsByUserId(targetUserID, currentUserID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]interface{}{
