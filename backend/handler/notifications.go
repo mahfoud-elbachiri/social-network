@@ -52,8 +52,8 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var notification FollowNotification
 		var avatar *string
-		
-		err := rows.Scan(&notification.ID, &notification.FirstName, &notification.LastName, 
+
+		err := rows.Scan(&notification.ID, &notification.FirstName, &notification.LastName,
 			&notification.Nickname, &avatar, &notification.CreatedAt)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, "Error reading notifications", nil)
@@ -77,11 +77,6 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 		"count":         len(notifications),
 	})
 }
-
-
-
-
-
 
 // AcceptFollowRequest accepts a pending follow request
 func AcceptFollowRequest(w http.ResponseWriter, r *http.Request) {
@@ -128,10 +123,6 @@ func AcceptFollowRequest(w http.ResponseWriter, r *http.Request) {
 
 	utils.JsonResponse(w, http.StatusOK, "Follow request accepted successfully", nil)
 }
-
-
-
-
 
 // RejectFollowRequest rejects a pending follow request
 func RejectFollowRequest(w http.ResponseWriter, r *http.Request) {

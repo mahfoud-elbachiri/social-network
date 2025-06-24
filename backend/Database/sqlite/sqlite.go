@@ -20,7 +20,7 @@ var (
 func GetDB() *sql.DB {
 	once.Do(func() {
 		var err error
-		databasePath := "./Database/social-network.db"
+		databasePath := "../Database/social-network.db"
 		db, err = sql.Open("sqlite3", databasePath)
 		if err != nil {
 			log.Fatalln("Error opening DB:", err)
@@ -44,7 +44,7 @@ func runMigrations(db *sql.DB) error {
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://./Database/migrations/sqlite",
+		"file://../Database/migrations/sqlite",
 		"sqlite3",
 		driver,
 	)

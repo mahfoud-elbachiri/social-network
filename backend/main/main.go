@@ -18,7 +18,6 @@ func main() {
 	router.HandleFunc("/resgester", handler.Register)
 	router.HandleFunc("/login", handler.Login)
 
-	
 	router.Handle("/statuts", handler.AuthMiddleware(http.HandlerFunc(handler.Statuts)))
 	router.Handle("/profile", handler.AuthMiddleware(http.HandlerFunc(handler.Profile)))
 	router.Handle("/pubpost", handler.AuthMiddleware(http.HandlerFunc(handler.Post)))
@@ -49,7 +48,7 @@ func main() {
 	router.Handle("/isFollowing", handler.AuthMiddleware(http.HandlerFunc(handler.CheckFollow)))
 	router.Handle("/follow-data", handler.AuthMiddleware(http.HandlerFunc(handler.GetFollowDataHandler)))
 
-	// Notification 
+	// Notification
 	router.Handle("/notifications", handler.AuthMiddleware(http.HandlerFunc(handler.GetNotifications)))
 	router.Handle("/accept-follow-request", handler.AuthMiddleware(http.HandlerFunc(handler.AcceptFollowRequest)))
 	router.Handle("/reject-follow-request", handler.AuthMiddleware(http.HandlerFunc(handler.RejectFollowRequest)))

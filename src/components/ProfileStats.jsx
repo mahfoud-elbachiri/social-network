@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import FollowList from '@/components/Followlist';
 
-const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile ,targetUserId }) => {
+const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile, targetUserId }) => {
   const [followData, setFollowData] = useState({ 
     followers: { count: 0 }, 
     following: { count: 0 } 
@@ -11,7 +11,7 @@ const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile ,targetUserId })
 
   useEffect(() => {
     fetchFollowData();
-  }, []);
+  }, [targetUserId]);
 
   const fetchFollowData = async () => {
     try {
@@ -33,6 +33,10 @@ const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile ,targetUserId })
   const openPopup = (tab) => {
     setPopupTab(tab);
     setShowPopup(true);
+  };
+
+  const handlePopupClose = () => {
+    setShowPopup(false);
   };
 
   return (
@@ -72,7 +76,7 @@ const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile ,targetUserId })
 
       <FollowList 
         isOpen={showPopup}
-        onClose={() => setShowPopup(false)}
+        onClose={handlePopupClose}
         activeTab={popupTab}
         targetUserId={targetUserId}
       />
