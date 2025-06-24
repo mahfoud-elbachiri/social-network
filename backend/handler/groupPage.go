@@ -75,9 +75,9 @@ type CreateGroup struct {
 
 func HomepageGroup(w http.ResponseWriter, r *http.Request) {
 	dvb := sqlite.GetDB()
-	token, _ := r.Cookie("SessionToken")
-	userID := db.GetId("sessionToken", token.Value)
-	username := db.GetUsernameByToken(token.Value)
+	cookie, _ := r.Cookie("SessionToken")
+	userID := db.GetId("sessionToken", cookie.Value)
+	username := db.GetUsernameByToken(cookie.Value)
 	dvb.QueryRow("SELECT username FROM users WHERE id = ?", userID).Scan(&username)
 
 	groups, _ := GetGroups(userID)
@@ -920,10 +920,7 @@ func CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateGroupCommentHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+
 	cookie, err := r.Cookie("SessionToken")
 	if err != nil {
 		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)

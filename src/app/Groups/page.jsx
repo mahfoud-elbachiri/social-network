@@ -25,6 +25,35 @@ export default function HomePage() {
     }
   }, []);
 
+  // Handle URL changes and browser navigation
+  useEffect(() => {
+    const handlePopState = (event) => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const groupId = urlParams.get('group');
+      
+      if (groupId) {
+        fetchGroupById(parseInt(groupId));
+      } else {
+        setSelectedGroup(null);
+        setGroupData(null);
+      }
+    };
+
+    // Check URL on component mount
+    const urlParams = new URLSearchParams(window.location.search);
+    const groupId = urlParams.get('group');
+    if (groupId) {
+      fetchGroupById(parseInt(groupId));
+    }
+
+    // Listen for browser back/forward buttons
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
@@ -77,7 +106,6 @@ export default function HomePage() {
   };
 
   const rejectInvite = async (groupId) => {
-
     try {
       await fetch('http://localhost:8080/group/reject-invite', {
         method: 'POST',
@@ -101,6 +129,11 @@ export default function HomePage() {
       const data = await res.json();
       setGroupData(data);
       setSelectedGroup(groupId);
+      
+      // Update URL without reloading the page
+      const newUrl = `${window.location.pathname}?group=${groupId}`;
+      window.history.pushState({ groupId }, '', newUrl);
+      
     } catch (err) {
       console.error(`Failed to fetch group ${groupId}`, err);
     }
@@ -171,7 +204,6 @@ export default function HomePage() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({ event_id: eventId, response }),
       });
       fetchGroupById(selectedGroup);
@@ -214,6 +246,10 @@ export default function HomePage() {
   const backToGroups = () => {
     setSelectedGroup(null);
     setGroupData(null);
+    
+    // Update URL to remove group parameter
+    const newUrl = window.location.pathname;
+    window.history.pushState({}, '', newUrl);
   };
 
   // Group Detail View
