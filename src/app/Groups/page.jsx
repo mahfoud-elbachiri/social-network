@@ -1,29 +1,16 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import "./style.css";
 
 export default function HomePage() {
-  const [groups, setGroups] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '' });
+  const router = useRouter();
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [groupData, setGroupData] = useState(null);
   const [eventForm, setEventForm] = useState({ title: '', description: '', datetime: '' });
   const [postContent, setPostContent] = useState('');
   const [commentInputs, setCommentInputs] = useState({});
-
-  const fetchGroups = useCallback(async () => {
-    try {
-      const res = await fetch('http://localhost:8080/groupPage', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await res.json();
-      setGroups(data.Groups || []);
-    } catch (err) {
-      console.error('Failed to fetch groups', err);
-    }
-  }, []);
+  const [loading, setLoading] = useState(true);
 
   // Handle URL changes and browser navigation
   useEffect(() => {
@@ -34,8 +21,8 @@ export default function HomePage() {
       if (groupId) {
         fetchGroupById(parseInt(groupId));
       } else {
-        setSelectedGroup(null);
-        setGroupData(null);
+        // Redirect to Home if no group ID is provided
+        router.push('/Home');
       }
     };
 
@@ -44,6 +31,10 @@ export default function HomePage() {
     const groupId = urlParams.get('group');
     if (groupId) {
       fetchGroupById(parseInt(groupId));
+    } else {
+      // Redirect to Home if no group ID is provided
+      router.push('/Home');
+      return;
     }
 
     // Listen for browser back/forward buttons
@@ -52,72 +43,7 @@ export default function HomePage() {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
-
-  useEffect(() => {
-    fetchGroups();
-  }, [fetchGroups]);
-
-  const handleCreateGroup = async (e) => {
-    e.preventDefault();
-    try {
-      await fetch('http://localhost:8080/create-group', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      setShowModal(false);
-      setForm({ title: '', description: '' });
-      fetchGroups();
-    } catch (err) {
-      console.error("Failed to create group", err);
-    }
-  };
-
-  const handleJoin = async (groupId) => {
-    console.log(`Joining group with ID: ${groupId}`);
-    
-    try {
-      await fetch('http://localhost:8080/join-group', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ group_id: groupId }),
-      });
-      fetchGroups();
-    } catch (err) {
-      console.error('Failed to join group', err);
-    }
-  };
-
-  const acceptInvite = async (groupId) => {
-    try {
-      await fetch('http://localhost:8080/group/accept-invite', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ group_id: groupId }),
-      });
-      fetchGroups();
-    } catch (err) {
-      console.error('Failed to accept invite', err);
-    }
-  };
-
-  const rejectInvite = async (groupId) => {
-    try {
-      await fetch('http://localhost:8080/group/reject-invite', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ group_id: groupId }),
-      });
-      fetchGroups();
-    } catch (err) {
-      console.error('Failed to reject invite', err);
-    }
-  };
+  }, [router]);
 
   const fetchGroupById = async (groupId) => {
     try {
@@ -129,6 +55,7 @@ export default function HomePage() {
       const data = await res.json();
       setGroupData(data);
       setSelectedGroup(groupId);
+      setLoading(false);
       
       // Update URL without reloading the page
       const newUrl = `${window.location.pathname}?group=${groupId}`;
@@ -136,6 +63,7 @@ export default function HomePage() {
       
     } catch (err) {
       console.error(`Failed to fetch group ${groupId}`, err);
+      setLoading(false);
     }
   };
 
@@ -262,7 +190,7 @@ export default function HomePage() {
       <div className="group-page-container">
         {/* Back Navigation */}
         <div className="back-nav">
-          <button onClick={backToGroups} className="back-btn">← Back to Groups</button>
+          <button onClick={() => router.push('/Home')} className="back-btn">← Back to Home</button>
         </div>
 
         {/* Group Header */}
@@ -487,96 +415,17 @@ export default function HomePage() {
     );
   }
 
-  // Groups List View
-  return (
-    <div className="group-home">
-      <div className="group-logo">
-        <button onClick={() => setShowModal(true)} className="btn">
-          Create Group
-        </button>
-      </div>
+  // Show loading state
+  if (loading) {
+    return <div className="loading">Loading group details...</div>;
+  }
 
-      <div className="search-box">
-        <input type="text" placeholder="Search group..." />
-      </div>
+  // If no group data, redirect to home (this shouldn't normally happen due to useEffect redirect)
+  if (!groupData) {
+    router.push('/Home');
+    return null;
+  }
 
-      <div className="group-contacts">
-        <h3>groups</h3>
-        <ul>
-          {groups?.map(group => (
-            <li key={group.ID}>
-              {group.IsCreator ? (
-                <div onClick={() => fetchGroupById(group.ID)} className="group-item clickable">
-                  <strong>{group.Title}</strong><br />
-                  <small>{group.Description}</small><br />
-                  <span style={{ fontSize: '12px', color: 'gray' }}>You are the admin</span>
-                </div>
-              ) : group.IsMember ? (
-                <div onClick={() => fetchGroupById(group.ID)} className="group-item clickable">
-                  <strong>{group.Title}</strong><br />
-                  <small>{group.Description}</small><br />
-                  <span style={{ color: 'green', fontWeight: 'bold', marginTop: '5px', display: 'inline-block' }}>
-                    You are a member of this group
-                  </span>
-                </div>
-              ) : group.IsRequested ? (
-                <div className="group-item">
-                  <strong>{group.Title}</strong><br />
-                  <small>{group.Description}</small><br />
-                  <span style={{ color: 'orange', fontStyle: 'italic', marginTop: '5px', display: 'inline-block' }}>
-                    Your request is pending
-                  </span>
-                </div>
-              ) : group.IsInvited ? (
-                <div className="group-item">
-                  <strong>{group.Title}</strong><br />
-                  <small>{group.Description}</small><br />
-                  <div style={{ display: 'inline', marginTop: '5px' }}>
-                    <button onClick={() => acceptInvite(group.ID)}>Accept</button>
-                    <button onClick={() => rejectInvite(group.ID)}>Reject</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="group-item">
-                  <strong>{group.Title}</strong><br />
-                  <small>{group.Description}</small><br />
-                  <div style={{ marginTop: '5px' }}>
-                    <button onClick={() => handleJoin(group.ID)}>Join</button>
-                  </div>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Create Group Modal */}
-      {showModal && (
-        <div id="create-group-form" className="modal">
-          <form onSubmit={handleCreateGroup}>
-            <h2>Create a New Group</h2>
-            <label>
-              Title:
-              <input
-                type="text"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                required
-              />
-            </label>
-            <label>
-              Description:
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                required
-              />
-            </label>
-            <button type="submit">Create</button>
-            <button type="button" onClick={() => setShowModal(false)}>Cancel</button>
-          </form>
-        </div>
-      )}
-    </div>
-  );
+  // This return statement is never reached due to the redirects above
+  return null;
 }
