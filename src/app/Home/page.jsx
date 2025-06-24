@@ -11,7 +11,6 @@ import { useComments } from '@/hooks/useComments';
 import { userApi, postApi } from '@/utils/api'
 import ChatWebSocket from "@/components/ChatWebSocket";
 
-
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +19,11 @@ export default function Home() {
   const [username, setUsername] = useState('User');
   const [userAvatar, setUserAvatar] = useState("");
   const [currentUserId, setCurrentUserId] = useState(null);
+
+  // Groups state
+  const [groups, setGroups] = useState([]);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [groupForm, setGroupForm] = useState({ title: '', description: '' });
 
   // Use custom comment hook
   const {
@@ -54,11 +58,13 @@ export default function Home() {
 
   const initializePage = async () => {
     try {
-      // Fetch user status and posts in same time
+      // Fetch user status, posts, and groups at the same time
       const [userStatus, postsData] = await Promise.all([
         fetchUserStatus(),
         loadPosts()
       ]);
+      // Fetch groups after user status is loaded
+      fetchGroups();
     } catch (error) {
       console.error('Error initializing page:', error);
       setError('Failed to load page');
@@ -68,16 +74,12 @@ export default function Home() {
 
   const fetchUserStatus = async () => {
     try {
-
       const data = await userApi.fetchUserStatus();
       if (data && data.status && data.name) {
         console.log("dkhlat");
-
         setUsername(data.name);
         setUserAvatar(data.avatar || "");
         setCurrentUserId(data.user_id);
-
-
         return data;
       } else {
         console.error('Failed to fetch user status:', data?.error);
@@ -102,6 +104,79 @@ export default function Home() {
     }
   };
 
+  // Groups functions
+  const fetchGroups = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/groupPage', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      setGroups(data.Groups || []);
+    } catch (err) {
+      console.error('Failed to fetch groups', err);
+    }
+  };
+
+  const handleCreateGroup = async (e) => {
+    e.preventDefault();
+    try {
+      await fetch('http://localhost:8080/create-group', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(groupForm),
+      });
+      setShowCreateGroupModal(false);
+      setGroupForm({ title: '', description: '' });
+      fetchGroups();
+    } catch (err) {
+      console.error("Failed to create group", err);
+    }
+  };
+
+  const handleJoinGroup = async (groupId) => {
+    try {
+      await fetch('http://localhost:8080/join-group', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: groupId }),
+      });
+      fetchGroups();
+    } catch (err) {
+      console.error('Failed to join group', err);
+    }
+  };
+
+  const acceptInvite = async (groupId) => {
+    try {
+      await fetch('http://localhost:8080/group/accept-invite', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: groupId }),
+      });
+      fetchGroups();
+    } catch (err) {
+      console.error('Failed to accept invite', err);
+    }
+  };
+
+  const rejectInvite = async (groupId) => {
+    try {
+      await fetch('http://localhost:8080/group/reject-invite', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: groupId }),
+      });
+      fetchGroups();
+    } catch (err) {
+      console.error('Failed to reject invite', err);
+    }
+  };
+
   const handlePostCreated = () => {
     // Refresh posts after creating a new one
     loadPosts();
@@ -120,23 +195,100 @@ export default function Home() {
       <Header />
 
       <div className="container">
-        {/* Sidebar */}
-        <aside className="sidebar">
-          <Link href={`/Profile?id=${currentUserId}`} style={{ textDecoration: 'none' }}>
-            <div className="contact">
-              <Image
-                src={userAvatar ? `/${userAvatar}` : "/icon.jpg"}
-                alt="User Avatar"
-                width={28}
-                height={28}
-                priority
-                style={{ borderRadius: 50 }}
-              />
-              <span>{username}</span>
-              <span className="online-indicator"></span>
+        {/* Left Sidebar Container */}
+        <div className="left-sidebar-container">
+          {/* User Profile Sidebar */}
+          <aside className="sidebar">
+            <Link href={`/Profile?id=${currentUserId}`} style={{ textDecoration: 'none' }}>
+              <div className="contact">
+                <Image
+                  src={userAvatar ? `/${userAvatar}` : "/icon.jpg"}
+                  alt="User Avatar"
+                  width={28}
+                  height={28}
+                  priority
+                  style={{ borderRadius: 50 }}
+                />
+                <span>{username}</span>
+                <span className="online-indicator"></span>
+              </div>
+            </Link>
+          </aside>
+
+          {/* Groups Sidebar */}
+          <aside className="groups-sidebar">
+            <div className="groups-header">
+              <h3>Groups</h3>
+              <button 
+                onClick={() => setShowCreateGroupModal(true)} 
+                className="create-group-btn"
+                title="Create Group"
+              >
+                +
+              </button>
             </div>
-          </Link>
-        </aside>
+            
+            <div className="groups-list">
+              {groups?.map(group => (
+                <div key={group.ID} className="group-item-sidebar">
+                  {group.IsCreator ? (
+                    <Link href={`/Groups?group=${group.ID}`} className="group-link">
+                      <div className="group-content">
+                        <strong className="group-title">{group.Title}</strong>
+                        <small className="group-description">{group.Description}</small>
+                        <span className="group-status admin">Admin</span>
+                      </div>
+                    </Link>
+                  ) : group.IsMember ? (
+                    <Link href={`/Groups?group=${group.ID}`} className="group-link">
+                      <div className="group-content">
+                        <strong className="group-title">{group.Title}</strong>
+                        <small className="group-description">{group.Description}</small>
+                        <span className="group-status member">Member</span>
+                      </div>
+                    </Link>
+                  ) : group.IsRequested ? (
+                    <div className="group-content">
+                      <strong className="group-title">{group.Title}</strong>
+                      <small className="group-description">{group.Description}</small>
+                      <span className="group-status pending">Pending</span>
+                    </div>
+                  ) : group.IsInvited ? (
+                    <div className="group-content">
+                      <strong className="group-title">{group.Title}</strong>
+                      <small className="group-description">{group.Description}</small>
+                      <div className="group-actions">
+                        <button 
+                          onClick={() => acceptInvite(group.ID)}
+                          className="accept-btn-small"
+                        >
+                          Accept
+                        </button>
+                        <button 
+                          onClick={() => rejectInvite(group.ID)}
+                          className="reject-btn-small"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="group-content">
+                      <strong className="group-title">{group.Title}</strong>
+                      <small className="group-description">{group.Description}</small>
+                      <button 
+                        onClick={() => handleJoinGroup(group.ID)}
+                        className="join-btn-small"
+                      >
+                        Join
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </aside>
+        </div>
 
         {/* Main Content */}
         <main className="main-content" id="main-content">
@@ -176,12 +328,43 @@ export default function Home() {
           </div>
         </main>
 
+        {/* Chat Sidebar */}
         <div className="side-chat">
-
           <ChatWebSocket username={username} />
-
         </div>
       </div>
+
+      {/* Create Group Modal */}
+      {showCreateGroupModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <form onSubmit={handleCreateGroup}>
+              <h2>Create a New Group</h2>
+              <label>
+                Title:
+                <input
+                  type="text"
+                  value={groupForm.title}
+                  onChange={(e) => setGroupForm({ ...groupForm, title: e.target.value })}
+                  required
+                />
+              </label>
+              <label>
+                Description:
+                <textarea
+                  value={groupForm.description}
+                  onChange={(e) => setGroupForm({ ...groupForm, description: e.target.value })}
+                  required
+                />
+              </label>
+              <div className="modal-actions">
+                <button type="submit">Create</button>
+                <button type="button" onClick={() => setShowCreateGroupModal(false)}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
