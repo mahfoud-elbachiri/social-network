@@ -1,16 +1,15 @@
 package sqlite
 
 import (
-	
 	"database/sql"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/golang-migrate/migrate/v4"
 	sqlite3 "github.com/golang-migrate/migrate/v4/database/sqlite"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/mattn/go-sqlite3"
-	"sync"
 )
 
 var (
@@ -19,23 +18,21 @@ var (
 )
 
 func GetDB() *sql.DB {
-	once.Do(func ()  { 
-	var err error
-	databasePath := "../Database/social-network.db"
-	db, err = sql.Open("sqlite3", databasePath)
-	if err != nil {
-		log.Fatalln("Error opening DB:", err)
-	}
+	once.Do(func() {
+		var err error
+		databasePath := "./Database/social-network.db"
+		db, err = sql.Open("sqlite3", databasePath)
+		if err != nil {
+			log.Fatalln("Error opening DB:", err)
+		}
 
-	db.Exec("PRAGMA foreign_keys = ON")
+		db.Exec("PRAGMA foreign_keys = ON")
 
-	if err := runMigrations(db); err != nil {
-		log.Fatalln("Migration error:", err)
-	}
-	fmt.Println("✅ DB initialized succes")
-		
+		if err := runMigrations(db); err != nil {
+			log.Fatalln("Migration error:", err)
+		}
+		fmt.Println("✅ DB initialized succes")
 	})
-
 
 	return db
 }
@@ -47,7 +44,7 @@ func runMigrations(db *sql.DB) error {
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://../Database/migrations/sqlite",
+		"file://./Database/migrations/sqlite",
 		"sqlite3",
 		driver,
 	)

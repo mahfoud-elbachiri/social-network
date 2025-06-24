@@ -49,6 +49,11 @@ func main() {
 	router.Handle("/isFollowing", handler.AuthMiddleware(http.HandlerFunc(handler.CheckFollow)))
 	router.Handle("/follow-data", handler.AuthMiddleware(http.HandlerFunc(handler.GetFollowDataHandler)))
 
+	// Notification 
+	router.Handle("/notifications", handler.AuthMiddleware(http.HandlerFunc(handler.GetNotifications)))
+	router.Handle("/accept-follow-request", handler.AuthMiddleware(http.HandlerFunc(handler.AcceptFollowRequest)))
+	router.Handle("/reject-follow-request", handler.AuthMiddleware(http.HandlerFunc(handler.RejectFollowRequest)))
+
 	// router.HandleFunc("/online-users", handler.OnlineUsers)
 	router.HandleFunc("/ws", handler.WebSocketHandler) // Add WebSocket route
 	go handler.HandleMessages()                        // Start WebSocket message handler in a goroutine
