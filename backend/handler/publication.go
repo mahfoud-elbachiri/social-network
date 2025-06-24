@@ -25,27 +25,20 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		privacy := r.FormValue("privacy")
 		selectedFollowers := r.FormValue("selected_followers")
 
-		// Handle avatar upload (simplified)
 		var avatarPath string
 
-		// Try to get the uploaded file
 		file, handler, err := r.FormFile("avatar")
 		if err == nil && handler != nil {
-			// User uploaded a file
 			defer file.Close()
 
-			// Make sure the avatars folder exists
 			os.MkdirAll("../../public/avatars2", 0o755)
 
-			// Save the file to public/avatars folder
 			savePath := "../../public/avatars2/" + handler.Filename
 			newFile, err := os.Create(savePath)
 			if err == nil {
-				// Copy the uploaded file to our folder
 				io.Copy(newFile, file)
 				newFile.Close()
 
-				// Store just "avatars/filename.jpg" in database (not full path)
 				avatarPath = "avatars2/" + handler.Filename
 			}
 		}

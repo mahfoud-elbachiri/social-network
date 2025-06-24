@@ -38,13 +38,12 @@ export const useComments = (setPosts) => {
     if (!showComments[postId] && !comments[postId]) {
       await fetchCommentsForPost(postId);
     }
-  };
-
-  const handleSendComment = async (postId, commentText) => {
-    if (!commentText.trim()) return;
+  };  const handleSendComment = async (postId, commentText, avatar = null) => {
+    // Validation: Either text content or image must be provided (or both)
+    if (!commentText.trim() && !avatar) return;
 
     try {
-      const data = await commentApi.sendComment(postId, commentText);
+      const data = await commentApi.sendComment(postId, commentText, avatar);
 
       if (data && data.status) {
         await fetchCommentsForPost(postId);

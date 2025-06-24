@@ -335,7 +335,7 @@ func LenghtComent(postid int) (nbr int, err error) {
 
 func SelectComments(postid int, userid int) ([]utils.CommentPost, error) {
 	var comments []utils.CommentPost
-	quire := "SELECT id, post_id, user_id, comment, created_at FROM comments WHERE post_id = ? ORDER BY created_at DESC"
+	quire := "SELECT id, post_id, user_id, comment, avatar, created_at FROM comments WHERE post_id = ? ORDER BY created_at DESC"
 	rows, err := DB.Query(quire, postid)
 	if err != nil {
 		return nil, err
@@ -343,7 +343,7 @@ func SelectComments(postid int, userid int) ([]utils.CommentPost, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var comment utils.CommentPost
-		err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.CreatedAt)
+		err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.Avatar, &comment.CreatedAt)
 		if err != nil {
 			fmt.Println("moxkil f scan")
 			return nil, err

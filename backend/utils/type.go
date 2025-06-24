@@ -30,6 +30,7 @@ type UserProfile struct {
 type Comment struct {
 	Content string `json:"content"`
 	PostID  string `json:"post_id"`
+	Avatar  string `json:"avatar,omitempty"`
 }
 
 type CommentPost struct {
@@ -40,6 +41,7 @@ type CommentPost struct {
 	CreatedAt string
 	Username  string
 	Have      string
+	Avatar    string // Comment image
 }
 
 type Jsncomment struct {
@@ -66,7 +68,6 @@ type FollowUser struct {
 	Avatar    string `json:"avatar"`
 }
 
- 
 type FollowResult struct {
 	Users []FollowUser `json:"users"`
 	Count int          `json:"count"`

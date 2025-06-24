@@ -124,16 +124,19 @@ export const commentApi = {
       body: JSON.stringify({ post_id: postId.toString() })
     });
   },
-
   // Send a comment
-  sendComment: async (postId, content) => {
+  sendComment: async (postId, content, avatar = null) => {
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('post_id', postId.toString());
+    
+    if (avatar) {
+      formData.append('avatar', avatar);
+    }
+
     return await apiRequest('/sendcomment', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        content,
-        post_id: postId.toString()
-      })
+      body: formData // Don't set Content-Type header, let browser set it with boundary
     });
   }
 };

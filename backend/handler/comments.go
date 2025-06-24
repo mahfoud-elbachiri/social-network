@@ -3,7 +3,9 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strconv"
 
 	db "social-network/Database/cration"
@@ -29,7 +31,7 @@ func Comments(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		_,_, _,err = servisse.IsHaveToken(r)
+		_, _, _, err = servisse.IsHaveToken(r)
 		if err != nil {
 			fmt.Println("token not found")
 			w.WriteHeader(http.StatusUnauthorized)
@@ -39,7 +41,6 @@ func Comments(w http.ResponseWriter, r *http.Request) {
 		token, _ := r.Cookie("SessionToken")
 		userid := db.GetId("sessionToken", token.Value)
 		allcoments, err := db.SelectComments(id, userid)
-		
 		if err != nil {
 			fmt.Println("err select")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -55,33 +56,45 @@ func Comments(w http.ResponseWriter, r *http.Request) {
 
 func Sendcomment(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-
-		var comment utils.Comment
 		w.Header().Set("Content-Type", "application/json")
-		_,_, _,ishave := servisse.IsHaveToken(r)
+		_, _, _, ishave := servisse.IsHaveToken(r)
 		if ishave != nil {
 			fmt.Println("token not found")
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(`{"error": "` + ishave.Error() + `", "status":false, "tocken":false}`))
 			return
 		}
+
+		content := r.FormValue("content")
+		postID := r.FormValue("post_id")
+
+		var avatarPath string
+		file, handler, err := r.FormFile("avatar")
+		if err == nil && handler != nil {
+			defer file.Close()
+			os.MkdirAll("../../public/avatars2", 0o755)
+
+			savePath := "../../public/avatars2/" + handler.Filename
+			newFile, err := os.Create(savePath)
+			if err == nil {
+				io.Copy(newFile, file)
+				newFile.Close()
+
+				avatarPath = "avatars2/" + handler.Filename
+			}
+		}
+
+		// Validation: Either content or image must be provided (or both)
+		if content == "" && avatarPath == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error": "Either text content or image must be provided", "status":false}`))
+			return
+		}
+
 		tocken, _ := r.Cookie("SessionToken")
 		id := db.GetId("sessionToken", tocken.Value)
-		err := json.NewDecoder(r.Body).Decode(&comment)
-		if err != nil {
-			fmt.Println("err jsn")
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error": "` + err.Error() + `", "status":false}`))
-			return
-		}
 
-		if comment.Content == "" {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error": "bad request", "status":false}`))
-			return
-		}
-
-		postid, err := strconv.Atoi(comment.PostID)
+		postid, err := strconv.Atoi(postID)
 		if err != nil {
 			fmt.Println("err postid")
 			w.WriteHeader(http.StatusBadRequest)
@@ -95,7 +108,7 @@ func Sendcomment(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`{"error": "` + err.Error() + `", "status":false}`))
 			return
 		}
-		err = db.InsertComment(postid, id, comment.Content)
+		err = db.InsertComment(postid, id, content, avatarPath)
 		if err != nil {
 			fmt.Println("err insert", err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -104,7 +117,5 @@ func Sendcomment(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"error": "comment sent", "status":true}`))
-
-		// code to create a post
 	}
 }
