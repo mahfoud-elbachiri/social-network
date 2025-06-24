@@ -197,8 +197,9 @@ export default function Home() {
       <div className="container">
         {/* Left Sidebar Container */}
         <div className="left-sidebar-container">
-          {/* User Profile Sidebar */}
+          {/* User Profile & Groups Sidebar */}
           <aside className="sidebar">
+            {/* User Profile Section */}
             <Link href={`/Profile?id=${currentUserId}`} style={{ textDecoration: 'none' }}>
               <div className="contact">
                 <Image
@@ -213,79 +214,79 @@ export default function Home() {
                 <span className="online-indicator"></span>
               </div>
             </Link>
-          </aside>
 
-          {/* Groups Sidebar */}
-          <aside className="groups-sidebar">
-            <div className="groups-header">
-              <h3>Groups</h3>
-              <button 
-                onClick={() => setShowCreateGroupModal(true)} 
-                className="create-group-btn"
-                title="Create Group"
-              >
-                +
-              </button>
-            </div>
-            
-            <div className="groups-list">
-              {groups?.map(group => (
-                <div key={group.ID} className="group-item-sidebar">
-                  {group.IsCreator ? (
-                    <Link href={`/Groups?group=${group.ID}`} className="group-link">
+            {/* Groups Section */}
+            <div className="groups-section">
+              <div className="groups-header">
+                <h3>Groups</h3>
+                <button 
+                  onClick={() => setShowCreateGroupModal(true)} 
+                  className="create-group-btn"
+                  title="Create Group"
+                >
+                  +
+                </button>
+              </div>
+              
+              <div className="groups-list">
+                {groups?.map(group => (
+                  <div key={group.ID} className="group-item-sidebar">
+                    {group.IsCreator ? (
+                      <Link href={`/Groups?group=${group.ID}`} className="group-link">
+                        <div className="group-content">
+                          <strong className="group-title">{group.Title}</strong>
+                          <small className="group-description">{group.Description}</small>
+                          <span className="group-status admin">Admin</span>
+                        </div>
+                      </Link>
+                    ) : group.IsMember ? (
+                      <Link href={`/Groups?group=${group.ID}`} className="group-link">
+                        <div className="group-content">
+                          <strong className="group-title">{group.Title}</strong>
+                          <small className="group-description">{group.Description}</small>
+                          <span className="group-status member">Member</span>
+                        </div>
+                      </Link>
+                    ) : group.IsRequested ? (
                       <div className="group-content">
                         <strong className="group-title">{group.Title}</strong>
                         <small className="group-description">{group.Description}</small>
-                        <span className="group-status admin">Admin</span>
+                        <span className="group-status pending">Pending</span>
                       </div>
-                    </Link>
-                  ) : group.IsMember ? (
-                    <Link href={`/Groups?group=${group.ID}`} className="group-link">
+                    ) : group.IsInvited ? (
                       <div className="group-content">
                         <strong className="group-title">{group.Title}</strong>
                         <small className="group-description">{group.Description}</small>
-                        <span className="group-status member">Member</span>
+                        <div className="group-actions">
+                          <button 
+                            onClick={() => acceptInvite(group.ID)}
+                            className="accept-btn-small"
+                          >
+                            Accept
+                          </button>
+                          <button 
+                            onClick={() => rejectInvite(group.ID)}
+                            className="reject-btn-small"
+                          >
+                            Reject
+                          </button>
+                        </div>
                       </div>
-                    </Link>
-                  ) : group.IsRequested ? (
-                    <div className="group-content">
-                      <strong className="group-title">{group.Title}</strong>
-                      <small className="group-description">{group.Description}</small>
-                      <span className="group-status pending">Pending</span>
-                    </div>
-                  ) : group.IsInvited ? (
-                    <div className="group-content">
-                      <strong className="group-title">{group.Title}</strong>
-                      <small className="group-description">{group.Description}</small>
-                      <div className="group-actions">
+                    ) : (
+                      <div className="group-content">
+                        <strong className="group-title">{group.Title}</strong>
+                        <small className="group-description">{group.Description}</small>
                         <button 
-                          onClick={() => acceptInvite(group.ID)}
-                          className="accept-btn-small"
+                          onClick={() => handleJoinGroup(group.ID)}
+                          className="join-btn-small"
                         >
-                          Accept
-                        </button>
-                        <button 
-                          onClick={() => rejectInvite(group.ID)}
-                          className="reject-btn-small"
-                        >
-                          Reject
+                          Join
                         </button>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="group-content">
-                      <strong className="group-title">{group.Title}</strong>
-                      <small className="group-description">{group.Description}</small>
-                      <button 
-                        onClick={() => handleJoinGroup(group.ID)}
-                        className="join-btn-small"
-                      >
-                        Join
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </aside>
         </div>
