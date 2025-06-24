@@ -3,12 +3,57 @@ package db
 import (
 	"database/sql"
 	"fmt"
- 
+
 	"social-network/Database/sqlite"
 	"social-network/utils"
 )
 
 var DB = sqlite.GetDB()
+
+func GetFollowersUsers(id int) ([]string, error) {
+	rows, err := DB.Query(`SELECT DISTINCT u.nikname
+		FROM users u
+		JOIN followers f ON (u.id = f.follower_id OR u.id = f.following_id)
+		WHERE (f.following_id = ? OR f.follower_id = ?) 
+  		AND f.status = 'accepted'
+		AND u.id != ?
+
+	`, id, id, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []string
+	for rows.Next() {
+		var nickname string
+		if err := rows.Scan(&nickname); err != nil {
+			return nil, err
+		}
+		users = append(users, nickname)
+	}
+
+	nUser, err := NewUser(users)
+	if err != nil {
+		return nil, err
+	}
+
+	return nUser, nil
+}
+
+func NewUser(users []string) ([]string, error) {
+	publicUser, err := GetAllPublicUsers()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, pUser := range publicUser {
+		if !contains(users, pUser) {
+			users = append(users, pUser)
+		}
+	}
+	return users, nil
+}
 
 func GetAllPublicUsers() ([]string, error) {
 	rows, err := DB.Query("SELECT nikname FROM users WHERE is_private = 0 ORDER BY nikname ASC;")
@@ -46,8 +91,6 @@ func GetAllPrivateUsers() ([]string, error) {
 	return users, nil
 }
 
-
-
 func GetAllUsers() ([]string, error) {
 	rows, err := DB.Query("SELECT nikname FROM users ORDER BY nikname ASC;")
 	if err != nil {
@@ -65,10 +108,6 @@ func GetAllUsers() ([]string, error) {
 	}
 	return users, nil
 }
-
-
-
-
 
 func CheckInfo(info string, input string) bool { ////hna kanoxofo wax email ola wax nikname kayn 3la hsab input xno fiha wax email ola wax nikname
 	var inter int
@@ -153,8 +192,6 @@ func GetUser(id int) string {
 	return name
 }
 
-
-
 // Helper function to check if user is following the post author
 func IsFollowing(followerID, followingID int) bool {
 	var exist bool
@@ -191,8 +228,6 @@ func CanViewPost(viewerID, postAuthorID int, privacy string, postID int) bool {
 		return false
 	}
 }
-
-
 
 func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 	var postes []utils.Postes
@@ -265,7 +300,6 @@ func GetPostsByUserId(userId int, viewerID int) ([]utils.Postes, error) {
 
 	return postes, nil
 }
-
 
 func GetUserProfile(userId int) (*utils.UserProfile, error) {
 	var profile utils.UserProfile
@@ -519,9 +553,9 @@ func SearchUsersByName(searchTerm string) ([]utils.UserProfile, error) {
 // GetAllUsersWithAvatars returns all users with their basic info including avatars
 func GetAllUsersWithAvatars() ([]utils.UserProfile, error) {
 	/*
-	if withFollowers {
+		if withFollowers {
 
-	}
+		}
 	*/
 	rows, err := DB.Query("SELECT id, first_name, last_name, nikname, avatar, is_private FROM users ORDER BY nikname ASC;")
 	if err != nil {
@@ -568,12 +602,9 @@ func CheckPendingRequest(followerID, followingID int) bool {
 	return count > 0
 }
 
-
-
- 
 func GetfollowerList(userID int) (*utils.FollowResult, error) {
 	var users []utils.FollowUser
-	
+
 	query := `
 		SELECT u.id, u.first_name, u.last_name, u.nikname, u.avatar 
 		FROM users u 
@@ -586,26 +617,24 @@ func GetfollowerList(userID int) (*utils.FollowResult, error) {
 		return nil, err
 	}
 	defer rows.Close()
-     for rows.Next() {
+	for rows.Next() {
 		var user utils.FollowUser
 		err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Nickname, &user.Avatar)
 		if err != nil {
 			return nil, err
-	  	}
+		}
 		users = append(users, user)
 	}
-	
-	 
+
 	return &utils.FollowResult{
 		Users: users,
 		Count: len(users),
 	}, nil
 }
 
- 
 func GetFollowinglist(userID int) (*utils.FollowResult, error) {
 	var users []utils.FollowUser
-	
+
 	query := `
 		SELECT u.id, u.first_name, u.last_name, u.nikname, u.avatar 
 		FROM users u 
@@ -613,26 +642,24 @@ func GetFollowinglist(userID int) (*utils.FollowResult, error) {
 		WHERE f.follower_id = ? AND f.status = 'accepted'
 		ORDER BY u.first_name
 	`
-	 
+
 	rows, err := DB.Query(query, userID)
 	if err != nil {
-	    	return nil, err
+		return nil, err
 	}
 	defer rows.Close()
-	
-	 for rows.Next() {
-			var user utils.FollowUser
-			err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Nickname, &user.Avatar)
-			if err != nil {
-				return nil, err
-			}
-			users = append(users, user)
-		}
-		 
 
-	 return &utils.FollowResult{
+	for rows.Next() {
+		var user utils.FollowUser
+		err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Nickname, &user.Avatar)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	return &utils.FollowResult{
 		Users: users,
 		Count: len(users),
 	}, nil
 }
-

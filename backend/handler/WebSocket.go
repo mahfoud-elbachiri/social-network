@@ -38,15 +38,6 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("WebSocket upgrade error:", err)
 		return
 	}
-	defer func() {
-		clientsMutex.Lock()
-		delete(clients, conn)
-		clientsMutex.Unlock()
-
-		BroadcastUsers()
-		// BroadcastOnlineUsers()
-		conn.Close()
-	}()
 
 	cookie, err := r.Cookie("SessionToken")
 
@@ -61,6 +52,16 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("this nigga does'nt exsist : ", username)
 		return
 	}
+
+	defer func() {
+		clientsMutex.Lock()
+		delete(clients, conn)
+		clientsMutex.Unlock()
+
+		BroadcastUsers()
+		// BroadcastOnlineUsers()
+		conn.Close()
+	}()
 
 	clientsMutex.Lock()
 	for existingConn, existingUsername := range clients {
@@ -129,6 +130,30 @@ func HandleMessages() {
 	}
 }
 
+type UserFollowers struct {
+	Username string
+	Alluser  []string
+}
+
+func sortU(allUser []string) ([]UserFollowers, error) {
+	var Users []UserFollowers
+
+	for _, user := range allUser {
+		id := db.GetId("nikname", user)
+		allUsers, err := db.GetFollowersUsers(id)
+		if err != nil {
+			return nil, err
+		}
+
+		Users = append(Users, UserFollowers{
+			Username: user,
+			Alluser:  allUsers,
+		})
+	}
+
+	return Users, nil
+}
+
 func BroadcastUsers() {
 	clientsMutex.RLock()
 	defer clientsMutex.RUnlock()
@@ -139,28 +164,40 @@ func BroadcastUsers() {
 		return
 	}
 
-	sortUsers, err := db.GetLastMessage(allUsers)
+	sortUser, err := sortU(allUsers)
 	if err != nil {
-		fmt.Println("Error fetching all users:", err)
+		fmt.Println("Error fetching sort users:", err)
 		return
 	}
 
 	users := []map[string]any{}
-	for _, user := range sortUsers {
-		online := false
-		for _, onlineUser := range clients {
-			if onlineUser == user.User {
-				online = true
-				break
+	for _, user := range sortUser {
+
+		sort := []map[string]any{}
+
+		for _, us := range user.Alluser {
+			online := false
+
+			for _, onlineUser := range clients {
+				if onlineUser == us {
+					online = true
+					break
+				}
 			}
+
+			sort = append(sort, map[string]any{
+				"user":   us,
+				"online": online,
+			})
 		}
+
 		users = append(users, map[string]any{
-			"username": user.User,
-			"sort":     user.UserMsg,
-			"online":   online,
-			"allUsers": allUsers,
+			"username": user.Username,
+			"sort":     sort,
 		})
 	}
+
+	fmt.Println("sort users ================++>>>>", users)
 
 	message := map[string]any{
 		"type":  "users",
@@ -229,8 +266,6 @@ func Typing() {
 	}
 }
 
-
-
 // allUsers, err := db.GetAllUsers()
 // 	if err != nil {
 // 		fmt.Println("Error fetching all users:", err)
@@ -249,7 +284,7 @@ func Typing() {
 // 		return
 // 	}
 
-// 	res, err := 
+// 	res, err :=
 // 	if err != nil {
 // 		fmt.Println("Error fetching all users:", err)
 // 		return

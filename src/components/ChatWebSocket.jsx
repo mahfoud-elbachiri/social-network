@@ -175,15 +175,26 @@ export default function ChatWebSocket({ username }) {
                     }}
                 >
                     {/* Contact list content */}
-                    <div>
-                        {UsersList?.filter(user => user.username !== username).map((user, i) => (
-
-                            <div key={i} className='list' onClick={() => setSelectedUser(user.username)}>
-                                <div >
-                                    <div className='p'></div>
-                                    <p className='users'>{user.username}</p>
-                                </div>
-                                {user.online ? <span className='online'></span> : <span className='offline'></span>}
+                   <div>
+                        {UsersList?.map((u, i) => (
+                            <div key={i}>
+                                {u.username === username ? (
+                                    u.sort?.length > 0 ? (
+                                        u.sort.map((user, i) => (
+                                            <div key={i} className="list" onClick={() => setSelectedUser(user.user)}>
+                                                <div>
+                                                    <div className="p"></div>
+                                                    <p className="users">{user.user}</p>
+                                                </div>
+                                                  <span className={user.online ? "online" : "offline"}></span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                       <></>
+                                    )
+                                ) : (
+                                    <></>  
+                                )}
                             </div>
                         ))}
                     </div>
