@@ -53,6 +53,12 @@ func main() {
 	router.Handle("/accept-follow-request", handler.AuthMiddleware(http.HandlerFunc(handler.AcceptFollowRequest)))
 	router.Handle("/reject-follow-request", handler.AuthMiddleware(http.HandlerFunc(handler.RejectFollowRequest)))
 
+	router.Handle("/accept-group-invitation", handler.AuthMiddleware(http.HandlerFunc(handler.AcceptGroupInvitation)))
+	router.Handle("/reject-group-invitation", handler.AuthMiddleware(http.HandlerFunc(handler.RejectGroupInvitation)))
+
+	router.Handle("/accept-group-join-request", handler.AuthMiddleware(http.HandlerFunc(handler.AcceptGroupJoinRequest)))
+	router.Handle("/reject-group-join-request", handler.AuthMiddleware(http.HandlerFunc(handler.RejectGroupJoinRequest)))
+
 	// router.HandleFunc("/online-users", handler.OnlineUsers)
 	router.HandleFunc("/ws", handler.WebSocketHandler) // Add WebSocket route
 	go handler.HandleMessages()                        // Start WebSocket message handler in a goroutine

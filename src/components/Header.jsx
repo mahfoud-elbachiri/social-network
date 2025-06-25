@@ -17,9 +17,8 @@ const Header = () => {
     
     const notificationInterval = setInterval(() => {
       fetchNotificationCount();
-    }, 1000); // Check every 1 seconds
+    }, 1000); 
 
-    // Cleanup interval on component unmount
     return () => clearInterval(notificationInterval);
   }, []);
 

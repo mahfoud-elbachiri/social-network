@@ -200,6 +200,19 @@
   transform: none;
 }
 
+/* Group notification specific styles */
+.notification-group {
+  color: #666;
+  font-size: 0.85rem;
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.notification-group strong {
+  color: #333;
+  font-weight: 600;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .notification-popup-overlay {
