@@ -11,6 +11,13 @@ const NotificationPopup = ({ isOpen, onClose, onNotificationUpdate }) => {
   useEffect(() => {
     if (isOpen) {
       fetchNotifications();
+      
+      const notificationInterval = setInterval(() => {
+        fetchNotifications();
+      }, 1000); 
+
+      // Cleanup interval when popup closes or component unmounts
+      return () => clearInterval(notificationInterval);
     }
   }, [isOpen]);
 

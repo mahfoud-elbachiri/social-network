@@ -11,10 +11,16 @@ const Header = () => {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [showNotificationPopup, setShowNotificationPopup] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
-
   useEffect(() => {
     fetchUserInfo();
     fetchNotificationCount();
+    
+    const notificationInterval = setInterval(() => {
+      fetchNotificationCount();
+    }, 1000); // Check every 1 seconds
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(notificationInterval);
   }, []);
 
   const fetchUserInfo = async () => {

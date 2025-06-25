@@ -9,30 +9,31 @@ const [IsPanding , setIsPanding] = useState(null)
 
 
   useEffect(()=> {
-    
       const checkfollow = async () => {
         
-        try {
-          const res = await fetch (`/api/isFollowing?id=${targetUserid}`,{
+        try {          const res = await fetch (`/api/isFollowing?id=${targetUserid}`,{
             credentials : 'include'
           })
 
           const data = await res.json()
-          console.log("vivo:",isPrivateView);
-          
           setFollowing(data.isFollowing)
           setIsPanding(data.IsPanding)
         }catch (err){
           console.log("error while cheking follow satus:",err);
           
-        }      }
+        }}
     checkfollow()
   },[targetUserid , isPrivateView])
-
   const handleClick = async () => {
     console.log("1",targetUserid);
-    try {
-      const url = following ? `/api/unfollowRequest` : `/api/followRequest`;
+    try {      let url;
+        if (IsPanding || following) {
+        // If pending or following, cancel/unfollow
+        url = `/api/unfollowRequest`;
+      } else {
+        // If not following and not pending, send follow request
+        url = `/api/followRequest`;
+      }
 
       const response = await fetch(url, {
         credentials: 'include',
@@ -48,7 +49,12 @@ const [IsPanding , setIsPanding] = useState(null)
       if (!response.ok) {
         console.log("response:",await response.json());
         throw new Error('Request failed');
-      } else {        if (following) {
+      } else {
+        if (IsPanding) {
+          // Cancel pending request
+          setFollowing(false);
+          setIsPanding(false);
+        } else if (following) {
           // User is unfollowing
           setFollowing(false);
           setIsPanding(false);
@@ -80,7 +86,7 @@ const getButtonClass = () => {
     if (IsPanding) {
       return (
         <>
-          <FaUserClock /> Pending
+          <FaUserClock /> cansel request
         </>
       );
     }
