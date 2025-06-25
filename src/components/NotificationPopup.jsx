@@ -14,7 +14,7 @@ const NotificationPopup = ({ isOpen, onClose, onNotificationUpdate }) => {
       
       const notificationInterval = setInterval(() => {
         fetchNotifications();
-      }, 1000); 
+      }, 3000); 
 
       return () => clearInterval(notificationInterval);
     }
@@ -79,11 +79,16 @@ const NotificationPopup = ({ isOpen, onClose, onNotificationUpdate }) => {
       }
 
       // Remove the notification from the list
-      setNotifications(prev => prev.filter(notif => 
-        notification.type === 'follow' 
-          ? notif.id !== notification.id 
-          : notif.id !== notification.id
-      ));
+      setNotifications(prev => prev.filter(notif => {
+        if (notification.type === 'follow') {
+          return notif.id !== notification.id;
+        } else if (notification.type === 'group') {
+          return notif.id !== notification.id;
+        } else if (notification.type === 'group_join') {
+          return notif.id !== notification.id;
+        }
+        return true;
+      }));
       
       // Notify parent component about the update
       if (onNotificationUpdate) {
@@ -129,11 +134,16 @@ const NotificationPopup = ({ isOpen, onClose, onNotificationUpdate }) => {
       }
 
       // Remove the notification from the list
-      setNotifications(prev => prev.filter(notif => 
-        notification.type === 'follow' 
-          ? notif.id !== notification.id 
-          : notif.id !== notification.id
-      ));
+      setNotifications(prev => prev.filter(notif => {
+        if (notification.type === 'follow') {
+          return notif.id !== notification.id;
+        } else if (notification.type === 'group') {
+          return notif.id !== notification.id;
+        } else if (notification.type === 'group_join') {
+          return notif.id !== notification.id;
+        }
+        return true;
+      }));
       
       // Notify parent component about the update
       if (onNotificationUpdate) {
@@ -177,8 +187,16 @@ const NotificationPopup = ({ isOpen, onClose, onNotificationUpdate }) => {
             </div>
           ) : (
             <div className="notifications-list">
-              {notifications.map((notification) => (
-                <div key={`${notification.type}-${notification.id}`} className="notification-item">
+              {notifications.map((notification, index) => (
+                <div key={
+                  notification.type === 'follow' 
+                    ? `follow-${notification.id}`
+                    : notification.type === 'group'
+                    ? `group-${notification.id}`
+                    : notification.type === 'event'
+                    ? `event-${index}`
+                    : `group_join-${notification.id}`
+                } className="notification-item">
                   <div className="notification-user">
                     <Image
                       src={
@@ -224,6 +242,11 @@ const NotificationPopup = ({ isOpen, onClose, onNotificationUpdate }) => {
                           : `@${notification.requester_nickname}`
                         }
                       </div>
+                      {notification.type === 'follow' && (
+                        <div className="notification-group">
+                          Wants to follow you
+                        </div>
+                      )}
                       {notification.type === 'group' && (
                         <div className="notification-group">
                           Invited you to group: <strong>{notification.group_name}</strong>

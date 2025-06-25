@@ -45,10 +45,7 @@ type GroupJoinRequestNotification struct {
 }
 
 type EventNotification struct {
-	ID               int    `json:"id"`
-	EventID          int    `json:"event_id"`
 	EventTitle       string `json:"event_title"`
-	GroupID          int    `json:"group_id"`
 	GroupName        string `json:"group_name"`
 	CreatorFirstName string `json:"creator_first_name"`
 	CreatorLastName  string `json:"creator_last_name"`
@@ -195,7 +192,7 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 
 	// Get event notifications (recent events in groups where user is a member)
 	eventQuery := `
-		SELECT ge.id, ge.id, ge.title, ge.group_id, g.title, u.first_name, u.last_name, u.nikname, u.avatar, ge.created_at
+		SELECT ge.title, g.title, u.first_name, u.last_name, u.nikname, u.avatar, ge.created_at
 		FROM group_events ge
 		INNER JOIN groups g ON ge.group_id = g.id
 		INNER JOIN users u ON ge.created_by = u.id
@@ -219,9 +216,9 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 		var notification EventNotification
 		var avatar *string
 
-		err := eventRows.Scan(&notification.ID, &notification.EventID, &notification.EventTitle,
-			&notification.GroupID, &notification.GroupName, &notification.CreatorFirstName,
-			&notification.CreatorLastName, &notification.CreatorNickname, &avatar, &notification.CreatedAt)
+		err := eventRows.Scan(&notification.EventTitle, &notification.GroupName,
+			&notification.CreatorFirstName, &notification.CreatorLastName,
+			&notification.CreatorNickname, &avatar, &notification.CreatedAt)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, "Error reading event notifications", nil)
 			return
