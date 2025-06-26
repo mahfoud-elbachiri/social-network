@@ -105,7 +105,7 @@ const CreatePostForm = ({ onPostCreated, onClose }) => {
               onClick={onClose}
               style={{cursor: 'pointer'}}
             >
-              close
+              x
             </span>
             <label>Post Title</label>
             <input 

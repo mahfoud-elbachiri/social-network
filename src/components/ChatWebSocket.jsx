@@ -243,10 +243,6 @@ export default function ChatWebSocket({ username }) {
         </>
     )
 }
-
-
-
-
 function debounce(func, delay = 500) {
     let timeout;
     return function (...args) {

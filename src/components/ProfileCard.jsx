@@ -7,8 +7,8 @@ const ProfileCard = ({
   isOwnProfile, 
   onPrivacyToggle, 
   updatingPrivacy, 
-  isPrivateView = false, 
-  isPrivatePosts = false,
+  isPrivateView, 
+  isPrivatePosts,
   targetid 
 }) => (
   <div className="profile-card">

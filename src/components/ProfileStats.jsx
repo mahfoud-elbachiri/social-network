@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import FollowList from '@/components/Followlist';
 
-const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile, targetUserId }) => {
+const ProfileStats = ({ 
+  postsCount,
+   isPrivateView,
+   isPrivatePosts,
+    isOwnProfile,
+     targetUserId 
+    }) => {
   const [followData, setFollowData] = useState({ 
     followers: { count: 0 }, 
     following: { count: 0 } 
@@ -50,16 +56,22 @@ const ProfileStats = ({ postsCount, isPrivateView, isOwnProfile, targetUserId })
             <strong>{postsCount}</strong>
             <span>Posts</span>
           </div>
-          <div className="stat-item clickable-stat" onClick={() => openPopup('followers')}>
+          <div 
+            className={`stat-item ${!isPrivatePosts ? 'clickable-stat' : ''}`} 
+            onClick={!isPrivatePosts ? () => openPopup('followers') : undefined}
+          >
             <strong>{followData.followers.count}</strong>
             <span>Followers</span>
           </div>
-          <div className="stat-item clickable-stat" onClick={() => openPopup('following')}>
+          <div 
+            className={`stat-item ${!isPrivatePosts ? 'clickable-stat' : ''}`} 
+            onClick={!isPrivatePosts ? () => openPopup('following') : undefined}
+          >
             <strong>{followData.following.count}</strong>
             <span>Following</span>
           </div>
         </div>
-        {isPrivateView && !isOwnProfile && (
+        {isPrivatePosts && !isOwnProfile && (
           <div style={{
             marginTop: '1rem',
             padding: '0.5rem',

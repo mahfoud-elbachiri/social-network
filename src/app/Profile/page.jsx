@@ -19,9 +19,8 @@ export default function Profile() {
   const [error, setError] = useState(null);
   const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
-    const [isPrivatePosts, setIsPrivatePosts] = useState(false);
+  const [isPrivatePosts, setIsPrivatePosts] = useState(false);
   const [isPrivateView, setIsPrivateView] = useState(false);
-
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('id') || null;
 
