@@ -10,7 +10,6 @@ const CommentSection = ({
   comments, 
   loadingComments, 
   onSendComment, 
-  currentUserId 
 }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -47,7 +46,7 @@ const CommentSection = ({
               <div className="comments-list">
                 {comments[postId].map((comment) => (
                   <div key={comment.ID} className="comment-item">                    <div className="comment-header">
-                      <Link href={getProfileLink(comment.UserID, currentUserId)} style={{textDecoration: 'none', color: 'inherit'}}>
+                      <Link href={getProfileLink(comment.UserID)} style={{textDecoration: 'none', color: 'inherit'}}>
                         <strong style={{cursor: 'pointer'}}>{comment.Username}</strong>
                       </Link>
                       <span className="comment-date">

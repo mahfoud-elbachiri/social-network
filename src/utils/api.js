@@ -87,8 +87,17 @@ export const userApi = {
     return await apiRequest('/logout', {
       method: 'POST'
     });
+  },
+   // Get posts of a specific user
+  fetchPostsOfUser: async (userId) => {
+    return await apiRequest('/getpostsofuser', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId })
+    });
   }
 };
+
 
 // Post related API calls
 export const postApi = {

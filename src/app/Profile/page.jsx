@@ -19,6 +19,7 @@ export default function Profile() {
   const [error, setError] = useState(null);
   const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+    const [isPrivatePosts, setIsPrivatePosts] = useState(false);
   const [isPrivateView, setIsPrivateView] = useState(false);
 
   const searchParams = useSearchParams();
@@ -35,16 +36,15 @@ export default function Profile() {
 
   useEffect(() => {
     fetchProfile();
+    fetchPosts();
   }, [targetUserId]);
 
   const fetchProfile = async () => {
     try {
       const data = await userApi.fetchProfile(targetUserId);
-      console.log('Profile data received:', data); 
       
       if (data && data.status) {
         setProfile(data.profile);
-        setPosts(data.posts || []);
         setIsOwnProfile(data.is_own_profile || false);
         setIsPrivateView(data.is_private_view || false);
         setError(null);
@@ -57,6 +57,34 @@ export default function Profile() {
       setError('Failed to load profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPosts = async () => {
+    try {
+      if (targetUserId) {
+        const data = await userApi.fetchPostsOfUser(targetUserId);
+        
+        if (data && data.status) {
+          if (data.is_private) {
+            // This is a private profile that we can't access
+            setIsPrivatePosts(true);
+            setPosts([]);
+          } else {
+            // Normal posts or empty posts from a public profile
+            setIsPrivatePosts(false);
+            setPosts(data.posts || []);
+          }
+        } else {
+          console.error('Posts fetch failed:', data);
+          setIsPrivatePosts(false);
+          setPosts([]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      setIsPrivatePosts(false);
+      setPosts([]);
     }
   };
 
@@ -127,6 +155,7 @@ export default function Profile() {
             onPrivacyToggle={togglePrivacy}
             updatingPrivacy={updatingPrivacy}
             isPrivateView={isPrivateView}
+            isPrivatePosts={isPrivatePosts}
             targetid={targetUserId}
           />
         </aside>
@@ -134,11 +163,11 @@ export default function Profile() {
         {/* Main Content - Posts */}
         <main className="main-content" id="main-content">
           <div className="profile-posts-header">
-            <h3>Posts by {profile.first_name} {isPrivateView && !isOwnProfile ? '(Private)' : `(${posts.length})`}</h3>
+            <h3>Posts by {profile.first_name} {isPrivatePosts ? '(Private)' : isPrivateView && !isOwnProfile ? '(Private)' : `(${posts.length})`}</h3>
           </div>
 
           <div className="posts-container">
-            {isPrivateView && !isOwnProfile ? (
+            {isPrivatePosts ? (
               <PrivatePostsMessage />
             ) : (
               <>
@@ -147,7 +176,6 @@ export default function Profile() {
                     <PostCard
                       key={post.ID}
                       post={post}
-                      currentUserId={null}
                       showComments={showComments}
                       comments={comments}
                       loadingComments={loadingComments}
@@ -168,6 +196,7 @@ export default function Profile() {
         <ProfileStats 
           postsCount={posts.length} 
           isPrivateView={isPrivateView}
+          isPrivatePosts={isPrivatePosts}
           isOwnProfile={isOwnProfile}
           targetUserId={targetUserId} 
         />

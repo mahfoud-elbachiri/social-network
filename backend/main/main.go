@@ -22,6 +22,7 @@ func main() {
 	router.Handle("/profile", handler.AuthMiddleware(http.HandlerFunc(handler.Profile)))
 	router.Handle("/pubpost", handler.AuthMiddleware(http.HandlerFunc(handler.Post)))
 	router.Handle("/getpost", handler.AuthMiddleware(http.HandlerFunc(handler.Getpost)))
+	router.Handle("/getpostsofuser", handler.AuthMiddleware(http.HandlerFunc(handler.GetPostsOfUser)))
 	router.Handle("/getChats", handler.AuthMiddleware(http.HandlerFunc(handler.Getchats)))
 	router.Handle("/sendcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Sendcomment)))
 	router.Handle("/getcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Comments)))

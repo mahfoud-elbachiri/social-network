@@ -7,10 +7,7 @@ export const formatDate = (dateString) => {
 
  
 export const getProfileLink = (userId, currentUserId) => {
-  // if (userId === currentUserId) {
-  //   return '/Profile'; // Own profile
-  // }
-  return `/Profile?id=${userId}`; // Other user's profile
+  return `/Profile?id=${userId}`; 
 };
 
 //  logout 

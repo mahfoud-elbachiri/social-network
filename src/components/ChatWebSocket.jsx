@@ -180,7 +180,7 @@ export default function ChatWebSocket({ username }) {
                             <div key={i}>
                                 {u.username === username ? (
                                     u.sort?.length > 0 ? (
-                                        u.sort.map((user, i) => (
+                                        u.sort.filter(us => us.user !== username).map((user, i) => (
                                             <div key={i} className="list" onClick={() => setSelectedUser(user.user)}>
                                                 <div>
                                                     <div className="p"></div>

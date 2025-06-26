@@ -7,7 +7,6 @@ import (
 
 	db "social-network/Database/cration"
 	"social-network/servisse"
-	"social-network/utils"
 )
 
 func Profile(w http.ResponseWriter, r *http.Request) {
@@ -125,41 +124,10 @@ func Profile(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the profile is private and if current user can view it
 	isOwnProfile := targetUserID == currentUserID
-	canViewFullProfile := isOwnProfile || !userProfile.IsPrivate
 
-	if !canViewFullProfile {
-		// Return basic profile info for private profiles
-		basicProfile := map[string]interface{}{
-			"first_name": userProfile.FirstName,
-			"last_name":  userProfile.LastName,
-			"nickname":   userProfile.Nickname,
-			"avatar":     userProfile.Avatar,
-			"is_private": userProfile.IsPrivate,
-		}
-
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":          true,
-			"profile":         basicProfile,
-			"posts":           []interface{}{}, // Empty posts array
-			"is_own_profile":  false,
-			"is_private_view": true, //  this is a private profile view
-		})
-		return
-	}
-
-	// Get user's posts (only if can view full profile)
-	var userPosts []utils.Postes
-	if canViewFullProfile {
-		userPosts, err = db.GetPostsByUserId(targetUserID, currentUserID)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"status": false,
-				"error":  "Failed to get user posts",
-			})
-			return
-		}
+	private := false
+	if userProfile.IsPrivate {
+		private = true
 	}
 
 	// Return full profile data and posts
@@ -167,8 +135,7 @@ func Profile(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":          true,
 		"profile":         userProfile,
-		"posts":           userPosts,
 		"is_own_profile":  isOwnProfile,
-		"is_private_view": false,
+		"is_private_view": private,
 	})
 }

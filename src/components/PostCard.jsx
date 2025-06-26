@@ -5,7 +5,6 @@ import CommentSection from './CommentSection';
 
 const PostCard = ({ 
   post, 
-  currentUserId, 
   showComments, 
   comments, 
   loadingComments, 
@@ -15,7 +14,7 @@ const PostCard = ({
   return (
     <div className="post" postid={post.ID}>
       <div className="post-header">
-        <Link href={getProfileLink(post.UserID, currentUserId)}>
+        <Link href={getProfileLink(post.UserID)}>
           <Image
             src={post.UserAvatar ? `/${post.UserAvatar}` : "/icon.jpg"}
             alt="Post Author Avatar"
@@ -25,7 +24,7 @@ const PostCard = ({
             style={{borderRadius: 50, cursor: 'pointer'}}
           />
         </Link>        <div className="post-header-text">
-          <Link href={getProfileLink(post.UserID, currentUserId)} style={{textDecoration: 'none', color: 'inherit'}}>
+          <Link href={getProfileLink(post.UserID)} style={{textDecoration: 'none', color: 'inherit'}}>
             <span style={{cursor: 'pointer'}}>{post.Username}</span>
           </Link>
           <span style={{color: '#6c757d'}}> {formatDate(post.CreatedAt)}</span>
@@ -73,7 +72,6 @@ const PostCard = ({
         comments={comments}
         loadingComments={loadingComments}
         onSendComment={onSendComment}
-        currentUserId={currentUserId}
       />
     </div>
   );

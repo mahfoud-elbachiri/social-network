@@ -8,6 +8,7 @@ const ProfileCard = ({
   onPrivacyToggle, 
   updatingPrivacy, 
   isPrivateView = false, 
+  isPrivatePosts = false,
   targetid 
 }) => (
   <div className="profile-card">
@@ -55,8 +56,8 @@ const ProfileCard = ({
       </div>
     </div>
     
-    {/* Show detailed info only if !isPrivateView or if is own profile */}
-    {(!isPrivateView || isOwnProfile) && profile.email && (
+     {/* Show detailed info only if not private posts or if is own profile */}
+    {(isOwnProfile || !isPrivatePosts) && (
       <div className="profile-details">
         <div className="detail-item">
           <strong>Email:</strong> {profile.email}
@@ -75,8 +76,8 @@ const ProfileCard = ({
       </div>
     )}
     
-    {/* Show message for private profile */}
-    {isPrivateView && !isOwnProfile && (
+    {/* Show message for private profile or private posts */}
+    {(isPrivatePosts) && !isOwnProfile && (
       <div className="private-details-message">
         <p>🔒 Additional details are private</p>
       </div>

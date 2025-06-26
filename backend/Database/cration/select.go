@@ -663,3 +663,33 @@ func GetFollowinglist(userID int) (*utils.FollowResult, error) {
 		Count: len(users),
 	}, nil
 }
+
+// UserExists checks if a user exists by ID
+func UserExists(userID int) bool {
+	var exists bool
+	query := "SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)"
+	DB.QueryRow(query, userID).Scan(&exists)
+	return exists
+}
+
+// CanViewProfile checks if a user can view another user's profile posts
+func CanViewProfile(viewerID, targetUserID int) bool {
+	// User can always view their own profile
+	if viewerID == targetUserID {
+		return true
+	}
+
+	// Check if target user is private
+	isPrivate, err := CheckPublic(targetUserID)
+	if err != nil {
+		return false
+	}
+
+	// If target user is not private, anyone can view
+	if !isPrivate {
+		return true
+	}
+
+	// If target user is private, check if viewer is following them
+	return IsFollowing(viewerID, targetUserID)
+}
