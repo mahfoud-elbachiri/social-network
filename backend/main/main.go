@@ -28,6 +28,8 @@ func main() {
 	router.Handle("/logout", handler.AuthMiddleware(http.HandlerFunc(handler.Logout)))
 	router.Handle("/getusers", handler.AuthMiddleware(http.HandlerFunc(handler.GetUsers)))
 	// Group system
+	router.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
+
 	router.Handle("/groupPage", handler.AuthMiddleware(http.HandlerFunc(handler.HomepageGroup)))
 	router.Handle("/group", handler.AuthMiddleware(http.HandlerFunc(handler.GroupPageHandler)))
 	router.Handle("/create-group", handler.AuthMiddleware(http.HandlerFunc(handler.CreateGroupHandler)))
@@ -40,7 +42,7 @@ func main() {
 	router.Handle("/group/create-event", handler.AuthMiddleware(http.HandlerFunc(handler.CreateEventHandler)))
 	router.Handle("/group/event-respond", handler.AuthMiddleware(http.HandlerFunc(handler.EventResponseHandler)))
 	router.Handle("/group/create-post", handler.AuthMiddleware(http.HandlerFunc(handler.CreateGroupPostHandler)))
-	router.Handle("/group/create-comment", handler.AuthMiddleware(http.HandlerFunc(handler.CreateGroupCommentHandler)))
+	// router.Handle("/group/create-comment", handler.AuthMiddleware(http.HandlerFunc(handler.CreateGroupCommentHandler)))
 
 	// follow sytyem
 	router.Handle("/followRequest", handler.AuthMiddleware(http.HandlerFunc(handler.Followreq)))

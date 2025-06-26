@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from "next/image";
 import "./style.css";
 
 export default function HomePage() {
@@ -9,6 +10,8 @@ export default function HomePage() {
   const [groupData, setGroupData] = useState(null);
   const [eventForm, setEventForm] = useState({ title: '', description: '', datetime: '' });
   const [postContent, setPostContent] = useState('');
+  const [postImage, setPostImage] = useState(null);
+  const [postImagePreview, setPostImagePreview] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -140,16 +143,34 @@ export default function HomePage() {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPostImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setPostImagePreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleCreatePost = async (e) => {
     e.preventDefault();
     try {
+      const formData = new FormData();
+      formData.append('content', postContent);
+      formData.append('group_id', selectedGroup);
+      if (postImage) {
+        formData.append('image', postImage);
+      }
+
       await fetch('http://localhost:8080/group/create-post', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: postContent, group_id: selectedGroup }),
+        body: formData,
       });
       setPostContent('');
+      setPostImage(null);
+      setPostImagePreview(null);
       fetchGroupById(selectedGroup);
     } catch (err) {
       console.error('Failed to create post', err);
@@ -290,6 +311,35 @@ export default function HomePage() {
                   placeholder="Write something to the group..."
                   required
                 /><br />
+                
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleImageChange}
+                />
+                
+                {postImagePreview && (
+                  <div style={{ margin: '10px 0' }}>
+                    <Image 
+                      src={postImagePreview} 
+                      alt="Preview" 
+                      width={200} 
+                      height={200} 
+                      style={{ objectFit: 'cover' }}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setPostImage(null);
+                        setPostImagePreview(null);
+                      }}
+                      style={{ marginLeft: '10px' }}
+                    >
+                      Remove Image
+                    </button>
+                  </div>
+                )}
+                
                 <button type="submit">Post</button>
               </form>
 
@@ -303,6 +353,18 @@ export default function HomePage() {
                         <small>{post.CreatedAt}</small>
                       </div>
                       <p className="post-content">{post.Content}</p>
+                      
+                      {post.ImageURL && (
+                        <div style={{ margin: '10px 0' }}>
+                          <Image 
+                            src={`http://localhost:8080${post.ImageURL}`} 
+                            alt="Post image" 
+                            width={400} 
+                            height={300} 
+                            style={{ objectFit: 'cover' }}
+                          />
+                        </div>
+                      )}
 
                       {/* Comment Form */}
                       <form onSubmit={(e) => {

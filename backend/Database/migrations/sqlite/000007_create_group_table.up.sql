@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS group_posts (
     group_id INTEGER,
     user_id INTEGER,
     content TEXT NOT NULL,
+    image_url TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(group_id) REFERENCES groups(id),
     FOREIGN KEY(user_id) REFERENCES users(id)
@@ -62,6 +63,7 @@ CREATE TABLE IF NOT EXISTS group_comments (
     post_id INTEGER,
     user_id INTEGER,
     content TEXT NOT NULL,
+    image_url TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(post_id) REFERENCES group_posts(id),
     FOREIGN KEY(user_id) REFERENCES users(id)

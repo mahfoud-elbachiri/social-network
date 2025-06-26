@@ -4,10 +4,16 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	db "social-network/Database/cration"
 	"social-network/Database/sqlite"
@@ -56,6 +62,7 @@ type GroupPost struct {
 	Content   string
 	Username  string
 	CreatedAt string
+	ImageURL  *string // Add this field
 	Comments  []GroupComment
 }
 
@@ -348,15 +355,16 @@ func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Step 8: Fetch group posts and comments (FIXED)
 	var posts []GroupPost
+	// In GroupPageHandler, update the query:
 	postRows, err := dvb.Query(`
-		SELECT p.id, p.group_id, p.user_id, p.content, p.created_at, u.nikname
-		FROM group_posts p
-		JOIN users u ON p.user_id = u.id
-		WHERE p.group_id = ?
-		ORDER BY p.created_at DESC
-	`, groupID)
+    SELECT p.id, p.group_id, p.user_id, p.content, p.created_at, u.nikname, p.image_url
+    FROM group_posts p
+    JOIN users u ON p.user_id = u.id
+    WHERE p.group_id = ?
+    ORDER BY p.created_at DESC
+`, groupID)
 	if err != nil {
-		log.Println("Failed to load posts:", err) 
+		log.Println("Failed to load posts:", err)
 		http.Error(w, "Failed to load posts", http.StatusInternalServerError)
 		return
 	}
@@ -364,7 +372,7 @@ func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
 
 	for postRows.Next() {
 		var post GroupPost
-		err := postRows.Scan(&post.ID, &post.GroupID, &post.UserID, &post.Content, &post.CreatedAt, &post.Username)
+		err := postRows.Scan(&post.ID, &post.GroupID, &post.UserID, &post.Content, &post.CreatedAt, &post.Username, &post.ImageURL)
 		if err != nil {
 			log.Println("Failed to read post:", err)
 			http.Error(w, "Failed to read post", http.StatusInternalServerError)
@@ -381,7 +389,7 @@ func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
 		`, post.ID)
 		if err != nil {
 
-			log.Println("Failed to load comments:", err) 
+			log.Println("Failed to load comments:", err)
 			http.Error(w, "Failed to load comments", http.StatusInternalServerError)
 			return
 		}
@@ -390,13 +398,13 @@ func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
 			var comment GroupComment
 			err := commentRows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.CreatedAt, &comment.Username)
 			if err != nil {
-				log.Println("Failed to read comment:", err) 
+				log.Println("Failed to read comment:", err)
 				http.Error(w, "Failed to read comment", http.StatusInternalServerError)
 				return
 			}
 			post.Comments = append(post.Comments, comment)
 		}
-		commentRows.Close() 
+		commentRows.Close()
 
 		posts = append(posts, post)
 	}
@@ -874,12 +882,12 @@ func EventResponseHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"message":"Response recorded successfully"}`))
 }
 
-
 func CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
 	cookie, err := r.Cookie("SessionToken")
 	if err != nil {
 		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
@@ -887,27 +895,95 @@ func CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dvb := sqlite.GetDB()
-
 	userID := db.GetId("sessionToken", cookie.Value)
 
-	bodyBytes, err := io.ReadAll(r.Body)
+	// Parse multipart form data (for file uploads)
+	err = r.ParseMultipartForm(10 << 20) // 10 MB max
 	if err != nil {
-		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
 		return
 	}
 
-	var data struct {
-		GroupID int    `json:"group_id"`
-		Content string `json:"content"`
-	}
+	// Get form values
+	groupIDStr := r.FormValue("group_id")
+	content := r.FormValue("content")
 
-	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
-	if err != nil || data.GroupID == 0 || data.Content == "" {
-		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+	if groupIDStr == "" || content == "" {
+		http.Error(w, "Missing group_id or content", http.StatusBadRequest)
 		return
 	}
 
-	_, err = dvb.Exec(`INSERT INTO group_posts (group_id, user_id, content) VALUES (?, ?, ?)`, data.GroupID, userID, data.Content)
+	groupID, err := strconv.Atoi(groupIDStr)
+	if err != nil {
+		http.Error(w, "Invalid group_id", http.StatusBadRequest)
+		return
+	}
+
+	var imageURL *string = nil
+
+	// Handle image upload if present
+	file, header, err := r.FormFile("image")
+	if err == nil {
+		defer file.Close()
+
+		// Validate file type
+		if !strings.HasPrefix(header.Header.Get("Content-Type"), "image/") {
+			http.Error(w, "Only image files are allowed", http.StatusBadRequest)
+			return
+		}
+
+		// Create uploads directory if it doesn't exist
+		uploadsDir := "uploads/group_posts"
+		if err := os.MkdirAll(uploadsDir, 0o755); err != nil {
+			log.Println("Failed to create uploads directory:", err)
+			http.Error(w, "Server error", http.StatusInternalServerError)
+			return
+		}
+
+		// Generate unique filename
+		ext := filepath.Ext(header.Filename)
+		filename := fmt.Sprintf("%d_%d_%s%s", groupID, time.Now().Unix(), generateRandomString(8), ext)
+		filePath := filepath.Join(uploadsDir, filename)
+
+		// Create the file
+		dst, err := os.Create(filePath)
+		if err != nil {
+			log.Println("Failed to create file:", err)
+			http.Error(w, "Failed to save image", http.StatusInternalServerError)
+			return
+		}
+		defer dst.Close()
+
+		// Copy uploaded file to destination
+		if _, err := io.Copy(dst, file); err != nil {
+			log.Println("Failed to save file:", err)
+			http.Error(w, "Failed to save image", http.StatusInternalServerError)
+			return
+		}
+
+		// Set image URL (relative path for serving)
+		imageURLStr := "/" + filePath
+		imageURL = &imageURLStr
+	} else if err != http.ErrMissingFile {
+		// Error other than missing file
+		log.Println("Error reading file:", err)
+		http.Error(w, "Error processing image", http.StatusBadRequest)
+		return
+	}
+
+	// Insert post into database
+	var query string
+	var args []interface{}
+
+	if imageURL != nil {
+		query = `INSERT INTO group_posts (group_id, user_id, content, image_url) VALUES (?, ?, ?, ?)`
+		args = []interface{}{groupID, userID, content, *imageURL}
+	} else {
+		query = `INSERT INTO group_posts (group_id, user_id, content) VALUES (?, ?, ?)`
+		args = []interface{}{groupID, userID, content}
+	}
+
+	_, err = dvb.Exec(query, args...)
 	if err != nil {
 		log.Println("CreateGroupPostHandler insert error:", err)
 		http.Error(w, "Unable to create post", http.StatusInternalServerError)
@@ -919,43 +995,52 @@ func CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"message":"Post created successfully"}`))
 }
 
-func CreateGroupCommentHandler(w http.ResponseWriter, r *http.Request) {
-
-	cookie, err := r.Cookie("SessionToken")
-	if err != nil {
-		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
-		return
+// Helper function to generate random string for filename
+func generateRandomString(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
 	}
-
-	dvb := sqlite.GetDB()
-
-	userID := db.GetId("sessionToken", cookie.Value)
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
-		return
-	}
-
-	var data struct {
-		PostID  int    `json:"post_id"`
-		GroupID int    `json:"group_id"`
-		Content string `json:"content"`
-	}
-
-	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
-	if err != nil || data.PostID == 0 || data.GroupID == 0 || data.Content == "" {
-		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
-		return
-	}
-
-	_, err = dvb.Exec(`INSERT INTO group_comments (post_id, user_id, content) VALUES (?, ?, ?)`, data.PostID, userID, data.Content)
-	if err != nil {
-		log.Println("CreateGroupCommentHandler insert error:", err)
-		http.Error(w, "Unable to create comment", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"Comment created successfully"}`))
+	return string(b)
 }
+
+// func CreateGroupCommentHandler(w http.ResponseWriter, r *http.Request) {
+// 	cookie, err := r.Cookie("SessionToken")
+// 	if err != nil {
+// 		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
+// 		return
+// 	}
+
+// 	dvb := sqlite.GetDB()
+
+// 	userID := db.GetId("sessionToken", cookie.Value)
+// 	bodyBytes, err := io.ReadAll(r.Body)
+// 	if err != nil {
+// 		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	var data struct {
+// 		PostID  int    `json:"post_id"`
+// 		GroupID int    `json:"group_id"`
+// 		Content string `json:"content"`
+// 	}
+
+// 	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
+// 	if err != nil || data.PostID == 0 || data.GroupID == 0 || data.Content == "" {
+// 		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	_, err = dvb.Exec(`INSERT INTO group_comments (post_id, user_id, content) VALUES (?, ?, ?)`, data.PostID, userID, data.Content)
+// 	if err != nil {
+// 		log.Println("CreateGroupCommentHandler insert error:", err)
+// 		http.Error(w, "Unable to create comment", http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(http.StatusOK)
+// 	w.Write([]byte(`{"message":"Comment created successfully"}`))
+// }
