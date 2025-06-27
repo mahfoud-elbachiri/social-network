@@ -72,9 +72,9 @@ func Sendcomment(w http.ResponseWriter, r *http.Request) {
 		file, handler, err := r.FormFile("avatar")
 		if err == nil && handler != nil {
 			defer file.Close()
-			os.MkdirAll("../../public/avatars2", 0o755)
-
-			savePath := "../../public/avatars2/" + handler.Filename
+			os.MkdirAll("../../frontend/public/avatars2", 0o755)
+ 
+			savePath := "../../frontend/public/avatars2/" + handler.Filename
 			newFile, err := os.Create(savePath)
 			if err == nil {
 				io.Copy(newFile, file)

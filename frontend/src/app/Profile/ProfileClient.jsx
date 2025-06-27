@@ -12,7 +12,7 @@ import PrivatePostsMessage from '@/components/PrivatePostsMessage';
 import { useComments } from '@/hooks/useComments';
 import { userApi } from '@/utils/api';
 
-export default function Profile() {
+export default function ProfileClient() {
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);

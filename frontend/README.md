@@ -4,6 +4,22 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 First, run the development server:
 
+ Build and Run Backend (docker) Separately
+        cd backend
+        docker build -t social-backend .
+        docker run -p 8080:8080 social-backend
+
+Build and Run Frontend (docker) Separately
+    cd frontend
+    docker build -t social-frontend .
+    docker run -p 3000:3000 social-frontend
+
+
+
+Run Both with Docker Compos
+        docker-compose up --build
+
+
 ```bash
 npm run dev
 # or

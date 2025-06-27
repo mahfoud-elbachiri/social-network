@@ -43,10 +43,10 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			defer file.Close()
 
 			// Make sure the avatars folder exists
-			os.MkdirAll("../../public/avatars", 0o755)
+			os.MkdirAll("../../frontend/public/avatars", 0o755)
 
 			// Save the file to public/avatars folder
-			savePath := "../../public/avatars/" + handler.Filename
+			savePath := "../../frontend/public/avatars/" + handler.Filename
 			newFile, err := os.Create(savePath)
 			if err == nil {
 				// Copy the uploaded file to our folder
