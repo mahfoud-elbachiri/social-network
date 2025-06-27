@@ -13,6 +13,8 @@ export default function HomePage() {
   const [postImage, setPostImage] = useState(null);
   const [postImagePreview, setPostImagePreview] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
+  const [commentImages, setCommentImages] = useState({});
+  const [commentImagePreviews, setCommentImagePreviews] = useState({});
   const [loading, setLoading] = useState(true);
 
   // Handle URL changes and browser navigation
@@ -153,6 +155,30 @@ export default function HomePage() {
     }
   };
 
+  const handleCommentImageChange = (postId, e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setCommentImages({ ...commentImages, [postId]: file });
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setCommentImagePreviews({ 
+          ...commentImagePreviews, 
+          [postId]: e.target.result 
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeCommentImage = (postId) => {
+    const newCommentImages = { ...commentImages };
+    const newCommentImagePreviews = { ...commentImagePreviews };
+    delete newCommentImages[postId];
+    delete newCommentImagePreviews[postId];
+    setCommentImages(newCommentImages);
+    setCommentImagePreviews(newCommentImagePreviews);
+  };
+
   const handleCreatePost = async (e) => {
     e.preventDefault();
     try {
@@ -179,13 +205,25 @@ export default function HomePage() {
 
   const handleCreateComment = async (postId, content) => {
     try {
+      const formData = new FormData();
+      formData.append('post_id', postId);
+      formData.append('content', content);
+      formData.append('group_id', selectedGroup);
+      
+      // Add image if present
+      if (commentImages[postId]) {
+        formData.append('image', commentImages[postId]);
+      }
+
       await fetch('http://localhost:8080/group/create-comment', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ post_id: postId, content, group_id: selectedGroup }),
+        body: formData,
       });
+      
+      // Clear comment input and image
       setCommentInputs({ ...commentInputs, [postId]: '' });
+      removeCommentImage(postId);
       fetchGroupById(selectedGroup);
     } catch (err) {
       console.error('Failed to create comment', err);
@@ -366,28 +404,76 @@ export default function HomePage() {
                         </div>
                       )}
 
-                      {/* Comment Form */}
-                      <form onSubmit={(e) => {
-                        e.preventDefault();
-                        handleCreateComment(post.ID, commentInputs[post.ID] || '');
-                      }}>
-                        <input
-                          type="text"
-                          value={commentInputs[post.ID] || ''}
-                          onChange={(e) => setCommentInputs({ ...commentInputs, [post.ID]: e.target.value })}
-                          placeholder="Write a comment..."
-                          required
-                        />
-                        <button type="submit">Comment</button>
-                      </form>
+                      {/* Comment Form with Image Support */}
+                      <div className="comment-form">
+                        <form onSubmit={(e) => {
+                          e.preventDefault();
+                          handleCreateComment(post.ID, commentInputs[post.ID] || '');
+                        }}>
+                          <input
+                            type="text"
+                            value={commentInputs[post.ID] || ''}
+                            onChange={(e) => setCommentInputs({ ...commentInputs, [post.ID]: e.target.value })}
+                            placeholder="Write a comment..."
+                            required
+                          />
+                          
+                          <div style={{ margin: '5px 0' }}>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleCommentImageChange(post.ID, e)}
+                              style={{ fontSize: '12px' }}
+                            />
+                          </div>
+                          
+                          {commentImagePreviews[post.ID] && (
+                            <div style={{ margin: '5px 0' }}>
+                              <Image 
+                                src={commentImagePreviews[post.ID]} 
+                                alt="Comment preview" 
+                                width={100} 
+                                height={100} 
+                                style={{ objectFit: 'cover' }}
+                              />
+                              <button 
+                                type="button" 
+                                onClick={() => removeCommentImage(post.ID)}
+                                style={{ marginLeft: '5px', fontSize: '12px' }}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          )}
+                          
+                          <button type="submit">Comment</button>
+                        </form>
+                      </div>
 
                       {/* Comment List */}
                       {post.Comments && post.Comments.length > 0 ? (
+                        
                         <ul className="comment-list">
                           {post.Comments.map((comment, commentIndex) => (
+
                             <li key={commentIndex} className="comment-item">
-                              <strong>{comment.Username}</strong>: {comment.Content}
-                              <small>{comment.CreatedAt}</small>
+                              <div className="comment-content">
+                                <strong>{comment.Username}</strong>: {comment.Content}
+                                <small>{comment.CreatedAt}</small>
+                              </div>
+                              
+                              {comment.ImageURL && (
+                                
+                                <div style={{ margin: '5px 0' }}>
+                                  <Image 
+                                    src={`http://localhost:8080${comment.ImageURL}`} 
+                                    alt="Comment image" 
+                                    width={150} 
+                                    height={150} 
+                                    style={{ objectFit: 'cover' }}
+                                  />
+                                </div>
+                              )}
                             </li>
                           ))}
                         </ul>

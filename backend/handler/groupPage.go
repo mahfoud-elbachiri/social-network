@@ -62,7 +62,7 @@ type GroupPost struct {
 	Content   string
 	Username  string
 	CreatedAt string
-	ImageURL  *string // Add this field
+	ImageURL  *string
 	Comments  []GroupComment
 }
 
@@ -72,6 +72,7 @@ type GroupComment struct {
 	UserID    int
 	Content   string
 	Username  string
+	ImageURL  *string
 	CreatedAt string
 }
 
@@ -194,240 +195,6 @@ func GetGroups(userID int) ([]Group, error) {
 		groups = append(groups, g)
 	}
 	return groups, nil
-}
-
-func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
-	// Step 1: Get user ID from cookie
-	dvb := sqlite.GetDB()
-	cookie, _ := r.Cookie("SessionToken")
-
-	userID := db.GetId("SessionToken", cookie.Value)
-
-	// Step 2: Get group ID from URL
-	groupIDStr := r.URL.Query().Get("id")
-	groupID, err := strconv.Atoi(groupIDStr)
-	if err != nil {
-		http.Error(w, "Invalid group ID", http.StatusBadRequest)
-		return
-	}
-
-	// Step 3: Fetch group info
-	var group Group
-	err = dvb.QueryRow(`SELECT id, title, description, creator_id FROM groups WHERE id = ?`, groupID).
-		Scan(&group.ID, &group.Title, &group.Description, &group.CreatorID)
-	if err != nil {
-		http.Error(w, "Group not found", http.StatusNotFound)
-		return
-	}
-	group.IsCreator = group.CreatorID == userID
-
-	// Step 4: Check if user is accepted member
-	var exists int
-	err = dvb.QueryRow(`
-		SELECT COUNT(*) FROM group_members 
-		WHERE group_id = ? AND user_id = ? AND status = 'accepted'
-	`, groupID, userID).Scan(&exists)
-	if err != nil {
-		http.Error(w, "Server error", http.StatusInternalServerError)
-		return
-	}
-	group.IsMember = exists > 0
-
-	// Step 5: Only allow access if creator or member
-	if !group.IsCreator && !group.IsMember {
-		http.Error(w, "You are not a member of this group", http.StatusForbidden)
-		return
-	}
-
-	// Step 6a: Fetch accepted group members
-	rows, err := dvb.Query(`
-		SELECT u.nikname, gm.role
-		FROM users u
-		JOIN group_members gm ON u.id = gm.user_id
-		WHERE gm.group_id = ? AND gm.status = 'accepted'
-	`, groupID)
-	if err != nil {
-		http.Error(w, "Unable to fetch members", http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-	var members []Member
-	for rows.Next() {
-		var m Member
-		err := rows.Scan(&m.Username, &m.Role)
-		if err != nil {
-			http.Error(w, "Error reading members", http.StatusInternalServerError)
-			return
-		}
-		members = append(members, m)
-	}
-
-	// Step 6b: Fetch join requests (only for group creator)
-	var requestedMembers []JoinRequest
-	if group.IsCreator {
-		reqRows, err := dvb.Query(`
-			SELECT u.id, u.nikname, gm.status
-			FROM users u
-			JOIN group_members gm ON u.id = gm.user_id
-			WHERE gm.group_id = ? AND gm.status = 'requested'
-		`, groupID)
-		if err != nil {
-			http.Error(w, "Unable to fetch join requests", http.StatusInternalServerError)
-			return
-		}
-		defer reqRows.Close()
-
-		for reqRows.Next() {
-			var jr JoinRequest
-			err := reqRows.Scan(&jr.UserID, &jr.Username, &jr.Status)
-			if err != nil {
-				http.Error(w, "Error reading join requests", http.StatusInternalServerError)
-				return
-			}
-			requestedMembers = append(requestedMembers, jr)
-		}
-	}
-
-	// Step 6c: Fetch invitable users (only for group creator)
-	var invitableUsers []InvitableUser
-	if group.IsCreator {
-		inviteRows, err := dvb.Query(`
-			SELECT u.id, u.nikname,
-			CASE WHEN gm.status IS NOT NULL THEN 1 ELSE 0 END AS invited
-			FROM users u
-			LEFT JOIN group_members gm ON gm.user_id = u.id AND gm.group_id = ?
-			WHERE u.id != ? 
-			  AND (gm.status IS NULL OR gm.status NOT IN ('accepted'))
-		`, group.ID, userID)
-		if err != nil {
-			http.Error(w, "Unable to fetch invitable users", http.StatusInternalServerError)
-			return
-		}
-		defer inviteRows.Close()
-
-		for inviteRows.Next() {
-			var u InvitableUser
-			var invitedInt int
-			err := inviteRows.Scan(&u.UserID, &u.Username, &invitedInt)
-			if err != nil {
-				http.Error(w, "Error reading invitable users", http.StatusInternalServerError)
-				return
-			}
-			u.Invited = invitedInt == 1
-			invitableUsers = append(invitableUsers, u)
-		}
-	}
-
-	// Step 7: Fetch group events and RSVP responses
-	var events []Event
-	eventRows, err := dvb.Query(`
-		SELECT id, title, description, datetime 
-		FROM group_events 
-		WHERE group_id = ? 
-		ORDER BY datetime ASC
-	`, groupID)
-	if err != nil {
-		http.Error(w, "Unable to fetch group events", http.StatusInternalServerError)
-		return
-	}
-	defer eventRows.Close()
-
-	for eventRows.Next() {
-		var ev Event
-		err := eventRows.Scan(&ev.ID, &ev.Title, &ev.Description, &ev.DateTime)
-		if err != nil {
-			http.Error(w, "Error reading events", http.StatusInternalServerError)
-			return
-		}
-
-		// Get user's response
-		err = dvb.QueryRow(`
-			SELECT response FROM event_responses 
-			WHERE event_id = ? AND user_id = ?
-		`, ev.ID, userID).Scan(&ev.UserResponse)
-		if err != nil && err != sql.ErrNoRows {
-			http.Error(w, "Error fetching event responses", http.StatusInternalServerError)
-			return
-		}
-
-		events = append(events, ev)
-	}
-
-	// Step 8: Fetch group posts and comments (FIXED)
-	var posts []GroupPost
-	// In GroupPageHandler, update the query:
-	postRows, err := dvb.Query(`
-    SELECT p.id, p.group_id, p.user_id, p.content, p.created_at, u.nikname, p.image_url
-    FROM group_posts p
-    JOIN users u ON p.user_id = u.id
-    WHERE p.group_id = ?
-    ORDER BY p.created_at DESC
-`, groupID)
-	if err != nil {
-		log.Println("Failed to load posts:", err)
-		http.Error(w, "Failed to load posts", http.StatusInternalServerError)
-		return
-	}
-	defer postRows.Close()
-
-	for postRows.Next() {
-		var post GroupPost
-		err := postRows.Scan(&post.ID, &post.GroupID, &post.UserID, &post.Content, &post.CreatedAt, &post.Username, &post.ImageURL)
-		if err != nil {
-			log.Println("Failed to read post:", err)
-			http.Error(w, "Failed to read post", http.StatusInternalServerError)
-			return
-		}
-
-		// Fetch comments for each post
-		commentRows, err := dvb.Query(`
-			SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.nikname
-			FROM group_comments c
-			JOIN users u ON c.user_id = u.id
-			WHERE c.post_id = ?
-			ORDER BY c.created_at ASC
-		`, post.ID)
-		if err != nil {
-
-			log.Println("Failed to load comments:", err)
-			http.Error(w, "Failed to load comments", http.StatusInternalServerError)
-			return
-		}
-
-		for commentRows.Next() {
-			var comment GroupComment
-			err := commentRows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.CreatedAt, &comment.Username)
-			if err != nil {
-				log.Println("Failed to read comment:", err)
-				http.Error(w, "Failed to read comment", http.StatusInternalServerError)
-				return
-			}
-			post.Comments = append(post.Comments, comment)
-		}
-		commentRows.Close()
-
-		posts = append(posts, post)
-	}
-
-	// Step 9: Render template with all group data
-	data := struct {
-		Group            Group
-		Members          []Member
-		IsAdmin          bool
-		RequestedMembers []JoinRequest
-		InvitableUsers   []InvitableUser
-		Events           []Event
-		Posts            []GroupPost
-	}{
-		Group:            group,
-		Members:          members,
-		IsAdmin:          group.IsCreator,
-		RequestedMembers: requestedMembers,
-		InvitableUsers:   invitableUsers,
-		Events:           events,
-		Posts:            posts,
-	}
-	json.NewEncoder(w).Encode(data)
 }
 
 func JoinGroupHandler(w http.ResponseWriter, r *http.Request) {
@@ -1005,42 +772,361 @@ func generateRandomString(length int) string {
 	return string(b)
 }
 
-// func CreateGroupCommentHandler(w http.ResponseWriter, r *http.Request) {
-// 	cookie, err := r.Cookie("SessionToken")
-// 	if err != nil {
-// 		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
-// 		return
-// 	}
+func CreateGroupCommentHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 
-// 	dvb := sqlite.GetDB()
+	cookie, err := r.Cookie("SessionToken")
+	if err != nil {
+		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
+		return
+	}
 
-// 	userID := db.GetId("sessionToken", cookie.Value)
-// 	bodyBytes, err := io.ReadAll(r.Body)
-// 	if err != nil {
-// 		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
-// 		return
-// 	}
+	dvb := sqlite.GetDB()
+	userID := db.GetId("sessionToken", cookie.Value)
 
-// 	var data struct {
-// 		PostID  int    `json:"post_id"`
-// 		GroupID int    `json:"group_id"`
-// 		Content string `json:"content"`
-// 	}
+	// Parse multipart form data (for file uploads)
+	err = r.ParseMultipartForm(10 << 20) // 10 MB max
+	if err != nil {
+		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+		return
+	}
 
-// 	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
-// 	if err != nil || data.PostID == 0 || data.GroupID == 0 || data.Content == "" {
-// 		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
-// 		return
-// 	}
+	// Get form values
+	postIDStr := r.FormValue("post_id")
+	groupIDStr := r.FormValue("group_id")
+	content := r.FormValue("content")
 
-// 	_, err = dvb.Exec(`INSERT INTO group_comments (post_id, user_id, content) VALUES (?, ?, ?)`, data.PostID, userID, data.Content)
-// 	if err != nil {
-// 		log.Println("CreateGroupCommentHandler insert error:", err)
-// 		http.Error(w, "Unable to create comment", http.StatusInternalServerError)
-// 		return
-// 	}
+	if postIDStr == "" || groupIDStr == "" || content == "" {
+		http.Error(w, "Missing post_id, group_id, or content", http.StatusBadRequest)
+		return
+	}
 
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Write([]byte(`{"message":"Comment created successfully"}`))
-// }
+	postID, err := strconv.Atoi(postIDStr)
+	if err != nil {
+		http.Error(w, "Invalid post_id", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := strconv.Atoi(groupIDStr)
+	if err != nil {
+		http.Error(w, "Invalid group_id", http.StatusBadRequest)
+		return
+	}
+
+	var imageURL *string = nil
+
+	// Handle image upload if present
+	file, header, err := r.FormFile("image")
+	if err == nil {
+		defer file.Close()
+
+		// Validate file type
+		if !strings.HasPrefix(header.Header.Get("Content-Type"), "image/") {
+			http.Error(w, "Only image files are allowed", http.StatusBadRequest)
+			return
+		}
+
+		// Create uploads directory if it doesn't exist
+		uploadsDir := "uploads/group_comments"
+		if err := os.MkdirAll(uploadsDir, 0o755); err != nil {
+			log.Println("Failed to create uploads directory:", err)
+			http.Error(w, "Server error", http.StatusInternalServerError)
+			return
+		}
+
+		// Generate unique filename
+		ext := filepath.Ext(header.Filename)
+		filename := fmt.Sprintf("%d_%d_%d_%s%s", groupID, postID, time.Now().Unix(), generateRandomString(8), ext)
+		filePath := filepath.Join(uploadsDir, filename)
+
+		// Create the file
+		dst, err := os.Create(filePath)
+		if err != nil {
+			log.Println("Failed to create file:", err)
+			http.Error(w, "Failed to save image", http.StatusInternalServerError)
+			return
+		}
+		defer dst.Close()
+
+		// Copy uploaded file to destination
+		if _, err := io.Copy(dst, file); err != nil {
+			log.Println("Failed to save file:", err)
+			http.Error(w, "Failed to save image", http.StatusInternalServerError)
+			return
+		}
+
+		// Set image URL (relative path for serving)
+		imageURLStr := "/" + filePath
+		imageURL = &imageURLStr
+	} else if err != http.ErrMissingFile {
+		// Error other than missing file
+		log.Println("Error reading file:", err)
+		http.Error(w, "Error processing image", http.StatusBadRequest)
+		return
+	}
+
+	// Insert comment into database
+	var query string
+	var args []interface{}
+
+	if imageURL != nil {
+		query = `INSERT INTO group_comments (post_id, user_id, content, image_url) VALUES (?, ?, ?, ?)`
+		args = []interface{}{postID, userID, content, *imageURL}
+	} else {
+		query = `INSERT INTO group_comments (post_id, user_id, content) VALUES (?, ?, ?)`
+		args = []interface{}{postID, userID, content}
+	}
+
+	_, err = dvb.Exec(query, args...)
+	if err != nil {
+		log.Println("CreateGroupCommentHandler insert error:", err)
+		http.Error(w, "Unable to create comment", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"Comment created successfully"}`))
+}
+
+func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
+	// Step 1: Get user ID from cookie
+	dvb := sqlite.GetDB()
+	cookie, _ := r.Cookie("SessionToken")
+
+	userID := db.GetId("SessionToken", cookie.Value)
+
+	// Step 2: Get group ID from URL
+	groupIDStr := r.URL.Query().Get("id")
+	groupID, err := strconv.Atoi(groupIDStr)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	// Step 3: Fetch group info
+	var group Group
+	err = dvb.QueryRow(`SELECT id, title, description, creator_id FROM groups WHERE id = ?`, groupID).
+		Scan(&group.ID, &group.Title, &group.Description, &group.CreatorID)
+	if err != nil {
+		http.Error(w, "Group not found", http.StatusNotFound)
+		return
+	}
+	group.IsCreator = group.CreatorID == userID
+
+	// Step 4: Check if user is accepted member
+	var exists int
+	err = dvb.QueryRow(`
+		SELECT COUNT(*) FROM group_members 
+		WHERE group_id = ? AND user_id = ? AND status = 'accepted'
+	`, groupID, userID).Scan(&exists)
+	if err != nil {
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	group.IsMember = exists > 0
+
+	// Step 5: Only allow access if creator or member
+	if !group.IsCreator && !group.IsMember {
+		http.Error(w, "You are not a member of this group", http.StatusForbidden)
+		return
+	}
+
+	// Step 6a: Fetch accepted group members
+	rows, err := dvb.Query(`
+		SELECT u.nikname, gm.role
+		FROM users u
+		JOIN group_members gm ON u.id = gm.user_id
+		WHERE gm.group_id = ? AND gm.status = 'accepted'
+	`, groupID)
+	if err != nil {
+		http.Error(w, "Unable to fetch members", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+	var members []Member
+	for rows.Next() {
+		var m Member
+		err := rows.Scan(&m.Username, &m.Role)
+		if err != nil {
+			http.Error(w, "Error reading members", http.StatusInternalServerError)
+			return
+		}
+		members = append(members, m)
+	}
+
+	// Step 6b: Fetch join requests (only for group creator)
+	var requestedMembers []JoinRequest
+	if group.IsCreator {
+		reqRows, err := dvb.Query(`
+			SELECT u.id, u.nikname, gm.status
+			FROM users u
+			JOIN group_members gm ON u.id = gm.user_id
+			WHERE gm.group_id = ? AND gm.status = 'requested'
+		`, groupID)
+		if err != nil {
+			http.Error(w, "Unable to fetch join requests", http.StatusInternalServerError)
+			return
+		}
+		defer reqRows.Close()
+
+		for reqRows.Next() {
+			var jr JoinRequest
+			err := reqRows.Scan(&jr.UserID, &jr.Username, &jr.Status)
+			if err != nil {
+				http.Error(w, "Error reading join requests", http.StatusInternalServerError)
+				return
+			}
+			requestedMembers = append(requestedMembers, jr)
+		}
+	}
+
+	// Step 6c: Fetch invitable users (only for group creator)
+	var invitableUsers []InvitableUser
+	if group.IsCreator {
+		inviteRows, err := dvb.Query(`
+			SELECT u.id, u.nikname,
+			CASE WHEN gm.status IS NOT NULL THEN 1 ELSE 0 END AS invited
+			FROM users u
+			LEFT JOIN group_members gm ON gm.user_id = u.id AND gm.group_id = ?
+			WHERE u.id != ? 
+			  AND (gm.status IS NULL OR gm.status NOT IN ('accepted'))
+		`, group.ID, userID)
+		if err != nil {
+			http.Error(w, "Unable to fetch invitable users", http.StatusInternalServerError)
+			return
+		}
+		defer inviteRows.Close()
+
+		for inviteRows.Next() {
+			var u InvitableUser
+			var invitedInt int
+			err := inviteRows.Scan(&u.UserID, &u.Username, &invitedInt)
+			if err != nil {
+				http.Error(w, "Error reading invitable users", http.StatusInternalServerError)
+				return
+			}
+			u.Invited = invitedInt == 1
+			invitableUsers = append(invitableUsers, u)
+		}
+	}
+
+	// Step 7: Fetch group events and RSVP responses
+	var events []Event
+	eventRows, err := dvb.Query(`
+		SELECT id, title, description, datetime 
+		FROM group_events 
+		WHERE group_id = ? 
+		ORDER BY datetime ASC
+	`, groupID)
+	if err != nil {
+		http.Error(w, "Unable to fetch group events", http.StatusInternalServerError)
+		return
+	}
+	defer eventRows.Close()
+
+	for eventRows.Next() {
+		var ev Event
+		err := eventRows.Scan(&ev.ID, &ev.Title, &ev.Description, &ev.DateTime)
+		if err != nil {
+			http.Error(w, "Error reading events", http.StatusInternalServerError)
+			return
+		}
+
+		// Get user's response
+		err = dvb.QueryRow(`
+			SELECT response FROM event_responses 
+			WHERE event_id = ? AND user_id = ?
+		`, ev.ID, userID).Scan(&ev.UserResponse)
+		if err != nil && err != sql.ErrNoRows {
+			http.Error(w, "Error fetching event responses", http.StatusInternalServerError)
+			return
+		}
+
+		events = append(events, ev)
+	}
+
+	// Step 8: Fetch group posts and comments (FIXED)
+	var posts []GroupPost
+	// In GroupPageHandler, update the query:
+	postRows, err := dvb.Query(`
+    SELECT p.id, p.group_id, p.user_id, p.content, p.created_at, u.nikname, p.image_url
+    FROM group_posts p
+    JOIN users u ON p.user_id = u.id
+    WHERE p.group_id = ?
+    ORDER BY p.created_at DESC
+`, groupID)
+	if err != nil {
+		log.Println("Failed to load posts:", err)
+		http.Error(w, "Failed to load posts", http.StatusInternalServerError)
+		return
+	}
+	defer postRows.Close()
+
+	for postRows.Next() {
+		var post GroupPost
+		err := postRows.Scan(&post.ID, &post.GroupID, &post.UserID, &post.Content, &post.CreatedAt, &post.Username, &post.ImageURL)
+		if err != nil {
+			log.Println("Failed to read post:", err)
+			http.Error(w, "Failed to read post", http.StatusInternalServerError)
+			return
+		}
+
+		// Fetch comments for each post
+		commentRows, err := dvb.Query(`
+	SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.nikname, c.image_url
+	FROM group_comments c
+	JOIN users u ON c.user_id = u.id
+	WHERE c.post_id = ?
+	ORDER BY c.created_at ASC
+`, post.ID)
+		if err != nil {
+
+			log.Println("Failed to load comments:", err)
+			http.Error(w, "Failed to load comments", http.StatusInternalServerError)
+			return
+		}
+
+		for commentRows.Next() {
+			var comment GroupComment
+			err := commentRows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.CreatedAt, &comment.Username, &comment.ImageURL)
+			if err != nil {
+				log.Println("Failed to read comment:", err)
+				http.Error(w, "Failed to read comment", http.StatusInternalServerError)
+				return
+			}
+			post.Comments = append(post.Comments, comment)
+		}
+		commentRows.Close()
+
+		posts = append(posts, post)
+	}
+	postsJSON, err := json.MarshalIndent(posts, "", "  ")
+	if err != nil {
+		log.Println("Error marshaling posts for debug:", err)
+	} else {
+		log.Println("Posts data with comments:\n", string(postsJSON))
+	}
+	// Step 9: Render template with all group data
+	data := struct {
+		Group            Group
+		Members          []Member
+		IsAdmin          bool
+		RequestedMembers []JoinRequest
+		InvitableUsers   []InvitableUser
+		Events           []Event
+		Posts            []GroupPost
+	}{
+		Group:            group,
+		Members:          members,
+		IsAdmin:          group.IsCreator,
+		RequestedMembers: requestedMembers,
+		InvitableUsers:   invitableUsers,
+		Events:           events,
+		Posts:            posts,
+	}
+	json.NewEncoder(w).Encode(data)
+}

@@ -43,7 +43,7 @@ func main() {
 	router.Handle("/group/create-event", handler.AuthMiddleware(http.HandlerFunc(handler.CreateEventHandler)))
 	router.Handle("/group/event-respond", handler.AuthMiddleware(http.HandlerFunc(handler.EventResponseHandler)))
 	router.Handle("/group/create-post", handler.AuthMiddleware(http.HandlerFunc(handler.CreateGroupPostHandler)))
-	// router.Handle("/group/create-comment", handler.AuthMiddleware(http.HandlerFunc(handler.CreateGroupCommentHandler)))
+	router.Handle("/group/create-comment", handler.AuthMiddleware(http.HandlerFunc(handler.CreateGroupCommentHandler)))
 
 	// follow sytyem
 	router.Handle("/followRequest", handler.AuthMiddleware(http.HandlerFunc(handler.Followreq)))
