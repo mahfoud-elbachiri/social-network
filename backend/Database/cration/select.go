@@ -33,7 +33,7 @@ func GetFollowersUsers(id int) ([]string, error) {
 		users = append(users, nickname)
 	}
 
-	nUser, err := NewUser(users)
+	nUser, err := NewUser(users, id)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func GetFollowersUsers(id int) ([]string, error) {
 	return nUser, nil
 }
 
-func NewUser(users []string) ([]string, error) {
+func NewUser(users []string, id int) ([]string, error) {
 	publicUser, err := GetAllPublicUsers()
 	if err != nil {
 		return nil, err
@@ -51,6 +51,38 @@ func NewUser(users []string) ([]string, error) {
 		if !contains(users, pUser) {
 			users = append(users, pUser)
 		}
+	}
+
+	msgUser, err := GetMsgUser(id)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, mUser := range msgUser {
+		if !contains(users, mUser) {
+			users = append(users, mUser)
+		}
+	}
+
+	return users, nil
+}
+
+func GetMsgUser(id int) ([]string, error) {
+	username := GetUser(id)
+	rows, err := DB.Query("SELECT sender FROM messages WHERE receiver = ? ;", username)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var users []string
+	for rows.Next() {
+		var receiver string
+		if err := rows.Scan(&receiver); err != nil {
+			return nil, err
+		}
+		users = append(users, receiver)
 	}
 	return users, nil
 }
@@ -154,7 +186,7 @@ func GetUsernameByToken(tocken string) string {
 	quire := "SELECT nikname FROM users WHERE sessionToken = ?"
 	err := DB.QueryRow(quire, tocken).Scan(&username)
 	if err != nil {
-		 fmt.Println(err)
+		fmt.Println(err)
 		return ""
 	}
 	return username

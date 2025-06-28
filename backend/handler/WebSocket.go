@@ -121,6 +121,9 @@ func HandleMessages() {
 				}
 			}
 		}
+
+		BroadcastUsers()
+
 		clientsMutex.RUnlock()
 	}
 }
