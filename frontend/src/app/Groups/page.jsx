@@ -25,15 +25,20 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
 
+  const [i, setI] = useState(false)
+
   useEffect(() => {
+    socket.onopen = () => {
+      console.log('✅ WebSocket connected')
+      setI(true)
+    }
 
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ content: "broadcast" }));
     } else {
       console.warn("❌ WebSocket not ready, cannot send message yet");
     }
-
-  }, [selectedGroup]);
+  }, [i])
 
   // Handle URL changes and browser navigation
   useEffect(() => {

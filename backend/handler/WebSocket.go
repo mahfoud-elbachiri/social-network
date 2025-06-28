@@ -22,7 +22,6 @@ var (
 	clients      = make(map[*websocket.Conn]string)
 	clientsMutex sync.RWMutex
 	broadcast    = make(chan Message)
-	typing       = make(chan Message)
 )
 
 type Message struct {
@@ -88,11 +87,7 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 
 		if msg.Content == "broadcast" {
 			BroadcastUsers()
-		}
-
-		if msg.Content == "is-typing" || msg.Content == "no-typing" {
-			typing <- msg
-		} else if msg.Content != "broadcast"{
+		} else {
 			time := time.Now().Format("2006-01-02 15:04:05")
 			msg.Time = time
 			fmt.Println(msg.Content)
@@ -220,77 +215,3 @@ func BroadcastUsers() {
 		}
 	}
 }
-
-func BroadcastOnlineUsers() {
-	clientsMutex.RLock()
-	defer clientsMutex.RUnlock()
-
-	var online []string
-
-	for _, client := range clients {
-		online = append(online, client)
-	}
-
-	message := map[string]any{
-		"type":  "online-users",
-		"users": online,
-	}
-
-	for client := range clients {
-		err := client.WriteJSON(message)
-		if err != nil {
-			fmt.Println("WebSocket write error:", err)
-			client.Close()
-			clientsMutex.Lock()
-			delete(clients, client)
-			clientsMutex.Unlock()
-		}
-	}
-}
-
-func Typing() {
-	for {
-		msg := <-typing
-
-		clientsMutex.RLock()
-		for client, username := range clients {
-			if username == msg.Receiver || username == msg.Sender {
-				err := client.WriteJSON(msg)
-				if err != nil {
-					fmt.Println(err)
-
-					client.Close()
-
-					clientsMutex.Lock()
-					delete(clients, client)
-					clientsMutex.Unlock()
-				}
-			}
-		}
-		clientsMutex.RUnlock()
-	}
-}
-
-// allUsers, err := db.GetAllUsers()
-// 	if err != nil {
-// 		fmt.Println("Error fetching all users:", err)
-// 		return
-// 	}
-
-// 	allPublicUsers, err := db.GetAllPublicUsers()
-// 	if err != nil {
-// 		fmt.Println("Error fetching all users:", err)
-// 		return
-// 	}
-
-// 	allPrivateUsers, err := db.GetAllPrivateUsers()
-// 	if err != nil {
-// 		fmt.Println("Error fetching all users:", err)
-// 		return
-// 	}
-
-// 	res, err :=
-// 	if err != nil {
-// 		fmt.Println("Error fetching all users:", err)
-// 		return
-// 	}

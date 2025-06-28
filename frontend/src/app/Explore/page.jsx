@@ -18,14 +18,23 @@ export default function Explore() {
   const [error, setError] = useState(null);
   const router = useRouter();
 
+  const [i, setI] = useState(false)
+
   useEffect(() => {
+    socket.onopen = () => {
+      console.log('✅ WebSocket connected')
+      setI(true)
+    }
 
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ content: "broadcast" }));
     } else {
       console.warn("❌ WebSocket not ready, cannot send message yet");
     }
+  }, [i])
 
+
+  useEffect(() => {
     initializeData();
   }, []);
 
@@ -57,10 +66,10 @@ export default function Explore() {
 
   const fetchAllUsers = async (search = '') => {
     try {
-      const url = search 
+      const url = search
         ? `http://localhost:8080/getusers?search=${encodeURIComponent(search)}`
         : 'http://localhost:8080/getusers';
-      
+
       const response = await fetch(url, {
         method: 'GET',
         credentials: 'include'
@@ -80,7 +89,7 @@ export default function Explore() {
   };
 
   const handleCardClick = (userId, e) => {
-    
+
     if (e.target.closest('.follow-button')) {
       return;
     }
@@ -92,7 +101,7 @@ export default function Explore() {
     const searchValue = formData.get('search');
     await fetchAllUsers(searchValue);
   };
- 
+
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -118,25 +127,25 @@ export default function Explore() {
                   <button type="submit" className="search-btn" >
                     🔍 Search
                   </button>
-                  
+
                 </div>
               </div>
             </form>
           </div>
-          
+
           <div className="users-container">
-            {users.length > 0 ? (                
+            {users.length > 0 ? (
               <div className="users-grid">
                 {users.map((user) => (
                   <div key={user.id} className="user-card">
-                    <div className="user-info" onClick={ (e) => handleCardClick(user.id ,e )}>
-                      <Image 
-                        src={user.avatar ? `/${user.avatar}` : "/icon.jpg"} 
+                    <div className="user-info" onClick={(e) => handleCardClick(user.id, e)}>
+                      <Image
+                        src={user.avatar ? `/${user.avatar}` : "/icon.jpg"}
                         alt={`${user.nickname || user.first_name} avatar`}
                         width={40}
                         height={40}
                         priority
-                        style={{borderRadius: 50}}
+                        style={{ borderRadius: 50 }}
                       />
                       <div className="user-details">
                         <h3>
@@ -147,10 +156,10 @@ export default function Explore() {
                           {user.is_private ? '🔒 Private' : '🌍 Public'}
                         </span>
                       </div>
-                      {console.log("id",user)}
+                      {console.log("id", user)}
                     </div>
-                     <FollowButton 
-                      targetUserid={String(user.id)} 
+                    <FollowButton
+                      targetUserid={String(user.id)}
                       isPrivateView={user.is_private}
                     />                  </div>
                 ))}

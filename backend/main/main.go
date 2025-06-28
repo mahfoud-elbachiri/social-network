@@ -65,7 +65,6 @@ func main() {
 	// router.HandleFunc("/online-users", handler.OnlineUsers)
 	router.HandleFunc("/ws", handler.WebSocketHandler) // Add WebSocket route
 	go handler.HandleMessages()                        // Start WebSocket message handler in a goroutine
-	go handler.Typing()
 
 	// Wrap router with CORS middleware
 	corsRouter := handler.CorsMiddleware(router)

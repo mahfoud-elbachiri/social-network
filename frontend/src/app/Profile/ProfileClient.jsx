@@ -28,6 +28,21 @@ export default function ProfileClient() {
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('id') || null;
 
+  const [i, setI] = useState(false)
+
+  useEffect(() => {
+    socket.onopen = () => {
+      console.log('✅ WebSocket connected')
+      setI(true)
+    }
+
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ content: "broadcast" }));
+    } else {
+      console.warn("❌ WebSocket not ready, cannot send message yet");
+    }
+  }, [i])
+
 
   const {
     showComments,
@@ -38,11 +53,6 @@ export default function ProfileClient() {
   } = useComments(setPosts);
 
   useEffect(() => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ content: "broadcast" }));
-    } else {
-      console.warn("❌ WebSocket not ready, cannot send message yet");
-    }
     fetchProfile();
     fetchPosts();
   }, [targetUserId]);
