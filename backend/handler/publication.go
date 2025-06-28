@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	db "social-network/Database/cration"
 	"social-network/servisse"
@@ -27,19 +28,21 @@ func Post(w http.ResponseWriter, r *http.Request) {
 
 		var avatarPath string
 
+		uniqueID := time.Now().Format("20060102150405")
+
 		file, handler, err := r.FormFile("avatar")
 		if err == nil && handler != nil {
 			defer file.Close()
 
-			os.MkdirAll("../../frontend/public/avatars2/", 0o755)
+			os.MkdirAll("../frontend/public/avatars2/", 0o755)
 
-			savePath := "../../frontend/public/avatars2/" + handler.Filename
+			savePath := "../frontend/public/avatars2/" + uniqueID + handler.Filename
 			newFile, err := os.Create(savePath)
 			if err == nil {
 				io.Copy(newFile, file)
 				newFile.Close()
 
-				avatarPath = "avatars2/" + handler.Filename
+				avatarPath = "avatars2/" + uniqueID + handler.Filename
 			}
 		}
 

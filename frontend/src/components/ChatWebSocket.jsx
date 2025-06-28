@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import "./chat.css"
 import { getSocket } from '@/sock/GetSocket'
-// import { useChat, useUser } from '@/context/ChatContext'
-
+import EmojiPicker from 'emoji-picker-react'
+import Image from 'next/image'
 
 
 
@@ -13,6 +13,13 @@ export default function ChatWebSocket({ username }) {
     const socket = getSocket()
 
     const [i, setI] = useState(false)
+
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+
+    const onEmojiClick = (emojiObject) => {
+        setInput(input + emojiObject.emoji)
+        setShowEmojiPicker(false)
+    };
 
     const [selectedUser, setSelectedUser] = useState()
     const [UsersList, setUsersList] = useState()
@@ -117,9 +124,9 @@ export default function ChatWebSocket({ username }) {
 
         if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ content: "broadcast" }));
-            } else {
+        } else {
             console.warn("❌ WebSocket not ready, cannot send message yet");
-            }
+        }
 
         socket.onmessage = (event) => {
 
@@ -130,6 +137,8 @@ export default function ChatWebSocket({ username }) {
             } else {
                 setMessages(prvData => [...prvData, data])
             }
+
+            console.log(data);
         }
 
         console.log("gg");
@@ -175,7 +184,7 @@ export default function ChatWebSocket({ username }) {
                     }}
                 >
                     {/* Contact list content */}
-                   <div>
+                    <div>
                         {UsersList?.map((u, i) => (
                             <div key={i}>
                                 {u.username === username ? (
@@ -183,17 +192,24 @@ export default function ChatWebSocket({ username }) {
                                         u.sort.filter(us => us.user !== username).map((user, i) => (
                                             <div key={i} className="list" onClick={() => setSelectedUser(user.user)}>
                                                 <div>
-                                                    <div className="p"></div>
+                                                    <Image
+                                                        src={user.avatar ? `/${user.avatar}` : "/icon.jpg"}
+                                                        alt="Profile Avatar"
+                                                        width={40}
+                                                        height={40}
+                                                        priority
+                                                        style={{ borderRadius: 50 }}
+                                                    />
                                                     <p className="users">{user.user}</p>
                                                 </div>
-                                                  <span className={user.online ? "online" : "offline"}></span>
+                                                <span className={user.online ? "online" : "offlin"}></span>
                                             </div>
                                         ))
                                     ) : (
-                                       <></>
+                                        <></>
                                     )
                                 ) : (
-                                    <></>  
+                                    <></>
                                 )}
                             </div>
                         ))}
@@ -206,7 +222,8 @@ export default function ChatWebSocket({ username }) {
             <div className="">
                 {selectedUser ?
                     <div id='chat-{selectedUser}' className="chat-box">
-                        <h3>Chat with {selectedUser}</h3>
+
+                        <h3 className='tagg'>Chat with {selectedUser}  <button className='close-chat' onClick={() => setSelectedUser(null)}>x</button> </h3>
                         <div className="messages" ref={messagesContainerRef}>
 
                             {/* old message */}
@@ -234,8 +251,15 @@ export default function ChatWebSocket({ username }) {
                         </div >
 
                         <div className="chat-input">
+
+                            <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="emoji-button" >😊</button>
+
+                            {showEmojiPicker && (
+                                <EmojiPicker onEmojiClick={onEmojiClick} />
+                            )}
+
                             <input onChange={(e) => setInput(e.target.value)} type="text" placeholder="Write a message..." value={input} />
-                            <button onClick={() => sendMessage(socket, username, selectedUser)}>Send</button>
+                            <button onClick={() => sendMessage(socket, username, selectedUser)} className='send'>Send</button>
                         </div>
                     </div>
                     : <></>}

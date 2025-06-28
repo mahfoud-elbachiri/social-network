@@ -140,6 +140,7 @@ func sortU(allUser []string) ([]UserFollowers, error) {
 
 	for _, user := range allUser {
 		id := db.GetId("nikname", user)
+		
 		allUsers, err := db.GetFollowersUsers(id)
 		if err != nil {
 			return nil, err
@@ -148,6 +149,7 @@ func sortU(allUser []string) ([]UserFollowers, error) {
 		Users = append(Users, UserFollowers{
 			Username: user,
 			Alluser:  allUsers,
+			
 		})
 	}
 
@@ -178,6 +180,8 @@ func BroadcastUsers() {
 		for _, us := range user.Alluser {
 			online := false
 
+			avatar := db.GetAvatar(us)
+
 			for _, onlineUser := range clients {
 				if onlineUser == us {
 					online = true
@@ -188,6 +192,7 @@ func BroadcastUsers() {
 			sort = append(sort, map[string]any{
 				"user":   us,
 				"online": online,
+				"avatar": avatar,
 			})
 		}
 

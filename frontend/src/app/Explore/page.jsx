@@ -5,9 +5,13 @@ import Header from '@/components/Header';
 import FollowButton from "@/components/FollowButton";
 import { useRouter } from 'next/navigation';
 import { userApi } from '../../utils/api';
+import { getSocket } from "@/sock/GetSocket";
 
 
 export default function Explore() {
+
+  const socket = getSocket()
+
   const [users, setUsers] = useState([]);
   const [allUsers, setAllUsers] = useState([]); // Store all users from backend
   const [currentUserId, setCurrentUserId] = useState(null);
@@ -15,6 +19,13 @@ export default function Explore() {
   const router = useRouter();
 
   useEffect(() => {
+
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ content: "broadcast" }));
+    } else {
+      console.warn("❌ WebSocket not ready, cannot send message yet");
+    }
+
     initializeData();
   }, []);
 

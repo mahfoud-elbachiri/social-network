@@ -170,6 +170,16 @@ func GetId(input string, tocken string) int {
 	return id
 }
 
+func GetAvatar(username string) string {
+	var avatar string
+	quire := "SELECT avatar FROM users WHERE nikname = ?"
+	err := DB.QueryRow(quire, username).Scan(&avatar)
+	if err != nil {
+		return ""
+	}
+	return avatar
+}
+
 func GetUserInfo(id int) (string, string) {
 	var name, avatar string
 	quire := "SELECT nikname, avatar FROM users WHERE id = ?"

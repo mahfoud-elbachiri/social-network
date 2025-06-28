@@ -1,10 +1,17 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from "next/image";
 import "./style.css";
+import { getSocket } from "@/sock/GetSocket";
+import Header from '@/components/Header';
+
 
 export default function HomePage() {
+
+  const socket = getSocket()
+
+
   const router = useRouter();
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [groupData, setGroupData] = useState(null);
@@ -17,12 +24,23 @@ export default function HomePage() {
   const [commentImagePreviews, setCommentImagePreviews] = useState({});
   const [loading, setLoading] = useState(true);
 
+
+  useEffect(() => {
+
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ content: "broadcast" }));
+    } else {
+      console.warn("❌ WebSocket not ready, cannot send message yet");
+    }
+
+  }, [selectedGroup]);
+
   // Handle URL changes and browser navigation
   useEffect(() => {
     const handlePopState = (event) => {
       const urlParams = new URLSearchParams(window.location.search);
       const groupId = urlParams.get('group');
-      
+
       if (groupId) {
         fetchGroupById(parseInt(groupId));
       } else {
@@ -44,7 +62,7 @@ export default function HomePage() {
 
     // Listen for browser back/forward buttons
     window.addEventListener('popstate', handlePopState);
-    
+
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
@@ -56,16 +74,16 @@ export default function HomePage() {
         method: 'POST',
         credentials: 'include',
       });
-      
+
       const data = await res.json();
       setGroupData(data);
       setSelectedGroup(groupId);
       setLoading(false);
-      
+
       // Update URL without reloading the page
       const newUrl = `${window.location.pathname}?group=${groupId}`;
       window.history.pushState({ groupId }, '', newUrl);
-      
+
     } catch (err) {
       console.error(`Failed to fetch group ${groupId}`, err);
       setLoading(false);
@@ -161,9 +179,9 @@ export default function HomePage() {
       setCommentImages({ ...commentImages, [postId]: file });
       const reader = new FileReader();
       reader.onload = (e) => {
-        setCommentImagePreviews({ 
-          ...commentImagePreviews, 
-          [postId]: e.target.result 
+        setCommentImagePreviews({
+          ...commentImagePreviews,
+          [postId]: e.target.result
         });
       };
       reader.readAsDataURL(file);
@@ -209,7 +227,7 @@ export default function HomePage() {
       formData.append('post_id', postId);
       formData.append('content', content);
       formData.append('group_id', selectedGroup);
-      
+
       // Add image if present
       if (commentImages[postId]) {
         formData.append('image', commentImages[postId]);
@@ -220,7 +238,7 @@ export default function HomePage() {
         credentials: 'include',
         body: formData,
       });
-      
+
       // Clear comment input and image
       setCommentInputs({ ...commentInputs, [postId]: '' });
       removeCommentImage(postId);
@@ -233,7 +251,7 @@ export default function HomePage() {
   const backToGroups = () => {
     setSelectedGroup(null);
     setGroupData(null);
-    
+
     // Update URL to remove group parameter
     const newUrl = window.location.pathname;
     window.history.pushState({}, '', newUrl);
@@ -246,321 +264,328 @@ export default function HomePage() {
     const isMemberOrCreator = group.IsCreator || group.IsMember;
 
     return (
-      <div className="group-page-container">
-        {/* Back Navigation */}
-        <div className="back-nav">
-          <button onClick={() => router.push('/Home')} className="back-btn">← Back to Home</button>
-        </div>
 
-        {/* Group Header */}
-        <div className="group-header">
-          <h2>{group.Title}</h2>
-          <p className="group-description">{group.Description}</p>
-        </div>
+      <>
 
-        {isMemberOrCreator ? (
-          <>
-            {/* Group Members Section */}
-            <div className="group-section">
-              <h3 className="section-title">Group Members</h3>
-              {groupData.Members && groupData.Members.length > 0 ? (
-                <ul className="member-list">
-                  {groupData.Members.map((member, index) => (
-                    <li key={index} className="member-item">
-                      <div className="member-info">
-                        <div className="member-name">{member.Username}</div>
-                        <div className="member-role">{member.Role}</div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="empty-state">No members yet.</div>
-              )}
-            </div>
+        <Header />
 
-            {/* Create Event Form */}
-            <div className="group-section">
-              <h3 className="section-title">Create Event</h3>
-              <form onSubmit={handleCreateEvent}>
-                <label>Title:</label>
-                <input
-                  type="text"
-                  value={eventForm.title}
-                  onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                  required
-                /><br />
-                <label>Description:</label>
-                <textarea
-                  value={eventForm.description}
-                  onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                /><br />
-                <label>Date/Time:</label>
-                <input
-                  type="datetime-local"
-                  value={eventForm.datetime}
-                  onChange={(e) => setEventForm({ ...eventForm, datetime: e.target.value })}
-                  required
-                /><br />
-                <button type="submit">Create Event</button>
-              </form>
-            </div>
+        <div className="group-page-container">
+          {/* Back Navigation */}
+          <div className="back-nav">
+            <button onClick={() => router.push('/Home')} className="back-btn">← Back to Home</button>
+          </div>
 
-            {/* List Events */}
-            <div className="group-section">
-              <h3 className="section-title">Group Events</h3>
-              {groupData.Events && groupData.Events.length > 0 ? (
-                <ul className="event-list">
-                  {groupData.Events.map((event, index) => (
-                    <li key={index} className="event-item">
-                      <strong>{event.Title}</strong> - {event.DateTime}<br />
-                      <small>{event.Description}</small><br />
-                      <div style={{ display: 'inline' }}>
-                        <button onClick={() => handleEventRespond(event.ID, 'going')}>
-                          ✅ Going
-                        </button>
-                        <button onClick={() => handleEventRespond(event.ID, 'not_going')}>
-                          ❌ Not Going
-                        </button>
-                      </div>
-                      {event.UserResponse === 'going' && (
-                        <div style={{ color: 'green', marginTop: '5px' }}>✅ You're going</div>
-                      )}
-                      {event.UserResponse === 'not_going' && (
-                        <div style={{ color: 'red', marginTop: '5px' }}>❌ You're not going</div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="empty-state">No events yet.</div>
-              )}
-            </div>
+          {/* Group Header */}
+          <div className="group-header">
+            <h2>{group.Title}</h2>
+            <p className="group-description">{group.Description}</p>
+          </div>
 
-            {/* Group Posts Section */}
-            <div className="group-section">
-              <h3 className="section-title">Group Posts</h3>
-
-              {/* Create Post */}
-              <form onSubmit={handleCreatePost}>
-                <textarea
-                  value={postContent}
-                  onChange={(e) => setPostContent(e.target.value)}
-                  placeholder="Write something to the group..."
-                  required
-                /><br />
-                
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleImageChange}
-                />
-                
-                {postImagePreview && (
-                  <div style={{ margin: '10px 0' }}>
-                    <Image 
-                      src={postImagePreview} 
-                      alt="Preview" 
-                      width={200} 
-                      height={200} 
-                      style={{ objectFit: 'cover' }}
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        setPostImage(null);
-                        setPostImagePreview(null);
-                      }}
-                      style={{ marginLeft: '10px' }}
-                    >
-                      Remove Image
-                    </button>
-                  </div>
-                )}
-                
-                <button type="submit">Post</button>
-              </form>
-
-              {/* List of Posts */}
-              {groupData.Posts && groupData.Posts.length > 0 ? (
-                <ul className="post-list">
-                  {groupData.Posts.map((post, index) => (
-                    <li key={index} className="post-item">
-                      <div className="post-header">
-                        <strong>{post.Username}</strong>
-                        <small>{post.CreatedAt}</small>
-                      </div>
-                      <p className="post-content">{post.Content}</p>
-                      
-                      {post.ImageURL && (
-                        <div style={{ margin: '10px 0' }}>
-                          <Image 
-                            src={`http://localhost:8080${post.ImageURL}`} 
-                            alt="Post image" 
-                            width={400} 
-                            height={300} 
-                            style={{ objectFit: 'cover' }}
-                          />
+          {isMemberOrCreator ? (
+            <>
+              {/* Group Members Section */}
+              <div className="group-section">
+                <h3 className="section-title">Group Members</h3>
+                {groupData.Members && groupData.Members.length > 0 ? (
+                  <ul className="member-list">
+                    {groupData.Members.map((member, index) => (
+                      <li key={index} className="member-item">
+                        <div className="member-info">
+                          <div className="member-name">{member.Username}</div>
+                          <div className="member-role">{member.Role}</div>
                         </div>
-                      )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="empty-state">No members yet.</div>
+                )}
+              </div>
 
-                      {/* Comment Form with Image Support */}
-                      <div className="comment-form">
-                        <form onSubmit={(e) => {
-                          e.preventDefault();
-                          handleCreateComment(post.ID, commentInputs[post.ID] || '');
-                        }}>
-                          <input
-                            type="text"
-                            value={commentInputs[post.ID] || ''}
-                            onChange={(e) => setCommentInputs({ ...commentInputs, [post.ID]: e.target.value })}
-                            placeholder="Write a comment..."
-                            required
-                          />
-                          
-                          <div style={{ margin: '5px 0' }}>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleCommentImageChange(post.ID, e)}
-                              style={{ fontSize: '12px' }}
+              {/* Create Event Form */}
+              <div className="group-section">
+                <h3 className="section-title">Create Event</h3>
+                <form onSubmit={handleCreateEvent}>
+                  <label>Title:</label>
+                  <input
+                    type="text"
+                    value={eventForm.title}
+                    onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                    required
+                  /><br />
+                  <label>Description:</label>
+                  <textarea
+                    value={eventForm.description}
+                    onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                  /><br />
+                  <label>Date/Time:</label>
+                  <input
+                    type="datetime-local"
+                    value={eventForm.datetime}
+                    onChange={(e) => setEventForm({ ...eventForm, datetime: e.target.value })}
+                    required
+                  /><br />
+                  <button type="submit">Create Event</button>
+                </form>
+              </div>
+
+              {/* List Events */}
+              <div className="group-section">
+                <h3 className="section-title">Group Events</h3>
+                {groupData.Events && groupData.Events.length > 0 ? (
+                  <ul className="event-list">
+                    {groupData.Events.map((event, index) => (
+                      <li key={index} className="event-item">
+                        <strong>{event.Title}</strong> - {event.DateTime}<br />
+                        <small>{event.Description}</small><br />
+                        <div style={{ display: 'inline' }}>
+                          <button onClick={() => handleEventRespond(event.ID, 'going')}>
+                            ✅ Going
+                          </button>
+                          <button onClick={() => handleEventRespond(event.ID, 'not_going')}>
+                            ❌ Not Going
+                          </button>
+                        </div>
+                        {event.UserResponse === 'going' && (
+                          <div style={{ color: 'green', marginTop: '5px' }}>✅ You're going</div>
+                        )}
+                        {event.UserResponse === 'not_going' && (
+                          <div style={{ color: 'red', marginTop: '5px' }}>❌ You're not going</div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="empty-state">No events yet.</div>
+                )}
+              </div>
+
+              {/* Group Posts Section */}
+              <div className="group-section">
+                <h3 className="section-title">Group Posts</h3>
+
+                {/* Create Post */}
+                <form onSubmit={handleCreatePost}>
+                  <textarea
+                    value={postContent}
+                    onChange={(e) => setPostContent(e.target.value)}
+                    placeholder="Write something to the group..."
+                    required
+                  /><br />
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+
+                  {postImagePreview && (
+                    <div style={{ margin: '10px 0' }}>
+                      <Image
+                        src={postImagePreview}
+                        alt="Preview"
+                        width={200}
+                        height={200}
+                        style={{ objectFit: 'cover' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPostImage(null);
+                          setPostImagePreview(null);
+                        }}
+                        style={{ marginLeft: '10px' }}
+                      >
+                        Remove Image
+                      </button>
+                    </div>
+                  )}
+
+                  <button type="submit">Post</button>
+                </form>
+
+                {/* List of Posts */}
+                {groupData.Posts && groupData.Posts.length > 0 ? (
+                  <ul className="post-list">
+                    {groupData.Posts.map((post, index) => (
+                      <li key={index} className="post-item">
+                        <div className="post-header">
+                          <strong>{post.Username}</strong>
+                          <small>{post.CreatedAt}</small>
+                        </div>
+                        <p className="post-content">{post.Content}</p>
+
+                        {post.ImageURL && (
+                          <div style={{ margin: '10px 0' }}>
+                            <Image
+                              src={`http://localhost:8080${post.ImageURL}`}
+                              alt="Post image"
+                              width={400}
+                              height={300}
+                              style={{ objectFit: 'cover' }}
                             />
                           </div>
-                          
-                          {commentImagePreviews[post.ID] && (
+                        )}
+
+                        {/* Comment Form with Image Support */}
+                        <div className="comment-form">
+                          <form onSubmit={(e) => {
+                            e.preventDefault();
+                            handleCreateComment(post.ID, commentInputs[post.ID] || '');
+                          }}>
+                            <input
+                              type="text"
+                              value={commentInputs[post.ID] || ''}
+                              onChange={(e) => setCommentInputs({ ...commentInputs, [post.ID]: e.target.value })}
+                              placeholder="Write a comment..."
+                              required
+                            />
+
                             <div style={{ margin: '5px 0' }}>
-                              <Image 
-                                src={commentImagePreviews[post.ID]} 
-                                alt="Comment preview" 
-                                width={100} 
-                                height={100} 
-                                style={{ objectFit: 'cover' }}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleCommentImageChange(post.ID, e)}
+                                style={{ fontSize: '12px' }}
                               />
-                              <button 
-                                type="button" 
-                                onClick={() => removeCommentImage(post.ID)}
-                                style={{ marginLeft: '5px', fontSize: '12px' }}
-                              >
-                                Remove
-                              </button>
                             </div>
-                          )}
-                          
-                          <button type="submit">Comment</button>
-                        </form>
-                      </div>
 
-                      {/* Comment List */}
-                      {post.Comments && post.Comments.length > 0 ? (
-                        
-                        <ul className="comment-list">
-                          {post.Comments.map((comment, commentIndex) => (
-
-                            <li key={commentIndex} className="comment-item">
-                              <div className="comment-content">
-                                <strong>{comment.Username}</strong>: {comment.Content}
-                                <small>{comment.CreatedAt}</small>
+                            {commentImagePreviews[post.ID] && (
+                              <div style={{ margin: '5px 0' }}>
+                                <Image
+                                  src={commentImagePreviews[post.ID]}
+                                  alt="Comment preview"
+                                  width={100}
+                                  height={100}
+                                  style={{ objectFit: 'cover' }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeCommentImage(post.ID)}
+                                  style={{ marginLeft: '5px', fontSize: '12px' }}
+                                >
+                                  Remove
+                                </button>
                               </div>
-                              
-                              {comment.ImageURL && (
-                                
-                                <div style={{ margin: '5px 0' }}>
-                                  <Image 
-                                    src={`http://localhost:8080${comment.ImageURL}`} 
-                                    alt="Comment image" 
-                                    width={150} 
-                                    height={150} 
-                                    style={{ objectFit: 'cover' }}
-                                  />
+                            )}
+
+                            <button type="submit">Comment</button>
+                          </form>
+                        </div>
+
+                        {/* Comment List */}
+                        {post.Comments && post.Comments.length > 0 ? (
+
+                          <ul className="comment-list">
+                            {post.Comments.map((comment, commentIndex) => (
+
+                              <li key={commentIndex} className="comment-item">
+                                <div className="comment-content">
+                                  <strong>{comment.Username}</strong>: {comment.Content}
+                                  <small>{comment.CreatedAt}</small>
                                 </div>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <div className="empty-state">No comments yet.</div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="empty-state">No posts yet.</div>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="no-access-message">
-            🔒 You are not a member of this group and cannot view its details.
-          </div>
-        )}
 
-        {/* Admin Sections */}
-        {isAdmin && (
-          <>
-            {/* Join Requests Section */}
-            <div className="group-section">
-              <h3 className="section-title">Join Requests</h3>
-              {groupData.RequestedMembers && groupData.RequestedMembers.length > 0 ? (
-                <ul className="member-list">
-                  {groupData.RequestedMembers.map((request, index) => (
-                    <li key={index} className="request-item">
-                      <div className="request-info">
-                        <div className="request-username">{request.Username}</div>
-                        <div className="request-status">{request.Status}</div>
-                      </div>
-                      <div className="action-buttons">
-                        <button 
-                          onClick={() => handleAcceptRequest(request.UserID, group.ID)}
-                          className="accept-btn"
-                        >
-                          Accept
-                        </button>
-                        <button 
-                          onClick={() => handleRejectRequest(request.UserID, group.ID)}
-                          className="reject-btn"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="empty-state">No pending join requests.</div>
-              )}
-            </div>
+                                {comment.ImageURL && (
 
-            {/* Invite Users Section */}
-            <div className="group-section">
-              <h3 className="section-title">Invite Users</h3>
-              {groupData.InvitableUsers && groupData.InvitableUsers.length > 0 ? (
-                <ul className="member-list">
-                  {groupData.InvitableUsers.map((user, index) => (
-                    <li key={index} className="invite-item">
-                      <div className="invite-username">{user.Username}</div>
-                      {user.Invited ? (
-                        <button type="button" className="invite-btn" disabled>
-                          Invited
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => handleInviteUser(user.UserID, group.ID)}
-                          className="invite-btn"
-                        >
-                          Invite
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="empty-state">No users available for invitation.</div>
-              )}
+                                  <div style={{ margin: '5px 0' }}>
+                                    <Image
+                                      src={`http://localhost:8080${comment.ImageURL}`}
+                                      alt="Comment image"
+                                      width={150}
+                                      height={150}
+                                      style={{ objectFit: 'cover' }}
+                                    />
+                                  </div>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="empty-state">No comments yet.</div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="empty-state">No posts yet.</div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="no-access-message">
+              🔒 You are not a member of this group and cannot view its details.
             </div>
-          </>
-        )}
-      </div>
+          )}
+
+          {/* Admin Sections */}
+          {isAdmin && (
+            <>
+              {/* Join Requests Section */}
+              <div className="group-section">
+                <h3 className="section-title">Join Requests</h3>
+                {groupData.RequestedMembers && groupData.RequestedMembers.length > 0 ? (
+                  <ul className="member-list">
+                    {groupData.RequestedMembers.map((request, index) => (
+                      <li key={index} className="request-item">
+                        <div className="request-info">
+                          <div className="request-username">{request.Username}</div>
+                          <div className="request-status">{request.Status}</div>
+                        </div>
+                        <div className="action-buttons">
+                          <button
+                            onClick={() => handleAcceptRequest(request.UserID, group.ID)}
+                            className="accept-btn"
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => handleRejectRequest(request.UserID, group.ID)}
+                            className="reject-btn"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="empty-state">No pending join requests.</div>
+                )}
+              </div>
+
+              {/* Invite Users Section */}
+              <div className="group-section">
+                <h3 className="section-title">Invite Users</h3>
+                {groupData.InvitableUsers && groupData.InvitableUsers.length > 0 ? (
+                  <ul className="member-list">
+                    {groupData.InvitableUsers.map((user, index) => (
+                      <li key={index} className="invite-item">
+                        <div className="invite-username">{user.Username}</div>
+                        {user.Invited ? (
+                          <button type="button" className="invite-btn" disabled>
+                            Invited
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleInviteUser(user.UserID, group.ID)}
+                            className="invite-btn"
+                          >
+                            Invite
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="empty-state">No users available for invitation.</div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </>
     );
+
   }
 
   // Show loading state

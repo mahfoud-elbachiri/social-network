@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	db "social-network/Database/cration"
 	"social-network/utils"
@@ -36,6 +37,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		// Handle avatar upload (simplified)
 		var avatarPath string
 
+		uniqueID := time.Now().Format("20060102150405")
+
 		// Try to get the uploaded file
 		file, handler, err := r.FormFile("avatar")
 		if err == nil && handler != nil {
@@ -43,10 +46,10 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			defer file.Close()
 
 			// Make sure the avatars folder exists
-			os.MkdirAll("../../frontend/public/avatars", 0o755)
+			os.MkdirAll("../frontend/public/avatars/", 0o755)
 
 			// Save the file to public/avatars folder
-			savePath := "../../frontend/public/avatars/" + handler.Filename
+			savePath := "../frontend/public/avatars/" + uniqueID + handler.Filename
 			newFile, err := os.Create(savePath)
 			if err == nil {
 				// Copy the uploaded file to our folder
@@ -54,7 +57,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				newFile.Close()
 
 				// Store just "avatars/filename.jpg" in database (not full path)
-				avatarPath = "avatars/" + handler.Filename
+				avatarPath = "avatars/" + uniqueID + handler.Filename
 			}
 		}
 

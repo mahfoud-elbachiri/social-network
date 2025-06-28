@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from 'next/navigation';
 
- 
+
 import Header from '@/components/Header';
 import PostCard from '@/components/PostCard';
 import ProfileStats from '@/components/ProfileStats';
@@ -11,8 +11,12 @@ import ProfileCard from '@/components/ProfileCard';
 import PrivatePostsMessage from '@/components/PrivatePostsMessage';
 import { useComments } from '@/hooks/useComments';
 import { userApi } from '@/utils/api';
+import { getSocket } from "@/sock/GetSocket";
 
 export default function ProfileClient() {
+
+  const socket = getSocket()
+
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +28,7 @@ export default function ProfileClient() {
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('id') || null;
 
- 
+
   const {
     showComments,
     comments,
@@ -34,6 +38,11 @@ export default function ProfileClient() {
   } = useComments(setPosts);
 
   useEffect(() => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ content: "broadcast" }));
+    } else {
+      console.warn("❌ WebSocket not ready, cannot send message yet");
+    }
     fetchProfile();
     fetchPosts();
   }, [targetUserId]);
@@ -41,7 +50,7 @@ export default function ProfileClient() {
   const fetchProfile = async () => {
     try {
       const data = await userApi.fetchProfile(targetUserId);
-      
+
       if (data && data.status) {
         setProfile(data.profile);
         setIsOwnProfile(data.is_own_profile || false);
@@ -63,7 +72,7 @@ export default function ProfileClient() {
     try {
       if (targetUserId) {
         const data = await userApi.fetchPostsOfUser(targetUserId);
-        
+
         if (data && data.status) {
           if (data.is_private) {
             // This is a private profile that we can't access
@@ -89,11 +98,11 @@ export default function ProfileClient() {
 
   const togglePrivacy = async () => {
     if (updatingPrivacy || !isOwnProfile) return;
-    
+
     setUpdatingPrivacy(true);
     try {
       const data = await userApi.updatePrivacy(!profile.is_private);
-      
+
       if (data && data.status) {
         setProfile(prev => ({
           ...prev,
@@ -158,7 +167,7 @@ export default function ProfileClient() {
             targetid={targetUserId}
           />
         </aside>
-        
+
         {/* Main Content - Posts */}
         <main className="main-content" id="main-content">
           <div className="profile-posts-header">
@@ -192,12 +201,12 @@ export default function ProfileClient() {
           </div>
         </main>
 
-        <ProfileStats 
-          postsCount={posts.length} 
+        <ProfileStats
+          postsCount={posts.length}
           isPrivateView={isPrivateView}
           isPrivatePosts={isPrivatePosts}
           isOwnProfile={isOwnProfile}
-          targetUserId={targetUserId} 
+          targetUserId={targetUserId}
         />
       </div>
     </div>
