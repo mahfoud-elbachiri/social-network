@@ -20,7 +20,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		// Parse form data
 		err := r.ParseMultipartForm(10 << 20) // 10 MB
-		fmt.Println("DEBUG r.Form:", r.Form)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(`{"error": "Failed to parse form data", "status":false}`))
@@ -29,7 +28,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 		email := r.FormValue("email")
 		password := r.FormValue("password")
-		fmt.Println("Email:", string(email), "Password:", string(password))
+		//fmt.Println("Email:", string(email), "Password:", string(password))
 		w.Header().Set("Content-Type", "application/json")
 		var boo bool
 		typ := ""

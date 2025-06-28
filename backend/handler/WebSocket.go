@@ -202,7 +202,7 @@ func BroadcastUsers() {
 		})
 	}
 
-	fmt.Println("sort users ================++>>>>", users)
+	//fmt.Println("sort users ================++>>>>", users)
 
 	message := map[string]any{
 		"type":  "users",

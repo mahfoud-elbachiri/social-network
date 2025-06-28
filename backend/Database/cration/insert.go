@@ -113,7 +113,7 @@ func InsertFOllow(follower_id int, following_id int, status string) error {
 
 	info, err := DB.Prepare(query)
 	if err != nil {
-		fmt.Println("publicddd")
+	//	fmt.Println("publicddd")
 		return err
 	}
 
