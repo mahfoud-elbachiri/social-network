@@ -92,10 +92,10 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 
 		if msg.Content == "is-typing" || msg.Content == "no-typing" {
 			typing <- msg
-		} else {
+		} else if msg.Content != "broadcast"{
 			time := time.Now().Format("2006-01-02 15:04:05")
 			msg.Time = time
-
+			fmt.Println(msg.Content)
 			err = db.InsertMessages(msg.Sender, msg.Receiver, msg.Content, msg.Time)
 			if err != nil {
 				fmt.Println("insert massages error:", err)
