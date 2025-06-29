@@ -20,7 +20,8 @@ export default function ChatWebSocket({ username }) {
         setInput(input + emojiObject.emoji)
         setShowEmojiPicker(false)
     };
-
+    
+    const [notification, setNotification] = useState(null)
     const [selectedUser, setSelectedUser] = useState()
     const [UsersList, setUsersList] = useState()
     const [input, setInput] = useState('')
@@ -103,6 +104,16 @@ export default function ChatWebSocket({ username }) {
     }, [username, selectedUser])
 
 
+    const showNotification = (sender) => {
+        let id
+        console.log(25);
+       clearTimeout(id) 
+    setNotification({ sender });
+
+     id = setTimeout(() => {
+        setNotification(null);
+    }, 5000);
+}
 
     useEffect(() => {
         // const socket = new WebSocket('ws://localhost:8080/ws')
@@ -136,6 +147,12 @@ export default function ChatWebSocket({ username }) {
                 setUsersList(data.users)
             } else {
                 setMessages(prvData => [...prvData, data])
+                console.log(data.receiver,selectedUser)
+                
+                if (data.sender != selectedUser && data.receiver === username){
+
+                    showNotification(data.receiver)
+                }
             }
 
             console.log(data);
@@ -152,7 +169,7 @@ export default function ChatWebSocket({ username }) {
         // };
 
 
-    }, [i])
+    }, [i,selectedUser])
 
     const sendMessage = (socket, sender, receiver) => {
 
@@ -169,6 +186,7 @@ export default function ChatWebSocket({ username }) {
     return (
 
         <>
+          
             <aside className="contacts" style={{ paddingTop: '0' }}>
                 <div style={{ marginBottom: '1rem' }}>
                     <h3 style={{ marginTop: "10px" }}>Chat</h3>
@@ -241,11 +259,15 @@ export default function ChatWebSocket({ username }) {
                             {messages.filter(m =>
                                 m.sender === selectedUser || m.receiver === selectedUser
                             ).map((msg, index) => (
+                                
                                 <div key={index} className={`format-msg ${msg.sender === username ? 'sent' : 'received'}`}>
+                                
                                     <p className="msg-text">{msg.content}</p>
                                     <span className="msg-time">{msg.Time}</span>
                                 </div>
-                            ))}
+                            )
+
+                            )}
 
                             <div ref={messagesEndRef} />
                         </div >
