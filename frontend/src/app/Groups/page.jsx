@@ -138,41 +138,41 @@ export default function HomePage() {
     }
   };
 
-const handleCreateEvent = async (e) => {
-  e.preventDefault();
-  setEventError('');
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
+    setEventError('');
 
-  try {
-    const res = await fetch('http://localhost:8080/group/create-event', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...eventForm, group_id: selectedGroup }),
-    });
+    try {
+      const res = await fetch('http://localhost:8080/group/create-event', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...eventForm, group_id: selectedGroup }),
+      });
 
-    if (!res.ok) {
-      const text = await res.text();
+      if (!res.ok) {
+        const text = await res.text();
 
-      // Handle specific backend error message
-      if (text.includes("Cannot create an event in the past")) {
-        setEventError("❌ You cannot create an event in the past.");
-      } else {
-        setEventError("❌ Failed to create event.");
+        // Handle specific backend error message
+        if (text.includes("Cannot create an event in the past")) {
+          setEventError("❌ You cannot create an event in the past.");
+        } else {
+          setEventError("❌ Failed to create event.");
+        }
+
+        // ✅ Return early without throwing so console stays clean
+        return;
       }
 
-      // ✅ Return early without throwing so console stays clean
-      return;
+      // ✅ Success
+      setEventForm({ title: '', description: '', datetime: '' });
+      fetchGroupById(selectedGroup);
+    } catch (err) {
+      // Only log unexpected errors
+      console.error('Unexpected error:', err);
+      setEventError("❌ Something went wrong. Please try again.");
     }
-
-    // ✅ Success
-    setEventForm({ title: '', description: '', datetime: '' });
-    fetchGroupById(selectedGroup);
-  } catch (err) {
-    // Only log unexpected errors
-    console.error('Unexpected error:', err);
-    setEventError("❌ Something went wrong. Please try again.");
-  }
-};
+  };
 
 
   const handleEventRespond = async (eventId, response) => {
@@ -604,7 +604,7 @@ const handleCreateEvent = async (e) => {
             <div className="group-section">
               <h3 className="section-title">Join Requests</h3>
               {groupData.RequestedMembers &&
-              groupData.RequestedMembers.length > 0 ? (
+                groupData.RequestedMembers.length > 0 ? (
                 <ul className="member-list">
                   {groupData.RequestedMembers.map((request, index) => (
                     <li key={index} className="request-item">
@@ -646,7 +646,7 @@ const handleCreateEvent = async (e) => {
             <div className="group-section">
               <h3 className="section-title">Invite Users</h3>
               {groupData.InvitableUsers &&
-              groupData.InvitableUsers.length > 0 ? (
+                groupData.InvitableUsers.length > 0 ? (
                 <ul className="member-list">
                   {groupData.InvitableUsers.map((user, index) => (
                     <li key={index} className="invite-item">
@@ -675,6 +675,28 @@ const handleCreateEvent = async (e) => {
               )}
             </div>
           )}
+
+          <div className="group-section">
+            <h2>Group  Chat </h2>
+
+            <div className="chat-box"> 
+              <div className="messages" >
+
+
+              </div >
+
+              <div className="chat-input">
+
+                <button className="emoji-button" >😊</button>
+
+                <input type="text" placeholder="Write a message..." />
+                <button className='send'>Send</button>
+              </div>
+            </div>
+
+
+          </div>
+
         </div>
       </>
     );
