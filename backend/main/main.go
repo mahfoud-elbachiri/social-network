@@ -1,18 +1,60 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 
 	data "social-network/Database/sqlite"
 	"social-network/handler"
+	"social-network/utils"
 )
+// gha bach manb9ach n3dl kol mra compt
+func addUsers(db *sql.DB) error {
+	users := []struct {
+		FirstName string
+		LastName  string
+		Email     string
+		Gender    string
+		Age       int
+		Nickname  string
+		Password  string
+		AboutMe   string
+		Avatar    string
+		IsPrivate bool
+	}{
+		{"User", "One", "user1@example.com", "male", 25, "user1", "user1", "", "", false},
+		{"User", "Two", "user2@example.com", "male", 25, "user2", "user2", "", "", false},
+		{"User", "Three", "user3@example.com", "male", 25, "user3", "user3", "", "", false},
+	}
+
+	for _, u := range users {
+		// Hash password
+		hashedPass, err := utils.HashPassword(u.Password)
+		if err != nil {
+			return fmt.Errorf("failed to hash password for %s: %w", u.Nickname, err)
+		}
+
+		// Insert user with raw SQL query
+		_, err = db.Exec(`
+			INSERT INTO users (
+				first_name, last_name, email, gender, age, nikname, password, avatar, about_me, is_private
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			u.FirstName, u.LastName, u.Email, u.Gender, u.Age, u.Nickname, hashedPass, u.Avatar, u.AboutMe, u.IsPrivate,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to insert user %s: %w", u.Nickname, err)
+		}
+	}
+
+	return nil
+}
 
 func main() {
 	Db := data.GetDB()
 
 	defer Db.Close()
-
+	addUsers(Db)
 	router := http.NewServeMux()
 
 	router.HandleFunc("/resgester", handler.Register)

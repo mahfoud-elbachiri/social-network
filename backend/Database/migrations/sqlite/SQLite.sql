@@ -1,2 +1,2 @@
 -- SQLite
--- DELETE FROM group_posts WHERE id = 6;
+DELETE FROM users ;

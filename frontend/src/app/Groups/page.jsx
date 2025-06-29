@@ -522,71 +522,71 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Admin Sections */}
+          {/* Join Requests: only visible to Admin */}
           {isAdmin && (
-            <>
-              {/* Join Requests Section */}
-              <div className="group-section">
-                <h3 className="section-title">Join Requests</h3>
-                {groupData.RequestedMembers && groupData.RequestedMembers.length > 0 ? (
-                  <ul className="member-list">
-                    {groupData.RequestedMembers.map((request, index) => (
-                      <li key={index} className="request-item">
-                        <div className="request-info">
-                          <div className="request-username">{request.Username}</div>
-                          <div className="request-status">{request.Status}</div>
-                        </div>
-                        <div className="action-buttons">
-                          <button
-                            onClick={() => handleAcceptRequest(request.UserID, group.ID)}
-                            className="accept-btn"
-                          >
-                            Accept
-                          </button>
-                          <button
-                            onClick={() => handleRejectRequest(request.UserID, group.ID)}
-                            className="reject-btn"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="empty-state">No pending join requests.</div>
-                )}
-              </div>
-
-              {/* Invite Users Section */}
-              <div className="group-section">
-                <h3 className="section-title">Invite Users</h3>
-                {groupData.InvitableUsers && groupData.InvitableUsers.length > 0 ? (
-                  <ul className="member-list">
-                    {groupData.InvitableUsers.map((user, index) => (
-                      <li key={index} className="invite-item">
-                        <div className="invite-username">{user.Username}</div>
-                        {user.Invited ? (
-                          <button type="button" className="invite-btn" disabled>
-                            Invited
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleInviteUser(user.UserID, group.ID)}
-                            className="invite-btn"
-                          >
-                            Invite
-                          </button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="empty-state">No users available for invitation.</div>
-                )}
-              </div>
-            </>
+            <div className="group-section">
+              <h3 className="section-title">Join Requests</h3>
+              {groupData.RequestedMembers && groupData.RequestedMembers.length > 0 ? (
+                <ul className="member-list">
+                  {groupData.RequestedMembers.map((request, index) => (
+                    <li key={index} className="request-item">
+                      <div className="request-info">
+                        <div className="request-username">{request.Username}</div>
+                        <div className="request-status">{request.Status}</div>
+                      </div>
+                      <div className="action-buttons">
+                        <button
+                          onClick={() => handleAcceptRequest(request.UserID, group.ID)}
+                          className="accept-btn"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => handleRejectRequest(request.UserID, group.ID)}
+                          className="reject-btn"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="empty-state">No pending join requests.</div>
+              )}
+            </div>
           )}
+
+          {/* Invite Users: visible to all group members */}
+          {isMemberOrCreator && (
+            <div className="group-section">
+              <h3 className="section-title">Invite Users</h3>
+              {groupData.InvitableUsers && groupData.InvitableUsers.length > 0 ? (
+                <ul className="member-list">
+                  {groupData.InvitableUsers.map((user, index) => (
+                    <li key={index} className="invite-item">
+                      <div className="invite-username">{user.Username}</div>
+                      {user.Invited ? (
+                        <button type="button" className="invite-btn" disabled>
+                          Invited
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleInviteUser(user.UserID, group.ID)}
+                          className="invite-btn"
+                        >
+                          Invite
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="empty-state">No users available for invitation.</div>
+              )}
+            </div>
+          )}
+
         </div>
       </>
     );

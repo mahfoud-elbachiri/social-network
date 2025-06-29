@@ -402,6 +402,7 @@ func GroupInviteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get session token
 	cookie, err := r.Cookie("SessionToken")
 	if err != nil {
 		http.Error(w, "Unauthorized - missing session", http.StatusUnauthorized)
@@ -409,9 +410,9 @@ func GroupInviteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dvb := sqlite.GetDB()
+	senderID := db.GetId("SessionToken", cookie.Value)
 
-	adminID := db.GetId("SessionToken", cookie.Value)
-
+	// Decode incoming JSON
 	var data struct {
 		UserID  int `json:"user_id"`
 		GroupID int `json:"group_id"`
@@ -422,29 +423,58 @@ func GroupInviteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
 		return
 	}
-
 	err = json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&data)
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
-
 	if data.UserID == 0 || data.GroupID == 0 {
 		http.Error(w, "Missing user_id or group_id", http.StatusBadRequest)
 		return
 	}
 
+	// Check if user is group creator
 	var creatorID int
 	err = dvb.QueryRow(`SELECT creator_id FROM groups WHERE id = ?`, data.GroupID).Scan(&creatorID)
 	if err != nil {
 		http.Error(w, "Group not found", http.StatusNotFound)
 		return
 	}
-	if creatorID != adminID {
+
+	// Check if sender is accepted member
+	var count int
+	err = dvb.QueryRow(`
+		SELECT COUNT(*) FROM group_members
+		WHERE group_id = ? AND user_id = ? AND status = 'accepted'
+	`, data.GroupID, senderID).Scan(&count)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	isAcceptedMember := count > 0
+
+	if senderID != creatorID && !isAcceptedMember {
 		http.Error(w, "Unauthorized", http.StatusForbidden)
 		return
 	}
 
+	// Check if target user is already in the group
+	var status string
+	err = dvb.QueryRow(`
+		SELECT status FROM group_members 
+		WHERE group_id = ? AND user_id = ?
+	`, data.GroupID, data.UserID).Scan(&status)
+
+	if err != sql.ErrNoRows {
+		if err != nil {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			return
+		}
+		http.Error(w, "User is already in the group or already invited/requested", http.StatusConflict)
+		return
+	}
+
+	// Safe to invite
 	_, err = dvb.Exec(`
 		INSERT INTO group_members (group_id, user_id, role, status)
 		VALUES (?, ?, 'member', 'invited')
@@ -458,6 +488,8 @@ func GroupInviteHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message":"User invited successfully"}`))
 }
+
+
 
 func AcceptInviteHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -986,7 +1018,7 @@ func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Step 6c: Fetch invitable users (only for group creator)
 	var invitableUsers []InvitableUser
-	if group.IsCreator {
+	if group.IsCreator || group.IsMember {
 		inviteRows, err := dvb.Query(`
 			SELECT u.id, u.nikname,
 			CASE WHEN gm.status IS NOT NULL THEN 1 ELSE 0 END AS invited
