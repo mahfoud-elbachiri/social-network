@@ -8,6 +8,7 @@ import Image from 'next/image'
 
 
 
+
 export default function ChatWebSocket({ username }) {
 
     const socket = getSocket()
@@ -20,7 +21,7 @@ export default function ChatWebSocket({ username }) {
         setInput(input + emojiObject.emoji)
         setShowEmojiPicker(false)
     };
-    
+
     const [notification, setNotification] = useState(null)
     const [selectedUser, setSelectedUser] = useState()
     const [UsersList, setUsersList] = useState()
@@ -106,14 +107,13 @@ export default function ChatWebSocket({ username }) {
 
     const showNotification = (sender) => {
         let id
-        console.log(25);
-       clearTimeout(id) 
-    setNotification({ sender });
+        clearTimeout(id)
+        setNotification({ sender });
 
-     id = setTimeout(() => {
-        setNotification(null);
-    }, 5000);
-}
+        id = setTimeout(() => {
+            setNotification(null);
+        }, 5000);
+    }
 
     useEffect(() => {
         // const socket = new WebSocket('ws://localhost:8080/ws')
@@ -147,9 +147,9 @@ export default function ChatWebSocket({ username }) {
                 setUsersList(data.users)
             } else {
                 setMessages(prvData => [...prvData, data])
-                console.log(data.receiver,selectedUser)
-                
-                if (data.sender != selectedUser && data.receiver === username){
+                console.log(data.receiver, selectedUser,data.sender)
+
+                if (data.sender != selectedUser && data.receiver === username) {
 
                     showNotification(data.receiver)
                 }
@@ -169,7 +169,7 @@ export default function ChatWebSocket({ username }) {
         // };
 
 
-    }, [i,selectedUser])
+    }, [i, selectedUser])
 
     const sendMessage = (socket, sender, receiver) => {
 
@@ -181,12 +181,19 @@ export default function ChatWebSocket({ username }) {
         socket.send(JSON.stringify({ sender: sender, receiver: receiver, content: trimmedMessage }))
         setInput("");
     }
+    // components/PopUpNotification.tsx
+    // components/PopUpNotification.jsx
+
 
 
     return (
 
         <>
-          
+            {notification && (
+                <div className="popup-notification">
+                    <strong>{notification.sender}</strong> send you a message...
+                </div>
+            )}
             <aside className="contacts" style={{ paddingTop: '0' }}>
                 <div style={{ marginBottom: '1rem' }}>
                     <h3 style={{ marginTop: "10px" }}>Chat</h3>
@@ -259,9 +266,9 @@ export default function ChatWebSocket({ username }) {
                             {messages.filter(m =>
                                 m.sender === selectedUser || m.receiver === selectedUser
                             ).map((msg, index) => (
-                                
+
                                 <div key={index} className={`format-msg ${msg.sender === username ? 'sent' : 'received'}`}>
-                                
+
                                     <p className="msg-text">{msg.content}</p>
                                     <span className="msg-time">{msg.Time}</span>
                                 </div>
