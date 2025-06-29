@@ -489,8 +489,6 @@ func GroupInviteHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"message":"User invited successfully"}`))
 }
 
-
-
 func AcceptInviteHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -611,7 +609,16 @@ func CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+	eventTime, err := time.Parse("2006-01-02T15:04", data.Datetime)
+	if err != nil {
+		http.Error(w, "Invalid datetime format", http.StatusBadRequest)
+		return
+	}
 
+	if eventTime.Before(time.Now()) {
+		http.Error(w, "Cannot create an event in the past", http.StatusBadRequest)
+		return
+	}
 	if data.GroupID == 0 || data.Title == "" || data.Datetime == "" {
 		http.Error(w, "Missing required fields", http.StatusBadRequest)
 		return
