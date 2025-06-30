@@ -31,21 +31,81 @@ export default function LoginRegisterPage() {
   }
 
   const handleRegister = async (e) => {
-    e.preventDefault()
-    const form = new FormData(e.target)
-    // No need to build a payload, just send the FormData directly
+   e.preventDefault()
+  const form = new FormData(e.target)
+  
+  // Validate form data
+  const validationErrors = validateForm(form)
+  if (validationErrors.length > 0) {
+    setRegisterError(validationErrors.join('. '))
+    return
+  }
+
+  // Clear any previous errors
+  setRegisterError("")
+
+  try {
     const res = await fetch("http://localhost:8080/resgester", {
       method: "POST",
       body: form,
       credentials: 'include'
     })
+    
     const data = await res.json()
+    
     if (data.success) {
       window.location.href = "/"
     } else {
       setRegisterError(data.message)
     }
+  } catch (error) {
+    setRegisterError("Network error. Please try again.")
   }
+  }
+
+const validateForm = (formData) => {
+  const errors = []
+  
+  
+  const firstName = formData.get('firstName')?.trim()
+  const lastName = formData.get('lastName')?.trim()
+  const email = formData.get('email')?.trim()
+  const password = formData.get('password')
+  const age = parseInt(formData.get('age'))
+  const nickname = formData.get('nickname')?.trim()
+
+
+  if (!firstName || firstName.length < 2 || firstName.length > 30 || !/^[a-zA-Z\s]+$/.test(firstName)) {
+    errors.push('First name must be 2-30 letters only')
+  }
+  
+  if (!lastName || lastName.length < 2 || lastName.length > 30 || !/^[a-zA-Z\s]+$/.test(lastName)) {
+    errors.push('Last name must be 2-30 letters only')
+  }
+
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!email || !emailRegex.test(email)) {
+    errors.push('Please enter a valid email address')
+  }
+
+
+  if (!password || password.length < 6) {
+    errors.push('Password must be at least 6 characters')
+  }
+
+
+  if (!age || age < 13 || age > 120) {
+    errors.push('Age must be between 13 and 120')
+  }
+
+ 
+  if (nickname && (nickname.length < 3 || nickname.length > 20 || !/^[a-zA-Z0-9_]+$/.test(nickname))) {
+    errors.push('Nickname must be 3-20 characters (letters, numbers, underscore only)')
+  }
+
+  return errors
+}
 
   return (
     <div>
