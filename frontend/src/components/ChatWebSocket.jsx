@@ -147,7 +147,7 @@ export default function ChatWebSocket({ username }) {
                 setUsersList(data.users)
             } else {
                 setMessages(prvData => [...prvData, data])
-                console.log(data.receiver, selectedUser,data.sender)
+                console.log(data.receiver, selectedUser, data.sender)
 
                 if (data.sender != selectedUser && data.receiver === username) {
 
@@ -183,7 +183,11 @@ export default function ChatWebSocket({ username }) {
     }
     // components/PopUpNotification.tsx
     // components/PopUpNotification.jsx
-
+    const onkkeydown = (e,socket,username,selectedUser) => {
+      if (e.key === "Enter") sendMessage(socket,username,selectedUser)
+      
+    }
+    
 
 
     return (
@@ -287,7 +291,7 @@ export default function ChatWebSocket({ username }) {
                                 <EmojiPicker onEmojiClick={onEmojiClick} />
                             )}
 
-                            <input onChange={(e) => setInput(e.target.value)} type="text" placeholder="Write a message..." value={input} />
+                            <input onKeyDown={(e)=>onkkeydown(e,socket,username,selectedUser)}onChange={(e) => setInput(e.target.value)} type="text" placeholder="Write a message..." value={input} />
                             <button onClick={() => sendMessage(socket, username, selectedUser)} className='send'>Send</button>
                         </div>
                     </div>
