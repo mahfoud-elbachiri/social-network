@@ -107,6 +107,17 @@ func InsertMessages(sender string, receiver string, content string, time string)
 	}
 	return nil
 }
+func InsertMssgGRoup(Group_id,user_id int,mssg string,time string)error{
+	info ,err :=DB.Prepare("INSERT INTO group_chat_messages(group_id,user_id,content,sent_at)VALUES(?,?,?,?)")
+		if err != nil {
+		return err
+	}
+	_, err = info.Exec(Group_id, user_id, mssg, time)
+	if err != nil {
+		return err
+	}
+	return  nil
+}
 
 func InsertFOllow(follower_id int, following_id int, status string) error {
 	query := "INSERT INTO followers (follower_id , following_id , status) VALUES (?,?,?)"

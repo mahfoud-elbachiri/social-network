@@ -31,7 +31,7 @@ export default function LoginRegisterPage() {
   }
 
   const handleRegister = async (e) => {
-   e.preventDefault()
+    e.preventDefault()
   const form = new FormData(e.target)
   
   // Validate form data
@@ -50,15 +50,13 @@ export default function LoginRegisterPage() {
       body: form,
       credentials: 'include'
     })
-    
     const data = await res.json()
-    
     if (data.success) {
       window.location.href = "/"
     } else {
       setRegisterError(data.message)
     }
-  } catch (error) {
+    } catch (error) {
     setRegisterError("Network error. Please try again.")
   }
   }
@@ -106,7 +104,6 @@ const validateForm = (formData) => {
 
   return errors
 }
-
   return (
     <div>
       {showRegister ? (

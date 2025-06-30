@@ -163,7 +163,7 @@ export default function ChatWebSocket({ username }) {
         //     console.log('🔌 WebSocket closed');
         // }
 
-        // return () => {
+        // return () => {socket.send(JSON.stringify({ sender: sender, receiver: receiver, content: trimmedMessage }))
         //     socket.close();
         //     console.log('WebSocket disconnected');
         // };

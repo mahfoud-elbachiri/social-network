@@ -5,6 +5,7 @@ import Image from "next/image";
 import "./style.css";
 import { getSocket } from "@/sock/GetSocket";
 import Header from "@/components/Header";
+import { useSearchParams } from 'next/navigation'
 
 export default function HomePage() {
   const socket = getSocket();
@@ -17,6 +18,7 @@ export default function HomePage() {
     description: "",
     datetime: "",
   });
+  const [input, setInput] = useState("")
   const [postContent, setPostContent] = useState("");
   const [postImage, setPostImage] = useState(null);
   const [postImagePreview, setPostImagePreview] = useState(null);
@@ -282,6 +284,23 @@ export default function HomePage() {
     const newUrl = window.location.pathname;
     window.history.pushState({}, "", newUrl);
   };
+  const searchParams = useSearchParams();
+  const id = searchParams.get('group')
+  useEffect(() => {
+
+    console.log('Current group id:', id);
+
+  }, [id])
+  
+  const sendMssg = (socket) => {
+    if (input.trim() === " ") {
+      return
+    }
+    let trimdMssg = input.trim().replace(/\s+/g, ' ')
+    socket.send(JSON.stringify({ type: "groupChat", content: trimdMssg, group_id: id }))
+    setInput("")
+  }
+
 
   // Group Detail View
   if (selectedGroup && groupData) {
@@ -679,7 +698,7 @@ export default function HomePage() {
           <div className="group-section">
             <h2>Group  Chat </h2>
 
-            <div className="chat-box"> 
+            <div className="chat-box">
               <div className="messages" >
 
 
@@ -689,8 +708,9 @@ export default function HomePage() {
 
                 <button className="emoji-button" >😊</button>
 
-                <input type="text" placeholder="Write a message..." />
-                <button className='send'>Send</button>
+                <input onChange={(e) => setInput(e.target.value)} value={input} type="text" placeholder="Write a message..." />
+                <button onClick={() => sendMssg(socket)
+                } className='send'>Send</button>
               </div>
             </div>
 

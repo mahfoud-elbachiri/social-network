@@ -3,10 +3,12 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
 	db "social-network/Database/cration"
+	// "social-network/Database/sqlite"
 
 	"github.com/gorilla/websocket"
 )
@@ -28,6 +30,9 @@ type Message struct {
 	Sender   string `json:"sender"`
 	Receiver string `json:"receiver"`
 	Content  string `json:"content"`
+	Type     string `json:"type"`
+	GroupId  string `json:"group_id"`
+	User_ID  string
 	Time     string
 }
 
@@ -86,11 +91,26 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if msg.Content == "broadcast" {
+			fmt.Println(55, msg.Content)
 			BroadcastUsers()
-		} else {
+		} else if msg.Type == "groupChat" {
 			time := time.Now().Format("2006-01-02 15:04:05")
 			msg.Time = time
-			fmt.Println(msg.Content)
+			Group_id, _ := strconv.Atoi(msg.GroupId)
+			cookie, _ := r.Cookie("SessionToken")
+
+			userID := db.GetId("SessionToken", cookie.Value)
+			err = db.InsertMssgGRoup(Group_id, userID, msg.Content, msg.Time)
+				if err != nil {
+				fmt.Println("insert massages error:", err)
+				return
+			}
+
+		} else {
+
+			time := time.Now().Format("2006-01-02 15:04:05")
+			msg.Time = time
+			fmt.Println(20, msg.Content)
 			err = db.InsertMessages(msg.Sender, msg.Receiver, msg.Content, msg.Time)
 			if err != nil {
 				fmt.Println("insert massages error:", err)
@@ -138,7 +158,7 @@ func sortU(allUser []string) ([]UserFollowers, error) {
 
 	for _, user := range allUser {
 		id := db.GetId("nikname", user)
-		
+
 		allUsers, err := db.GetFollowersUsers(id)
 		if err != nil {
 			return nil, err
@@ -147,7 +167,6 @@ func sortU(allUser []string) ([]UserFollowers, error) {
 		Users = append(Users, UserFollowers{
 			Username: user,
 			Alluser:  allUsers,
-			
 		})
 	}
 
@@ -200,7 +219,7 @@ func BroadcastUsers() {
 		})
 	}
 
-	//fmt.Println("sort users ================++>>>>", users)
+	// fmt.Println("sort users ================++>>>>", users)
 
 	message := map[string]any{
 		"type":  "users",
