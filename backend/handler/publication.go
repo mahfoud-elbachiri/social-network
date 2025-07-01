@@ -6,10 +6,12 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	db "social-network/Database/cration"
 	"social-network/servisse"
+	"social-network/utils"
 )
 
 func Post(w http.ResponseWriter, r *http.Request) {
@@ -34,9 +36,12 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		if err == nil && handler != nil {
 			defer file.Close()
 
-			os.MkdirAll("../frontend/public/avatars2/", 0o755)
+			avatarDir := utils.GetImageSavePath("avatars2")
+			os.MkdirAll(avatarDir, 0o755)
 
-			savePath := "../frontend/public/avatars2/" + uniqueID + handler.Filename
+			// os.MkdirAll("../frontend/public/avatars2/", 0o755)
+
+			savePath := filepath.Join(avatarDir, uniqueID+handler.Filename)
 			newFile, err := os.Create(savePath)
 			if err == nil {
 				io.Copy(newFile, file)

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	db "social-network/Database/cration"
@@ -45,12 +46,13 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			// User uploaded a file
 			defer file.Close()
 
-			// Make sure the avatars folder exists
-			os.MkdirAll("../frontend/public/avatars/", 0o755)
+			avatarDir := utils.GetImageSavePath("avatars")
+			os.MkdirAll(avatarDir, 0o755)
 
 			// Save the file to public/avatars folder
-			savePath := "../frontend/public/avatars/" + uniqueID + handler.Filename
+			savePath := filepath.Join(avatarDir, uniqueID+handler.Filename)
 			newFile, err := os.Create(savePath)
+			
 			if err == nil {
 				// Copy the uploaded file to our folder
 				io.Copy(newFile, file)

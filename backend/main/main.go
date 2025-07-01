@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"path/filepath"
 
 	data "social-network/Database/sqlite"
 	"social-network/handler"
 	"social-network/utils"
 )
+
 // gha bach manb9ach n3dl kol mra compt
 func addUsers(db *sql.DB) error {
 	users := []struct {
@@ -57,6 +59,11 @@ func main() {
 	addUsers(Db)
 	router := http.NewServeMux()
 
+	// serve image folder (docker)
+	imageBasePath := utils.GetImageBasePath()
+	router.Handle("/avatars/", http.StripPrefix("/avatars/", http.FileServer(http.Dir(filepath.Join(imageBasePath, "avatars")))))
+	router.Handle("/avatars2/", http.StripPrefix("/avatars2/", http.FileServer(http.Dir(filepath.Join(imageBasePath, "avatars2")))))
+
 	router.HandleFunc("/resgester", handler.Register)
 	router.HandleFunc("/login", handler.Login)
 
@@ -70,8 +77,10 @@ func main() {
 	router.Handle("/getcomment", handler.AuthMiddleware(http.HandlerFunc(handler.Comments)))
 	router.Handle("/logout", handler.AuthMiddleware(http.HandlerFunc(handler.Logout)))
 	router.Handle("/getusers", handler.AuthMiddleware(http.HandlerFunc(handler.GetUsers)))
+
 	// Group system
-	router.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("../frontend/public/uploads"))))
+	 
+	router.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(filepath.Join(imageBasePath, "uploads")))))
 
 	router.Handle("/groupPage", handler.AuthMiddleware(http.HandlerFunc(handler.HomepageGroup)))
 	router.Handle("/group", handler.AuthMiddleware(http.HandlerFunc(handler.GroupPageHandler)))

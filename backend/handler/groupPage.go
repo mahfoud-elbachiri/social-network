@@ -17,6 +17,7 @@ import (
 
 	db "social-network/Database/cration"
 	"social-network/Database/sqlite"
+	"social-network/utils"
 )
 
 type Event struct {
@@ -739,7 +740,7 @@ func CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Create uploads directory if it doesn't exist
-		uploadsDir := "../frontend/public/uploads/group_posts"
+		uploadsDir := utils.GetImageSavePath("uploads/group_posts")
 		if err := os.MkdirAll(uploadsDir, 0o755); err != nil {
 			log.Println("Failed to create uploads directory:", err)
 			http.Error(w, "Server error", http.StatusInternalServerError)
@@ -869,7 +870,8 @@ func CreateGroupCommentHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Create uploads directory if it doesn't exist
-		uploadsDir := "../frontend/public/uploads/group_comments"
+
+		uploadsDir := utils.GetImageSavePath("uploads/group_comments")
 		if err := os.MkdirAll(uploadsDir, 0o755); err != nil {
 			log.Println("Failed to create uploads directory:", err)
 			http.Error(w, "Server error", http.StatusInternalServerError)

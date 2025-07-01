@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from 'next/navigation';
 
 
 import Header from '@/components/Header';
@@ -25,8 +24,14 @@ export default function ProfileClient() {
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [isPrivatePosts, setIsPrivatePosts] = useState(false);
   const [isPrivateView, setIsPrivateView] = useState(false);
-  const searchParams = useSearchParams();
-  const targetUserId = searchParams.get('id') || null;
+
+  const [targetUserId, setTargetUserId] = useState(null);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const idFromUrl = urlParams.get('id');
+    setTargetUserId(idFromUrl || null);
+  }, []);
 
   const [i, setI] = useState(false)
 

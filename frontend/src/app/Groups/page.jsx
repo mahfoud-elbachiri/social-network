@@ -285,10 +285,23 @@ export default function HomePage() {
     const newUrl = window.location.pathname;
     window.history.pushState({}, "", newUrl);
   };
-  const searchParams = useSearchParams();
-  const id = searchParams.get('group')
-  useEffect(() => {
 
+  // dont edit this . for docker container
+  const getGroupImageUrl = (imageURL) => {
+    if (!imageURL) return null;
+    
+    // Remove leading slash if present and use relative path
+    // This will use the rewrite rules in next.config.mjs
+    const cleanPath = imageURL.startsWith('/') ? imageURL.substring(1) : imageURL;
+    return `/${cleanPath}`;
+  };
+
+  const [id, setId] = useState(null);
+ 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const groupId = urlParams.get("group");
+    setId(groupId);
     console.log('Current group id:', id);
 
   }, [id])
@@ -515,7 +528,7 @@ export default function HomePage() {
                         {post.ImageURL && (
                           <div style={{ margin: "10px 0" }}>
                             <Image
-                              src={`http://localhost:8080${post.ImageURL}`}
+                              src={getGroupImageUrl(post.ImageURL)}
                               alt="Post image"
                               width={400}
                               height={300}
@@ -599,7 +612,7 @@ export default function HomePage() {
                                 {comment.ImageURL && (
                                   <div style={{ margin: "5px 0" }}>
                                     <Image
-                                      src={`http://localhost:8080${comment.ImageURL}`}
+                                      src={getGroupImageUrl(comment.ImageURL)}
                                       alt="Comment image"
                                       width={150}
                                       height={150}

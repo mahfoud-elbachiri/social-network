@@ -1,20 +1,18 @@
-version: '3.8'
-
 services:
   backend:
-    build:
-      context: ./backend
+    build: ./backend
     ports:
       - "8080:8080"
     volumes:
-      - ./backend/Database:/root/Database
+       
+      - ./frontend/public:/app/../frontend/public
+       
+      - ./backend/Database:/app/Database:rw
+    working_dir: /app
     environment:
-      - DB_PATH=/root/Database/social-network.db
+      - DOCKER_ENV=true
 
   frontend:
-    build:
-      context: ./frontend
+    build: ./frontend
     ports:
       - "3000:3000"
-    depends_on:
-      - backend

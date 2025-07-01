@@ -20,15 +20,24 @@ var (
 func GetDB() *sql.DB {
 	once.Do(func() {
 		var err error
-		databasePath := "./Database/social-network.db"
+
+		var databasePath string
+		var migrationsPath string
+
+		databasePath = "./Database/social-network.db"
+		migrationsPath = "file://./Database/migrations/sqlite"
+
+		fmt.Printf("Using database path: %s\n", databasePath)
+		fmt.Printf("Using migrations path: %s\n", migrationsPath)
+
 		db, err = sql.Open("sqlite3", databasePath)
 		if err != nil {
 			log.Fatalln("Error opening DB:", err)
 		}
 
-		db.Exec("PRAGMA foreign_keys = ON")
+		db.Exec("PRAGMA foreign_keys = OFF")
 
-		if err := runMigrations(db); err != nil {
+		if err := runMigrations(db, migrationsPath); err != nil {
 			log.Fatalln("Migration error:", err)
 		}
 		fmt.Println("✅ DB initialized succes")
@@ -37,14 +46,14 @@ func GetDB() *sql.DB {
 	return db
 }
 
-func runMigrations(db *sql.DB) error {
+func runMigrations(db *sql.DB, migrationsPath string) error {
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
 		return err
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://./Database/migrations/sqlite",
+		migrationsPath,
 		"sqlite3",
 		driver,
 	)

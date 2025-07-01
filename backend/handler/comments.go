@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	db "social-network/Database/cration"
@@ -72,9 +73,10 @@ func Sendcomment(w http.ResponseWriter, r *http.Request) {
 		file, handler, err := r.FormFile("avatar")
 		if err == nil && handler != nil {
 			defer file.Close()
-			os.MkdirAll("../frontend/public/avatars2", 0o755)
- 
-			savePath := "../frontend/public/avatars2/" + handler.Filename
+			avatarDir := utils.GetImageSavePath("avatars2")
+			os.MkdirAll(avatarDir, 0o755)
+
+			savePath := filepath.Join(avatarDir, handler.Filename)
 			newFile, err := os.Create(savePath)
 			if err == nil {
 				io.Copy(newFile, file)
@@ -96,7 +98,7 @@ func Sendcomment(w http.ResponseWriter, r *http.Request) {
 
 		postid, err := strconv.Atoi(postID)
 		if err != nil {
-			
+
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(`{"error": "` + err.Error() + `", "status":false}`))
 			return
