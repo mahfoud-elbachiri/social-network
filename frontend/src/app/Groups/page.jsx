@@ -293,12 +293,17 @@ export default function HomePage() {
   }, [id])
   
   const sendMssg = (socket) => {
-    if (input.trim() === " ") {
+    if (input.trim() === "") {
       return
     }
     let trimdMssg = input.trim().replace(/\s+/g, ' ')
     socket.send(JSON.stringify({ type: "groupChat", content: trimdMssg, group_id: id }))
     setInput("")
+  }
+  socket.onmessage = (event) => {
+     const data = JSON.parse(event.data)
+     console.log(data);
+     
   }
 
 
@@ -708,9 +713,9 @@ export default function HomePage() {
 
                 <button className="emoji-button" >😊</button>
 
-                <input onChange={(e) => setInput(e.target.value)} value={input} type="text" placeholder="Write a message..." />
+                <input onChange={(e) => setInput(e.target.value)} onKeyDown={(e)=> {if (e.key === "Enter") {sendMssg(socket) }}} value={input} type="text" placeholder="Write a message..." />
                 <button onClick={() => sendMssg(socket)
-                } className='send'>Send</button>
+                }  className='send'>Send</button>
               </div>
             </div>
 

@@ -21,9 +21,10 @@ var upgrader = websocket.Upgrader{
 }
 
 var (
-	clients      = make(map[*websocket.Conn]string)
-	clientsMutex sync.RWMutex
-	broadcast    = make(chan Message)
+	clients            = make(map[*websocket.Conn]string)
+	clientsMutex       sync.RWMutex
+	broadcast          = make(chan Message)
+	broadcastGroupChat = make(chan Message)
 )
 
 type Message struct {
@@ -34,6 +35,7 @@ type Message struct {
 	GroupId  string `json:"group_id"`
 	User_ID  string
 	Time     string
+	Grp      bool
 }
 
 func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
@@ -94,21 +96,25 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(55, msg.Content)
 			BroadcastUsers()
 		} else if msg.Type == "groupChat" {
-			time := time.Now().Format("2006-01-02 15:04:05")
+			
+			time := time.Now().Format("2025-01-02 15:04:05")
 			msg.Time = time
 			Group_id, _ := strconv.Atoi(msg.GroupId)
 			cookie, _ := r.Cookie("SessionToken")
 
 			userID := db.GetId("SessionToken", cookie.Value)
 			err = db.InsertMssgGRoup(Group_id, userID, msg.Content, msg.Time)
-				if err != nil {
+			if err != nil {
 				fmt.Println("insert massages error:", err)
 				return
 			}
-
+			msg.Grp = true
+			fmt.Println(msg.Content)
+			broadcastGroupChat <- msg
+			
 		} else {
 
-			time := time.Now().Format("2006-01-02 15:04:05")
+			time := time.Now().Format("2025-01-02 15:04:05")
 			msg.Time = time
 			fmt.Println(20, msg.Content)
 			err = db.InsertMessages(msg.Sender, msg.Receiver, msg.Content, msg.Time)
@@ -118,8 +124,22 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			broadcast <- msg
 		}
+		// fmt.Println(broadcastGroupChat)
 
 	}
+}
+
+func HandleGroupMessages() {
+    for {
+        msg := <-broadcastGroupChat
+        for client , _ := range clients {
+            err := client.WriteJSON(msg)
+            if err != nil {
+                client.Close()
+                delete(clients, client)
+            }
+        }
+    }
 }
 
 func HandleMessages() {
