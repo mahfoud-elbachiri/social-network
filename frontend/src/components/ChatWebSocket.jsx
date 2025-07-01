@@ -142,12 +142,12 @@ export default function ChatWebSocket({ username }) {
         socket.onmessage = (event) => {
 
             const data = JSON.parse(event.data)
-            console.log(data);
+            // console.log(data);
             if (data.type === "users") {
                 setUsersList(data.users)
             } else {
                 setMessages(prvData => [...prvData, data])
-                console.log(data.receiver, selectedUser, data.sender)
+                // console.log(data.receiver, selectedUser, data.sender)
 
                 if (data.sender != selectedUser && data.receiver === username) {
 

@@ -13,6 +13,7 @@ export default function HomePage() {
   const router = useRouter();
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [groupData, setGroupData] = useState(null);
+  const [messages, setMessages] = useState([])
   const [eventForm, setEventForm] = useState({
     title: "",
     description: "",
@@ -302,6 +303,9 @@ export default function HomePage() {
   }
   socket.onmessage = (event) => {
      const data = JSON.parse(event.data)
+     if (data.grp){
+      setMessages(prvData => [...prvData, data])
+     }
      console.log(data);
      
   }
