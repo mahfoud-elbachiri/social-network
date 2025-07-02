@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import "./style.css";
@@ -8,7 +8,7 @@ import Header from "@/components/Header";
 
 export default function HomePage() {
   const socket = getSocket();
-
+const chatMessagesRef = useRef(null);
   const router = useRouter();
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [groupData, setGroupData] = useState(null);
@@ -33,7 +33,12 @@ export default function HomePage() {
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   const [i, setI] = useState(false);
-
+// this function to scroll to bottom
+const scrollToBottom = () => {
+  if (chatMessagesRef.current) {
+    chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+  }
+};
   useEffect(() => {
     socket.onopen = () => {
       console.log("✅ WebSocket connected");
@@ -61,13 +66,18 @@ export default function HomePage() {
     }
   }, [i, selectedGroup, showChat]);
 
-  // Clear unread messages when chat is opened
-  useEffect(() => {
-    if (showChat) {
-      setUnreadMessages(0);
-    }
-  }, [showChat]);
-
+useEffect(() => {
+  if (showChat) {
+    setUnreadMessages(0);
+    // Scroll to bottom when chat is opened
+    setTimeout(scrollToBottom, 100); // Small delay to ensure DOM is updated
+  }
+}, [showChat]);
+useEffect(() => {
+  if (showChat && chatMessages.length > 0) {
+    scrollToBottom();
+  }
+}, [chatMessages, showChat]);
   // Handle URL changes and browser navigation
   useEffect(() => {
     const handlePopState = (event) => {
@@ -423,102 +433,107 @@ const handleCreateEvent = async (e) => {
               </div>
 
               {/* Chat Section */}
-              {showChat && (
-                <div className="chat-section" style={{
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  marginBottom: '20px',
-                  backgroundColor: '#f9f9f9'
-                }}>
-                  <div className="chat-header" style={{
-                    padding: '15px',
-                    borderBottom: '1px solid #ddd',
-                    backgroundColor: '#fff',
-                    borderRadius: '8px 8px 0 0'
-                  }}>
-                    <h3 style={{ margin: 0, fontSize: '18px' }}>💬 Group Chat</h3>
-                  </div>
-                  
-                  <div className="chat-messages" style={{
-                    height: '300px',
-                    overflowY: 'auto',
-                    padding: '15px',
-                    backgroundColor: '#fff'
-                  }}>
-                    {chatMessages.length > 0 ? (
-                      chatMessages.map((msg, index) => (
-                        <div key={index} className="chat-message" style={{
-                          marginBottom: '15px',
-                          padding: '10px',
-                          backgroundColor: '#f0f0f0',
-                          borderRadius: '8px',
-                          borderLeft: '3px solid #2196F3'
-                        }}>
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '5px'
-                          }}>
-                            <strong style={{ color: '#333' }}>{msg.username}</strong>
-                            <small style={{ color: '#666' }}>
-                              {formatChatTime(msg.timestamp)}
-                            </small>
-                          </div>
-                          <div style={{ color: '#555' }}>{msg.message}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{ 
-                        textAlign: 'center', 
-                        color: '#666', 
-                        fontStyle: 'italic',
-                        marginTop: '50px'
-                      }}>
-                        No messages yet. Start the conversation!
-                      </div>
-                    )}
-                  </div>
+{showChat && (
+  <div className="chat-section" style={{
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    marginBottom: '20px',
+    backgroundColor: '#f9f9f9'
+  }}>
+    <div className="chat-header" style={{
+      padding: '15px',
+      borderBottom: '1px solid #ddd',
+      backgroundColor: '#fff',
+      borderRadius: '8px 8px 0 0'
+    }}>
+      <h3 style={{ margin: 0, fontSize: '18px' }}>💬 Group Chat</h3>
+    </div>
+    
+    <div 
+      ref={chatMessagesRef}
+      className="chat-messages" 
+      style={{
+        height: '300px',
+        overflowY: 'auto',
+        padding: '15px',
+        backgroundColor: '#fff',
+        scrollBehavior: 'smooth' // Smooth scrolling animation
+      }}
+    >
+      {chatMessages.length > 0 ? (
+        chatMessages.map((msg, index) => (
+          <div key={index} className="chat-message" style={{
+            marginBottom: '15px',
+            padding: '10px',
+            backgroundColor: '#f0f0f0',
+            borderRadius: '8px',
+            borderLeft: '3px solid #2196F3'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '5px'
+            }}>
+              <strong style={{ color: '#333' }}>{msg.username}</strong>
+              <small style={{ color: '#666' }}>
+                {formatChatTime(msg.timestamp)}
+              </small>
+            </div>
+            <div style={{ color: '#555' }}>{msg.message}</div>
+          </div>
+        ))
+      ) : (
+        <div style={{ 
+          textAlign: 'center', 
+          color: '#666', 
+          fontStyle: 'italic',
+          marginTop: '50px'
+        }}>
+          No messages yet. Start the conversation!
+        </div>
+      )}
+    </div>
 
-                  <form onSubmit={handleSendChatMessage} style={{
-                    padding: '15px',
-                    borderTop: '1px solid #ddd',
-                    backgroundColor: '#fff',
-                    borderRadius: '0 0 8px 8px'
-                  }}>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <input
-                        type="text"
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        placeholder="Type your message..."
-                        style={{
-                          flex: 1,
-                          padding: '10px',
-                          border: '1px solid #ddd',
-                          borderRadius: '4px',
-                          fontSize: '14px'
-                        }}
-                        required
-                      />
-                      <button 
-                        type="submit"
-                        style={{
-                          padding: '10px 20px',
-                          backgroundColor: '#2196F3',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '14px'
-                        }}
-                      >
-                        Send
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
+    <form onSubmit={handleSendChatMessage} style={{
+      padding: '15px',
+      borderTop: '1px solid #ddd',
+      backgroundColor: '#fff',
+      borderRadius: '0 0 8px 8px'
+    }}>
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <input
+          type="text"
+          value={chatInput}
+          onChange={(e) => setChatInput(e.target.value)}
+          placeholder="Type your message..."
+          style={{
+            flex: 1,
+            padding: '10px',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}
+          required
+        />
+        <button 
+          type="submit"
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#2196F3',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          Send
+        </button>
+      </div>
+    </form>
+  </div>
+)}
 
               {/* Group Members Section */}
               <div className="group-section">
