@@ -40,13 +40,14 @@ func GetFollowersUsers(id int) ([]string, error) {
 
 	return nUser, nil
 }
+
 func selectAllGrpIds() ([]int, error) {
 	rows, err := DB.Query("SELECT id FROM groups")
 	if err != nil {
-		return nil , err
+		return nil, err
 	}
-	var ids = []int{}
-		for rows.Next() {
+	ids := []int{}
+	for rows.Next() {
 		var id int
 		if err := rows.Scan(&id); err != nil {
 			return nil, err
@@ -55,6 +56,7 @@ func selectAllGrpIds() ([]int, error) {
 	}
 	return ids, nil
 }
+
 func NewUser(users []string, id int) ([]string, error) {
 	publicUser, err := GetAllPublicUsers()
 	if err != nil {
@@ -748,4 +750,102 @@ func CanViewProfile(viewerID, targetUserID int) bool {
 
 	// If target user is private, check if viewer is following them
 	return IsFollowing(viewerID, targetUserID)
+}
+
+// GetGroupChatMessages retrieves all chat messages for a specific group
+func GetGroupChatMessages(groupID int) ([]GroupChatMessage, error) {
+	query := `
+		SELECT 
+			gcm.id,
+			gcm.group_id,
+			gcm.user_id,
+			u.nikname as username,
+			gcm.message,
+			gcm.timestamp
+		FROM group_chat_messages gcm
+		JOIN users u ON gcm.user_id = u.id
+		WHERE gcm.group_id = ?
+		ORDER BY gcm.timestamp ASC
+	`
+
+	rows, err := DB.Query(query, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query group chat messages: %w", err)
+	}
+	defer rows.Close()
+
+	var messages []GroupChatMessage
+	for rows.Next() {
+		var msg GroupChatMessage
+		err := rows.Scan(
+			&msg.ID,
+			&msg.GroupID,
+			&msg.UserID,
+			&msg.Username,
+			&msg.Message,
+			&msg.Timestamp,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan group chat message: %w", err)
+		}
+
+		msg.Type = "chat_message"
+		messages = append(messages, msg)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over group chat messages: %w", err)
+	}
+
+	return messages, nil
+}
+
+// IsUserGroupMember checks if a user is a member of a specific group
+func IsUserGroupMember(userID, groupID int) (bool, error) {
+	query := `
+		SELECT COUNT(*) 
+		FROM groups g
+		LEFT JOIN group_members gm ON g.id = gm.group_id
+		WHERE g.id = ? AND (
+			g.creator_id = ? OR 
+			(gm.user_id = ? AND gm.status = 'accepted')
+		)
+	`
+
+	var count int
+	err := DB.QueryRow(query, groupID, userID, userID).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("failed to check group membership: %w", err)
+	}
+
+	return count > 0, nil
+}
+
+// GetGroupMembers retrieves all members of a specific group (for WebSocket broadcasting)
+func GetGroupMembers(groupID int) ([]int, error) {
+	query := `
+		SELECT DISTINCT user_id
+		FROM (
+			SELECT creator_id as user_id FROM groups WHERE id = ?
+			UNION
+			SELECT user_id FROM group_members WHERE group_id = ? AND status = 'accepted'
+		)
+	`
+
+	rows, err := DB.Query(query, groupID, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get group members: %w", err)
+	}
+	defer rows.Close()
+
+	var members []int
+	for rows.Next() {
+		var userID int
+		if err := rows.Scan(&userID); err != nil {
+			return nil, fmt.Errorf("failed to scan group member: %w", err)
+		}
+		members = append(members, userID)
+	}
+
+	return members, nil
 }
