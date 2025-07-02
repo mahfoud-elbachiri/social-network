@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	data "social-network/Database/sqlite"
 	db "social-network/Database/cration"
+	data "social-network/Database/sqlite"
 	"social-network/handler"
 	"social-network/utils"
 )
@@ -105,11 +105,12 @@ func main() {
 	// Group Chat endpoints - NEW
 	router.HandleFunc("/group/chat", func(w http.ResponseWriter, r *http.Request) {
 		handler.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method == http.MethodGet {
+			switch r.Method {
+			case http.MethodGet:
 				handler.GetGroupChatHandler(w, r)
-			} else if r.Method == http.MethodPost {
+			case http.MethodPost:
 				handler.SendGroupChatHandler(w, r)
-			} else {
+			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
 		})).ServeHTTP(w, r)
