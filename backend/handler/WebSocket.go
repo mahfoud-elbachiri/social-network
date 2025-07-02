@@ -8,14 +8,12 @@ import (
 	"time"
 
 	db "social-network/Database/cration"
-	// "social-network/Database/sqlite"
 
 	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		// origin := r.Header.Get("Origin")
 		return true
 	},
 }
@@ -24,7 +22,7 @@ var (
 	clients            = make(map[*websocket.Conn]string)
 	clientsMutex       sync.RWMutex
 	broadcast          = make(chan Message)
-	broadcastGroupChat = make(chan Message)
+	broadcastGroupChat = make(chan db.GroupChatMessage)
 )
 
 type Message struct {
@@ -46,16 +44,14 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookie, err := r.Cookie("SessionToken")
-
 	if err != nil || cookie.Value == "" {
 		fmt.Println("Error sessionToken ", err)
 		return
 	}
 
 	username := db.GetUsernameByToken(cookie.Value)
-
 	if username == "" {
-		fmt.Println("this nigga does'nt exsist : ", username)
+		fmt.Println("Invalid username: ", username)
 		return
 	}
 
@@ -65,11 +61,11 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		clientsMutex.Unlock()
 
 		BroadcastUsers()
-		// BroadcastOnlineUsers()
 		conn.Close()
 	}()
 
 	clientsMutex.Lock()
+	// Close existing connection for same user
 	for existingConn, existingUsername := range clients {
 		if existingUsername == username {
 			fmt.Println("Closing previous connection for username:", username)
@@ -80,11 +76,8 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	clients[conn] = username
 	clientsMutex.Unlock()
-	// BroadcastUsers()
-	// BroadcastOnlineUsers()
 
 	for {
-
 		var msg Message
 		err := conn.ReadJSON(&msg)
 		if err != nil {
@@ -93,53 +86,91 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if msg.Content == "broadcast" {
-			fmt.Println(55, msg.Content)
+			fmt.Println("Broadcasting users")
 			BroadcastUsers()
 		} else if msg.Type == "groupChat" {
-			
-			time := time.Now().Format("2025-01-02 15:04:05")
-			msg.Time = time
-			Group_id, _ := strconv.Atoi(msg.GroupId)
-			cookie, _ := r.Cookie("SessionToken")
-
+			// Handle group chat message
+			timestamp := time.Now().Format("2006-01-02 15:04:05")
+			groupID, _ := strconv.Atoi(msg.GroupId)
 			userID := db.GetId("SessionToken", cookie.Value)
-			err = db.InsertMssgGRoup(Group_id, userID, msg.Content, msg.Time)
-			if err != nil {
-				fmt.Println("insert massages error:", err)
-				return
-			}
-			msg.Grp = true
-			fmt.Println(msg.Content)
-			broadcastGroupChat <- msg
-			
-		} else {
 
-			time := time.Now().Format("2025-01-02 15:04:05")
-			msg.Time = time
-			fmt.Println(20, msg.Content)
+			// Check if user is member of the group
+			isMember, err := db.IsUserGroupMember(userID, groupID)
+			if err != nil || !isMember {
+				fmt.Println("User not authorized for group chat:", userID, groupID)
+				continue
+			}
+
+			// Insert message into database
+			err = db.InsertGroupChatMessage(groupID, userID, msg.Content, timestamp)
+			if err != nil {
+				fmt.Println("Failed to insert group chat message:", err)
+				continue
+			}
+
+			// Create group chat message for broadcast
+			groupChatMsg := db.GroupChatMessage{
+				GroupID:   groupID,
+				UserID:    userID,
+				Username:  username,
+				Message:   msg.Content,
+				Timestamp: timestamp,
+				Type:      "chat_message",
+			}
+
+			// Broadcast to group members
+			BroadcastGroupChatMessage(groupChatMsg)
+
+		} else {
+			// Handle private messages
+			timestamp := time.Now().Format("2006-01-02 15:04:05")
+			msg.Time = timestamp
+			
 			err = db.InsertMessages(msg.Sender, msg.Receiver, msg.Content, msg.Time)
 			if err != nil {
-				fmt.Println("insert massages error:", err)
+				fmt.Println("insert messages error:", err)
 				return
 			}
 			broadcast <- msg
 		}
-		// fmt.Println(broadcastGroupChat)
+	}
+}
 
+// BroadcastGroupChatMessage sends a chat message to all WebSocket clients in the same group
+func BroadcastGroupChatMessage(message db.GroupChatMessage) {
+	clientsMutex.RLock()
+	defer clientsMutex.RUnlock()
+
+	for client, username := range clients {
+		// Get user ID for this client
+		userID := db.GetId("nikname", username)
+		if userID == 0 {
+			continue
+		}
+
+		// Check if this user is a member of the group
+		isMember, err := db.IsUserGroupMember(userID, message.GroupID)
+		if err != nil || !isMember {
+			continue
+		}
+
+		// Send message to this client
+		err = client.WriteJSON(message)
+		if err != nil {
+			fmt.Println("WebSocket write error:", err)
+			client.Close()
+			clientsMutex.Lock()
+			delete(clients, client)
+			clientsMutex.Unlock()
+		}
 	}
 }
 
 func HandleGroupMessages() {
-    for {
-        msg := <-broadcastGroupChat
-        for client , _ := range clients {
-            err := client.WriteJSON(msg)
-            if err != nil {
-                client.Close()
-                delete(clients, client)
-            }
-        }
-    }
+	for {
+		msg := <-broadcastGroupChat
+		BroadcastGroupChatMessage(msg)
+	}
 }
 
 func HandleMessages() {
@@ -152,18 +183,14 @@ func HandleMessages() {
 				err := client.WriteJSON(msg)
 				if err != nil {
 					fmt.Println("WebSocket write error:", err)
-
 					client.Close()
-
 					clientsMutex.Lock()
 					delete(clients, client)
 					clientsMutex.Unlock()
 				}
 			}
 		}
-
 		BroadcastUsers()
-
 		clientsMutex.RUnlock()
 	}
 }
@@ -238,8 +265,6 @@ func BroadcastUsers() {
 			"sort":     sort,
 		})
 	}
-
-	// fmt.Println("sort users ================++>>>>", users)
 
 	message := map[string]any{
 		"type":  "users",

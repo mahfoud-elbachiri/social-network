@@ -5,7 +5,6 @@ import Image from "next/image";
 import "./style.css";
 import { getSocket } from "@/sock/GetSocket";
 import Header from "@/components/Header";
-import { useSearchParams } from 'next/navigation'
 
 export default function HomePage() {
   const socket = getSocket();
@@ -13,13 +12,11 @@ export default function HomePage() {
   const router = useRouter();
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [groupData, setGroupData] = useState(null);
-  const [messages, setMessages] = useState([])
   const [eventForm, setEventForm] = useState({
     title: "",
     description: "",
     datetime: "",
   });
-  const [input, setInput] = useState("")
   const [postContent, setPostContent] = useState("");
   const [postImage, setPostImage] = useState(null);
   const [postImagePreview, setPostImagePreview] = useState(null);
@@ -29,6 +26,12 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [eventError, setEventError] = useState("");
 
+  // Chat-related state
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [showChat, setShowChat] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
   const [i, setI] = useState(false);
 
   useEffect(() => {
@@ -37,12 +40,33 @@ export default function HomePage() {
       setI(true);
     };
 
+    // Handle incoming WebSocket messages
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      if (data.type === "chat_message" && data.group_id === selectedGroup) {
+        setChatMessages((prev) => [...prev, data]);
+        
+        // Increment unread count if chat is not visible
+        if (!showChat) {
+          setUnreadMessages((prev) => prev + 1);
+        }
+      }
+    };
+
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ content: "broadcast" }));
     } else {
       console.warn("❌ WebSocket not ready, cannot send message yet");
     }
-  }, [i]);
+  }, [i, selectedGroup, showChat]);
+
+  // Clear unread messages when chat is opened
+  useEffect(() => {
+    if (showChat) {
+      setUnreadMessages(0);
+    }
+  }, [showChat]);
 
   // Handle URL changes and browser navigation
   useEffect(() => {
@@ -89,12 +113,56 @@ export default function HomePage() {
       setSelectedGroup(groupId);
       setLoading(false);
 
+      // Fetch chat messages for this group
+      await fetchChatMessages(groupId);
+
       // Update URL without reloading the page
       const newUrl = `${window.location.pathname}?group=${groupId}`;
       window.history.pushState({ groupId }, "", newUrl);
     } catch (err) {
       console.error(`Failed to fetch group ${groupId}`, err);
       setLoading(false);
+    }
+  };
+
+  const fetchChatMessages = async (groupId) => {
+    try {
+      const res = await fetch(`http://localhost:8080/group/chat?group_id=${groupId}`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const messages = await res.json();
+        setChatMessages(messages || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch chat messages", err);
+    }
+  };
+
+  const handleSendChatMessage = async (e) => {
+    e.preventDefault();
+    
+    if (!chatInput.trim()) return;
+
+    try {
+      const res = await fetch("http://localhost:8080/group/chat", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          group_id: selectedGroup,
+          message: chatInput.trim(),
+        }),
+      });
+
+      if (res.ok) {
+        setChatInput("");
+        // Message will be added via WebSocket
+      }
+    } catch (err) {
+      console.error("Failed to send chat message", err);
     }
   };
 
@@ -141,42 +209,41 @@ export default function HomePage() {
     }
   };
 
-  const handleCreateEvent = async (e) => {
-    e.preventDefault();
-    setEventError('');
+const handleCreateEvent = async (e) => {
+  e.preventDefault();
+  setEventError('');
 
-    try {
-      const res = await fetch('http://localhost:8080/group/create-event', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...eventForm, group_id: selectedGroup }),
-      });
+  try {
+    const res = await fetch('http://localhost:8080/group/create-event', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...eventForm, group_id: selectedGroup }),
+    });
 
-      if (!res.ok) {
-        const text = await res.text();
+    if (!res.ok) {
+      const text = await res.text();
 
-        // Handle specific backend error message
-        if (text.includes("Cannot create an event in the past")) {
-          setEventError("❌ You cannot create an event in the past.");
-        } else {
-          setEventError("❌ Failed to create event.");
-        }
-
-        // ✅ Return early without throwing so console stays clean
-        return;
+      // Handle specific backend error message
+      if (text.includes("Cannot create an event in the past")) {
+        setEventError("❌ You cannot create an event in the past.");
+      } else {
+        setEventError("❌ Failed to create event.");
       }
 
-      // ✅ Success
-      setEventForm({ title: '', description: '', datetime: '' });
-      fetchGroupById(selectedGroup);
-    } catch (err) {
-      // Only log unexpected errors
-      console.error('Unexpected error:', err);
-      setEventError("❌ Something went wrong. Please try again.");
+      // ✅ Return early without throwing so console stays clean
+      return;
     }
-  };
 
+    // ✅ Success
+    setEventForm({ title: '', description: '', datetime: '' });
+    fetchGroupById(selectedGroup);
+  } catch (err) {
+    // Only log unexpected errors
+    console.error('Unexpected error:', err);
+    setEventError("❌ Something went wrong. Please try again.");
+  }
+};
 
   const handleEventRespond = async (eventId, response) => {
     try {
@@ -277,6 +344,11 @@ export default function HomePage() {
     }
   };
 
+  const formatChatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   const backToGroups = () => {
     setSelectedGroup(null);
     setGroupData(null);
@@ -285,44 +357,6 @@ export default function HomePage() {
     const newUrl = window.location.pathname;
     window.history.pushState({}, "", newUrl);
   };
-
-  // dont edit this . for docker container
-  const getGroupImageUrl = (imageURL) => {
-    if (!imageURL) return null;
-    
-    // Remove leading slash if present and use relative path
-    // This will use the rewrite rules in next.config.mjs
-    const cleanPath = imageURL.startsWith('/') ? imageURL.substring(1) : imageURL;
-    return `/${cleanPath}`;
-  };
-
-  const [id, setId] = useState(null);
- 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const groupId = urlParams.get("group");
-    setId(groupId);
-    console.log('Current group id:', id);
-
-  }, [id])
-  
-  const sendMssg = (socket) => {
-    if (input.trim() === "") {
-      return
-    }
-    let trimdMssg = input.trim().replace(/\s+/g, ' ')
-    socket.send(JSON.stringify({ type: "groupChat", content: trimdMssg, group_id: id }))
-    setInput("")
-  }
-  socket.onmessage = (event) => {
-     const data = JSON.parse(event.data)
-     if (data.grp){
-      setMessages(prvData => [...prvData, data])
-     }
-     console.log(data);
-     
-  }
-
 
   // Group Detail View
   if (selectedGroup && groupData) {
@@ -350,6 +384,142 @@ export default function HomePage() {
 
           {isMemberOrCreator ? (
             <>
+              {/* Chat Toggle Button */}
+              <div className="chat-toggle-container">
+                <button 
+                  onClick={() => setShowChat(!showChat)}
+                  className="chat-toggle-btn"
+                  style={{
+                    position: 'relative',
+                    backgroundColor: showChat ? '#4CAF50' : '#2196F3',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    marginBottom: '20px'
+                  }}
+                >
+                  💬 {showChat ? 'Hide Chat' : 'Show Chat'}
+                  {unreadMessages > 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '-5px',
+                      right: '-5px',
+                      backgroundColor: 'red',
+                      color: 'white',
+                      borderRadius: '50%',
+                      width: '20px',
+                      height: '20px',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {unreadMessages}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Chat Section */}
+              {showChat && (
+                <div className="chat-section" style={{
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  marginBottom: '20px',
+                  backgroundColor: '#f9f9f9'
+                }}>
+                  <div className="chat-header" style={{
+                    padding: '15px',
+                    borderBottom: '1px solid #ddd',
+                    backgroundColor: '#fff',
+                    borderRadius: '8px 8px 0 0'
+                  }}>
+                    <h3 style={{ margin: 0, fontSize: '18px' }}>💬 Group Chat</h3>
+                  </div>
+                  
+                  <div className="chat-messages" style={{
+                    height: '300px',
+                    overflowY: 'auto',
+                    padding: '15px',
+                    backgroundColor: '#fff'
+                  }}>
+                    {chatMessages.length > 0 ? (
+                      chatMessages.map((msg, index) => (
+                        <div key={index} className="chat-message" style={{
+                          marginBottom: '15px',
+                          padding: '10px',
+                          backgroundColor: '#f0f0f0',
+                          borderRadius: '8px',
+                          borderLeft: '3px solid #2196F3'
+                        }}>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '5px'
+                          }}>
+                            <strong style={{ color: '#333' }}>{msg.username}</strong>
+                            <small style={{ color: '#666' }}>
+                              {formatChatTime(msg.timestamp)}
+                            </small>
+                          </div>
+                          <div style={{ color: '#555' }}>{msg.message}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ 
+                        textAlign: 'center', 
+                        color: '#666', 
+                        fontStyle: 'italic',
+                        marginTop: '50px'
+                      }}>
+                        No messages yet. Start the conversation!
+                      </div>
+                    )}
+                  </div>
+
+                  <form onSubmit={handleSendChatMessage} style={{
+                    padding: '15px',
+                    borderTop: '1px solid #ddd',
+                    backgroundColor: '#fff',
+                    borderRadius: '0 0 8px 8px'
+                  }}>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder="Type your message..."
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          fontSize: '14px'
+                        }}
+                        required
+                      />
+                      <button 
+                        type="submit"
+                        style={{
+                          padding: '10px 20px',
+                          backgroundColor: '#2196F3',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '14px'
+                        }}
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
               {/* Group Members Section */}
               <div className="group-section">
                 <h3 className="section-title">Group Members</h3>
@@ -528,7 +698,7 @@ export default function HomePage() {
                         {post.ImageURL && (
                           <div style={{ margin: "10px 0" }}>
                             <Image
-                              src={getGroupImageUrl(post.ImageURL)}
+                              src={`http://localhost:8080${post.ImageURL}`}
                               alt="Post image"
                               width={400}
                               height={300}
@@ -612,7 +782,7 @@ export default function HomePage() {
                                 {comment.ImageURL && (
                                   <div style={{ margin: "5px 0" }}>
                                     <Image
-                                      src={getGroupImageUrl(comment.ImageURL)}
+                                      src={`http://localhost:8080${comment.ImageURL}`}
                                       alt="Comment image"
                                       width={150}
                                       height={150}
@@ -645,7 +815,7 @@ export default function HomePage() {
             <div className="group-section">
               <h3 className="section-title">Join Requests</h3>
               {groupData.RequestedMembers &&
-                groupData.RequestedMembers.length > 0 ? (
+              groupData.RequestedMembers.length > 0 ? (
                 <ul className="member-list">
                   {groupData.RequestedMembers.map((request, index) => (
                     <li key={index} className="request-item">
@@ -687,7 +857,7 @@ export default function HomePage() {
             <div className="group-section">
               <h3 className="section-title">Invite Users</h3>
               {groupData.InvitableUsers &&
-                groupData.InvitableUsers.length > 0 ? (
+              groupData.InvitableUsers.length > 0 ? (
                 <ul className="member-list">
                   {groupData.InvitableUsers.map((user, index) => (
                     <li key={index} className="invite-item">
@@ -716,29 +886,6 @@ export default function HomePage() {
               )}
             </div>
           )}
-
-          <div className="group-section">
-            <h2>Group  Chat </h2>
-
-            <div className="chat-box">
-              <div className="messages" >
-
-
-              </div >
-
-              <div className="chat-input">
-
-                <button className="emoji-button" >😊</button>
-
-                <input onChange={(e) => setInput(e.target.value)} onKeyDown={(e)=> {if (e.key === "Enter") {sendMssg(socket) }}} value={input} type="text" placeholder="Write a message..." />
-                <button onClick={() => sendMssg(socket)
-                }  className='send'>Send</button>
-              </div>
-            </div>
-
-
-          </div>
-
         </div>
       </>
     );

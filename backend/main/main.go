@@ -7,12 +7,13 @@ import (
 	"path/filepath"
 
 	data "social-network/Database/sqlite"
+	db "social-network/Database/cration"
 	"social-network/handler"
 	"social-network/utils"
 )
 
 // gha bach manb9ach n3dl kol mra compt
-func addUsers(db *sql.DB) error {
+func addUsers(database *sql.DB) error {
 	users := []struct {
 		FirstName string
 		LastName  string
@@ -38,7 +39,7 @@ func addUsers(db *sql.DB) error {
 		}
 
 		// Insert user with raw SQL query
-		_, err = db.Exec(`
+		_, err = database.Exec(`
 			INSERT INTO users (
 				first_name, last_name, email, gender, age, nikname, password, avatar, about_me, is_private
 			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -54,8 +55,14 @@ func addUsers(db *sql.DB) error {
 
 func main() {
 	Db := data.GetDB()
-
 	defer Db.Close()
+
+	// Create group chat table if it doesn't exist
+	err := db.CreateGroupChatTable()
+	if err != nil {
+		fmt.Printf("Error creating group chat table: %v\n", err)
+	}
+
 	addUsers(Db)
 	router := http.NewServeMux()
 
@@ -79,7 +86,6 @@ func main() {
 	router.Handle("/getusers", handler.AuthMiddleware(http.HandlerFunc(handler.GetUsers)))
 
 	// Group system
-	 
 	router.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(filepath.Join(imageBasePath, "uploads")))))
 
 	router.Handle("/groupPage", handler.AuthMiddleware(http.HandlerFunc(handler.HomepageGroup)))
@@ -95,6 +101,19 @@ func main() {
 	router.Handle("/group/event-respond", handler.AuthMiddleware(http.HandlerFunc(handler.EventResponseHandler)))
 	router.Handle("/group/create-post", handler.AuthMiddleware(http.HandlerFunc(handler.CreateGroupPostHandler)))
 	router.Handle("/group/create-comment", handler.AuthMiddleware(http.HandlerFunc(handler.CreateGroupCommentHandler)))
+
+	// Group Chat endpoints - NEW
+	router.HandleFunc("/group/chat", func(w http.ResponseWriter, r *http.Request) {
+		handler.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodGet {
+				handler.GetGroupChatHandler(w, r)
+			} else if r.Method == http.MethodPost {
+				handler.SendGroupChatHandler(w, r)
+			} else {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		})).ServeHTTP(w, r)
+	})
 
 	// follow sytyem
 	router.Handle("/followRequest", handler.AuthMiddleware(http.HandlerFunc(handler.Followreq)))
@@ -113,7 +132,7 @@ func main() {
 	router.Handle("/accept-group-join-request", handler.AuthMiddleware(http.HandlerFunc(handler.AcceptGroupJoinRequest)))
 	router.Handle("/reject-group-join-request", handler.AuthMiddleware(http.HandlerFunc(handler.RejectGroupJoinRequest)))
 
-	// router.HandleFunc("/online-users", handler.OnlineUsers)
+	// WebSocket
 	router.HandleFunc("/ws", handler.WebSocketHandler) // Add WebSocket route
 	go handler.HandleMessages()                        // Start WebSocket message handler in a goroutine
 	go handler.HandleGroupMessages()
@@ -122,7 +141,7 @@ func main() {
 	corsRouter := handler.CorsMiddleware(router)
 
 	fmt.Println("✅ Server running on: http://localhost:8080")
-	err := http.ListenAndServe(":8080", corsRouter)
+	err = http.ListenAndServe(":8080", corsRouter)
 	if err != nil {
 		fmt.Println(err)
 		return
