@@ -4,6 +4,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 First, run the development server:
 
+## install docker
+dockerd-rootless.sh &
+export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
+
+
  Build and Run Backend (docker) Separately
         cd backend
         docker build -t social-backend .

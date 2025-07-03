@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	db "social-network/Database/cration"
+	db "social-network/app/cration"
 	"social-network/servisse"
 )
 

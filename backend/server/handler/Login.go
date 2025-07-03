@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	db "social-network/Database/cration"
+	db "social-network/app/cration"
 	"social-network/utils"
 )
 

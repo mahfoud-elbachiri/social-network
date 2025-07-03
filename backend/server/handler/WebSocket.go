@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	db "social-network/Database/cration"
+	db "social-network/app/cration"
 
 	"github.com/gorilla/websocket"
 )

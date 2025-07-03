@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	db "social-network/Database/cration"
+	db "social-network/app/cration"
 )
 
 type chats struct {
