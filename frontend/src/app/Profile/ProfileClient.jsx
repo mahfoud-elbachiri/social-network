@@ -144,7 +144,7 @@ export default function ProfileClient() {
     return (
       <div>
         <Header />
-        <div>Loading profile...</div>
+        <div>  </div>
       </div>
     );
   }
