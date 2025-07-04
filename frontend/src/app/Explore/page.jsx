@@ -38,9 +38,8 @@ export default function Explore() {
     initializeData();
   }, []);
 
-  // Filter users whenever allUsers or currentUserId changes
   useEffect(() => {
-    if (allUsers.length > 0 && currentUserId !== null) {
+    if (currentUserId !== null) {
       const filteredUsers = allUsers.filter(user => user.id !== currentUserId);
       setUsers(filteredUsers);
     }
@@ -102,6 +101,15 @@ export default function Explore() {
     await fetchAllUsers(searchValue);
   };
 
+  const handleClearSearch = async () => {
+    // Clear the search input
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+      searchInput.value = '';
+    }
+    await fetchAllUsers();
+  };
+
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -127,7 +135,9 @@ export default function Explore() {
                   <button type="submit" className="search-btn" >
                     🔍 Search
                   </button>
-
+                  <button type="button" onClick={handleClearSearch} className="clear-btn">
+                    ✖️ Clear
+                  </button>
                 </div>
               </div>
             </form>
