@@ -12,7 +12,13 @@ import { useComments } from '@/hooks/useComments';
 import { userApi } from '@/utils/api';
 import { getSocket } from "@/sock/GetSocket";
 
+
+import { useSearchParams } from 'next/navigation';
+
+
 export default function ProfileClient() {
+  const searchParams = useSearchParams();
+  const targetUserId = searchParams.get('id') || null;
 
   const socket = getSocket()
 
@@ -25,13 +31,13 @@ export default function ProfileClient() {
   const [isPrivatePosts, setIsPrivatePosts] = useState(false);
   const [isPrivateView, setIsPrivateView] = useState(false);
 
-  const [targetUserId, setTargetUserId] = useState(null);
+  //const [targetUserId, setTargetUserId] = useState(null);
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const idFromUrl = urlParams.get('id');
-    setTargetUserId(idFromUrl || null);
-  }, [targetUserId]);
+  // useEffect(() => {
+  //   const urlParams = new URLSearchParams(window.location.search);
+  //   const idFromUrl = urlParams.get('id');
+  //   setTargetUserId(idFromUrl || null);
+  // }, [targetUserId]);
 
   const [i, setI] = useState(false)
 

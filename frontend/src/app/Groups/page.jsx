@@ -122,7 +122,8 @@ useEffect(() => {
       setGroupData(data);
       setSelectedGroup(groupId);
       setLoading(false);
-
+      
+      
       // Fetch chat messages for this group
       await fetchChatMessages(groupId);
 
@@ -353,7 +354,7 @@ const handleCreateEvent = async (e) => {
       console.error("Failed to create comment", err);
     }
   };
-
+console.log("groups data:",groupData);
   const formatChatTime = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -876,7 +877,7 @@ const handleCreateEvent = async (e) => {
                 <ul className="member-list">
                   {groupData.InvitableUsers.map((user, index) => (
                     <li key={index} className="invite-item">
-                      <div className="invite-username">{user.Username}</div>
+                      <div className="invite-username">{user.Name}</div>
                       {user.Invited ? (
                         <button type="button" className="invite-btn" disabled>
                           Invited
