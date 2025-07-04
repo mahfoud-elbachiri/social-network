@@ -31,7 +31,7 @@ export default function ProfileClient() {
     const urlParams = new URLSearchParams(window.location.search);
     const idFromUrl = urlParams.get('id');
     setTargetUserId(idFromUrl || null);
-  }, []);
+  }, [targetUserId]);
 
   const [i, setI] = useState(false)
 

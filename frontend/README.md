@@ -25,6 +25,12 @@ Run Both with Docker Compos
         docker-compose up --build
 
 
+
+
+to check migration : 
+SELECT * FROM schema_migrations;
+
+
 ```bash
 npm run dev
 # or
