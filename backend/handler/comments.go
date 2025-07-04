@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	db "social-network/app/cration"
+	db "social-network/Database/cration"
 	"social-network/servisse"
 	"social-network/utils"
 )

@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	db "social-network/app/cration"
+	db "social-network/Database/cration"
 )
 
 func Logout(w http.ResponseWriter, r *http.Request) {

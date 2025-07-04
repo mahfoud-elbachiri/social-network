@@ -321,6 +321,16 @@ export default function HomePage() {
     }
   };
 
+  // dont edit this . for docker container
+  const getGroupImageUrl = (imageURL) => {
+    if (!imageURL) return null;
+    
+    // Remove leading slash if present and use relative path
+    // This will use the rewrite rules in next.config.mjs
+    const cleanPath = imageURL.startsWith('/') ? imageURL.substring(1) : imageURL;
+    return `/${cleanPath}`;
+  };
+
   // Step 23: Remove comment image preview
   const removeCommentImage = (postId) => {
     const newCommentImages = { ...commentImages };
@@ -754,7 +764,8 @@ export default function HomePage() {
                         {post.ImageURL && (
                           <div style={{ margin: "10px 0" }}>
                             <Image
-                              src={`http://localhost:8080${post.ImageURL}`}
+                               
+                               src={getGroupImageUrl(post.ImageURL)}
                               alt="Post image"
                               width={400}
                               height={300}
@@ -840,7 +851,8 @@ export default function HomePage() {
                                 {comment.ImageURL && (
                                   <div style={{ margin: "5px 0" }}>
                                     <Image
-                                      src={`http://localhost:8080${comment.ImageURL}`}
+                                    
+                                      src={getGroupImageUrl(comment.ImageURL)}
                                       alt="Comment image"
                                       width={150}
                                       height={150}

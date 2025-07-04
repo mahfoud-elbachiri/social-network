@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	db "social-network/app/cration"
+	db "social-network/Database/cration"
 	"social-network/Database/sqlite"
 	"social-network/utils"
 )

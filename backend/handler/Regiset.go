@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	db "social-network/app/cration"
+	db "social-network/Database/cration"
 	"social-network/utils"
 )
 

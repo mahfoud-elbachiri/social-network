@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	db "social-network/app/cration"
+	db "social-network/Database/cration"
 )
 
 func GetFollowDataHandler(w http.ResponseWriter, r *http.Request) {
