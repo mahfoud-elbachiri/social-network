@@ -7,38 +7,51 @@ import { getSocket } from "@/sock/GetSocket";
 import Header from "@/components/Header";
 
 export default function HomePage() {
+  // Step 1: Initialize WebSocket connection and router
   const socket = getSocket();
-const chatMessagesRef = useRef(null);
+  const chatMessagesRef = useRef(null);
   const router = useRouter();
+
+  // Step 2: Define main component state variables
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [groupData, setGroupData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Step 3: Define event form state
   const [eventForm, setEventForm] = useState({
     title: "",
     description: "",
     datetime: "",
   });
+  const [eventError, setEventError] = useState("");
+
+  // Step 4: Define post creation state
   const [postContent, setPostContent] = useState("");
   const [postImage, setPostImage] = useState(null);
   const [postImagePreview, setPostImagePreview] = useState(null);
+
+  // Step 5: Define comment-related state
   const [commentInputs, setCommentInputs] = useState({});
   const [commentImages, setCommentImages] = useState({});
   const [commentImagePreviews, setCommentImagePreviews] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [eventError, setEventError] = useState("");
 
-  // Chat-related state
+  // Step 6: Define chat-related state
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [showChat, setShowChat] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
+  // Step 7: WebSocket connection state
   const [i, setI] = useState(false);
-// this function to scroll to bottom
-const scrollToBottom = () => {
-  if (chatMessagesRef.current) {
-    chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
-  }
-};
+
+  // Step 8: Function to scroll chat to bottom
+  const scrollToBottom = () => {
+    if (chatMessagesRef.current) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+    }
+  };
+
+  // Step 9: Setup WebSocket connection and message handling
   useEffect(() => {
     socket.onopen = () => {
       console.log("✅ WebSocket connected");
@@ -48,10 +61,10 @@ const scrollToBottom = () => {
     // Handle incoming WebSocket messages
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      
+
       if (data.type === "chat_message" && data.group_id === selectedGroup) {
         setChatMessages((prev) => [...prev, data]);
-        
+
         // Increment unread count if chat is not visible
         if (!showChat) {
           setUnreadMessages((prev) => prev + 1);
@@ -66,19 +79,23 @@ const scrollToBottom = () => {
     }
   }, [i, selectedGroup, showChat]);
 
-useEffect(() => {
-  if (showChat) {
-    setUnreadMessages(0);
-    // Scroll to bottom when chat is opened
-    setTimeout(scrollToBottom, 100); // Small delay to ensure DOM is updated
-  }
-}, [showChat]);
-useEffect(() => {
-  if (showChat && chatMessages.length > 0) {
-    scrollToBottom();
-  }
-}, [chatMessages, showChat]);
-  // Handle URL changes and browser navigation
+  // Step 10: Reset unread messages when chat is opened and auto-scroll
+  useEffect(() => {
+    if (showChat) {
+      setUnreadMessages(0);
+      // Scroll to bottom when chat is opened
+      setTimeout(scrollToBottom, 100); // Small delay to ensure DOM is updated
+    }
+  }, [showChat]);
+
+  // Step 11: Auto-scroll when new messages arrive
+  useEffect(() => {
+    if (showChat && chatMessages.length > 0) {
+      scrollToBottom();
+    }
+  }, [chatMessages, showChat]);
+
+  // Step 12: Handle URL changes and browser navigation
   useEffect(() => {
     const handlePopState = (event) => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -111,6 +128,7 @@ useEffect(() => {
     };
   }, [router]);
 
+  // Step 13: Fetch group data by ID
   const fetchGroupById = async (groupId) => {
     try {
       const res = await fetch(`http://localhost:8080/group?id=${groupId}`, {
@@ -122,8 +140,7 @@ useEffect(() => {
       setGroupData(data);
       setSelectedGroup(groupId);
       setLoading(false);
-      
-      
+
       // Fetch chat messages for this group
       await fetchChatMessages(groupId);
 
@@ -136,6 +153,7 @@ useEffect(() => {
     }
   };
 
+  // Step 14: Fetch chat messages for the selected group
   const fetchChatMessages = async (groupId) => {
     try {
       const res = await fetch(`http://localhost:8080/group/chat?group_id=${groupId}`, {
@@ -152,9 +170,10 @@ useEffect(() => {
     }
   };
 
+  // Step 15: Handle sending chat messages
   const handleSendChatMessage = async (e) => {
     e.preventDefault();
-    
+
     if (!chatInput.trim()) return;
 
     try {
@@ -177,6 +196,7 @@ useEffect(() => {
     }
   };
 
+  // Step 16: Handle accepting join requests
   const handleAcceptRequest = async (userId, groupId) => {
     console.log(`Accepting request from user ${userId} for group ${groupId}`);
     try {
@@ -192,6 +212,7 @@ useEffect(() => {
     }
   };
 
+  // Step 17: Handle rejecting join requests
   const handleRejectRequest = async (userId, groupId) => {
     try {
       await fetch("http://localhost:8080/group/reject", {
@@ -206,6 +227,7 @@ useEffect(() => {
     }
   };
 
+  // Step 18: Handle inviting users to the group
   const handleInviteUser = async (userId, groupId) => {
     try {
       await fetch("http://localhost:8080/group/invite", {
@@ -220,42 +242,44 @@ useEffect(() => {
     }
   };
 
-const handleCreateEvent = async (e) => {
-  e.preventDefault();
-  setEventError('');
+  // Step 19: Handle event creation with validation
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
+    setEventError('');
 
-  try {
-    const res = await fetch('http://localhost:8080/group/create-event', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...eventForm, group_id: selectedGroup }),
-    });
+    try {
+      const res = await fetch('http://localhost:8080/group/create-event', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...eventForm, group_id: selectedGroup }),
+      });
 
-    if (!res.ok) {
-      const text = await res.text();
+      if (!res.ok) {
+        const text = await res.text();
 
-      // Handle specific backend error message
-      if (text.includes("Cannot create an event in the past")) {
-        setEventError("❌ You cannot create an event in the past.");
-      } else {
-        setEventError("❌ Failed to create event.");
+        // Handle specific backend error message
+        if (text.includes("Cannot create an event in the past")) {
+          setEventError("❌ You cannot create an event in the past.");
+        } else {
+          setEventError("❌ Failed to create event.");
+        }
+
+        // Return early without throwing so console stays clean
+        return;
       }
 
-      // ✅ Return early without throwing so console stays clean
-      return;
+      // Success - clear form and refresh group data
+      setEventForm({ title: '', description: '', datetime: '' });
+      fetchGroupById(selectedGroup);
+    } catch (err) {
+      // Only log unexpected errors
+      console.error('Unexpected error:', err);
+      setEventError("❌ Something went wrong. Please try again.");
     }
+  };
 
-    // ✅ Success
-    setEventForm({ title: '', description: '', datetime: '' });
-    fetchGroupById(selectedGroup);
-  } catch (err) {
-    // Only log unexpected errors
-    console.error('Unexpected error:', err);
-    setEventError("❌ Something went wrong. Please try again.");
-  }
-};
-
+  // Step 20: Handle event response (going/not going)
   const handleEventRespond = async (eventId, response) => {
     try {
       await fetch("http://localhost:8080/group/event-respond", {
@@ -270,6 +294,7 @@ const handleCreateEvent = async (e) => {
     }
   };
 
+  // Step 21: Handle post image selection and preview
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -280,6 +305,7 @@ const handleCreateEvent = async (e) => {
     }
   };
 
+  // Step 22: Handle comment image selection and preview
   const handleCommentImageChange = (postId, e) => {
     const file = e.target.files[0];
     if (file) {
@@ -295,6 +321,7 @@ const handleCreateEvent = async (e) => {
     }
   };
 
+  // Step 23: Remove comment image preview
   const removeCommentImage = (postId) => {
     const newCommentImages = { ...commentImages };
     const newCommentImagePreviews = { ...commentImagePreviews };
@@ -304,6 +331,7 @@ const handleCreateEvent = async (e) => {
     setCommentImagePreviews(newCommentImagePreviews);
   };
 
+  // Step 24: Handle creating new posts
   const handleCreatePost = async (e) => {
     e.preventDefault();
     try {
@@ -328,6 +356,7 @@ const handleCreateEvent = async (e) => {
     }
   };
 
+  // Step 25: Handle creating comments on posts
   const handleCreateComment = async (postId, content) => {
     try {
       const formData = new FormData();
@@ -354,12 +383,16 @@ const handleCreateEvent = async (e) => {
       console.error("Failed to create comment", err);
     }
   };
-console.log("groups data:",groupData);
+
+  console.log("groups data:", groupData);
+
+  // Step 26: Format chat message timestamps
   const formatChatTime = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Step 27: Handle navigation back to groups list
   const backToGroups = () => {
     setSelectedGroup(null);
     setGroupData(null);
@@ -369,7 +402,7 @@ console.log("groups data:",groupData);
     window.history.pushState({}, "", newUrl);
   };
 
-  // Group Detail View
+  // Step 28: Main render logic - Group Detail View
   if (selectedGroup && groupData) {
     const group = groupData.Group;
     const isAdmin = groupData.IsAdmin;
@@ -380,24 +413,25 @@ console.log("groups data:",groupData);
         <Header />
 
         <div className="group-page-container">
-          {/* Back Navigation */}
+          {/* Step 29: Back Navigation */}
           <div className="back-nav">
             <button onClick={() => router.push("/Home")} className="back-btn">
               ← Back to Home
             </button>
           </div>
 
-          {/* Group Header */}
+          {/* Step 30: Group Header */}
           <div className="group-header">
             <h2>{group.Title}</h2>
             <p className="group-description">{group.Description}</p>
           </div>
 
+          {/* Step 31: Only allow access if creator or member */}
           {isMemberOrCreator ? (
             <>
-              {/* Chat Toggle Button */}
+              {/* Step 32: Chat Toggle Button with unread count */}
               <div className="chat-toggle-container">
-                <button 
+                <button
                   onClick={() => setShowChat(!showChat)}
                   className="chat-toggle-btn"
                   style={{
@@ -433,110 +467,112 @@ console.log("groups data:",groupData);
                 </button>
               </div>
 
-              {/* Chat Section */}
-{showChat && (
-  <div className="chat-section" style={{
-    border: '1px solid #ddd',
-    borderRadius: '8px',
-    marginBottom: '20px',
-    backgroundColor: '#f9f9f9'
-  }}>
-    <div className="chat-header" style={{
-      padding: '15px',
-      borderBottom: '1px solid #ddd',
-      backgroundColor: '#fff',
-      borderRadius: '8px 8px 0 0'
-    }}>
-      <h3 style={{ margin: 0, fontSize: '18px' }}>💬 Group Chat</h3>
-    </div>
-    
-    <div 
-      ref={chatMessagesRef}
-      className="chat-messages" 
-      style={{
-        height: '300px',
-        overflowY: 'auto',
-        padding: '15px',
-        backgroundColor: '#fff',
-        scrollBehavior: 'smooth' // Smooth scrolling animation
-      }}
-    >
-      {chatMessages.length > 0 ? (
-        chatMessages.map((msg, index) => (
-          <div key={index} className="chat-message" style={{
-            marginBottom: '15px',
-            padding: '10px',
-            backgroundColor: '#f0f0f0',
-            borderRadius: '8px',
-            borderLeft: '3px solid #2196F3'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '5px'
-            }}>
-              <strong style={{ color: '#333' }}>{msg.username}</strong>
-              <small style={{ color: '#666' }}>
-                {formatChatTime(msg.timestamp)}
-              </small>
-            </div>
-            <div style={{ color: '#555' }}>{msg.message}</div>
-          </div>
-        ))
-      ) : (
-        <div style={{ 
-          textAlign: 'center', 
-          color: '#666', 
-          fontStyle: 'italic',
-          marginTop: '50px'
-        }}>
-          No messages yet. Start the conversation!
-        </div>
-      )}
-    </div>
+              {/* Step 33: Chat Section - Only visible when toggled */}
+              {showChat && (
+                <div className="chat-section" style={{
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  marginBottom: '20px',
+                  backgroundColor: '#f9f9f9'
+                }}>
+                  <div className="chat-header" style={{
+                    padding: '15px',
+                    borderBottom: '1px solid #ddd',
+                    backgroundColor: '#fff',
+                    borderRadius: '8px 8px 0 0'
+                  }}>
+                    <h3 style={{ margin: 0, fontSize: '18px' }}>💬 Group Chat</h3>
+                  </div>
 
-    <form onSubmit={handleSendChatMessage} style={{
-      padding: '15px',
-      borderTop: '1px solid #ddd',
-      backgroundColor: '#fff',
-      borderRadius: '0 0 8px 8px'
-    }}>
-      <div style={{ display: 'flex', gap: '10px' }}>
-        <input
-          type="text"
-          value={chatInput}
-          onChange={(e) => setChatInput(e.target.value)}
-          placeholder="Type your message..."
-          style={{
-            flex: 1,
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            fontSize: '14px'
-          }}
-          required
-        />
-        <button 
-          type="submit"
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#2196F3',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
-        >
-          Send
-        </button>
-      </div>
-    </form>
-  </div>
-)}
+                  {/* Step 34: Chat Messages Display */}
+                  <div
+                    ref={chatMessagesRef}
+                    className="chat-messages"
+                    style={{
+                      height: '300px',
+                      overflowY: 'auto',
+                      padding: '15px',
+                      backgroundColor: '#fff',
+                      scrollBehavior: 'smooth' // Smooth scrolling animation
+                    }}
+                  >
+                    {chatMessages.length > 0 ? (
+                      chatMessages.map((msg, index) => (
+                        <div key={index} className="chat-message" style={{
+                          marginBottom: '15px',
+                          padding: '10px',
+                          backgroundColor: '#f0f0f0',
+                          borderRadius: '8px',
+                          borderLeft: '3px solid #2196F3'
+                        }}>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '5px'
+                          }}>
+                            <strong style={{ color: '#333' }}>{msg.username}</strong>
+                            <small style={{ color: '#666' }}>
+                              {formatChatTime(msg.timestamp)}
+                            </small>
+                          </div>
+                          <div style={{ color: '#555' }}>{msg.message}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{
+                        textAlign: 'center',
+                        color: '#666',
+                        fontStyle: 'italic',
+                        marginTop: '50px'
+                      }}>
+                        No messages yet. Start the conversation!
+                      </div>
+                    )}
+                  </div>
 
-              {/* Group Members Section */}
+                  {/* Step 35: Chat Input Form */}
+                  <form onSubmit={handleSendChatMessage} style={{
+                    padding: '15px',
+                    borderTop: '1px solid #ddd',
+                    backgroundColor: '#fff',
+                    borderRadius: '0 0 8px 8px'
+                  }}>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder="Type your message..."
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          fontSize: '14px'
+                        }}
+                        required
+                      />
+                      <button
+                        type="submit"
+                        style={{
+                          padding: '10px 20px',
+                          backgroundColor: '#2196F3',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '14px'
+                        }}
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Step 36: Group Members Section */}
               <div className="group-section">
                 <h3 className="section-title">Group Members</h3>
                 {groupData.Members && groupData.Members.length > 0 ? (
@@ -555,7 +591,7 @@ console.log("groups data:",groupData);
                 )}
               </div>
 
-              {/* Create Event Form */}
+              {/* Step 37: Create Event Form */}
               <div className="group-section">
                 <h3 className="section-title">Create Event</h3>
                 <form onSubmit={handleCreateEvent}>
@@ -592,6 +628,7 @@ console.log("groups data:",groupData);
                   <br />
                   <button type="submit">Create Event</button>
 
+                  {/* Step 38: Event creation error display */}
                   {eventError && (
                     <div
                       style={{
@@ -610,7 +647,7 @@ console.log("groups data:",groupData);
                 </form>
               </div>
 
-              {/* List Events */}
+              {/* Step 39: List Group Events */}
               <div className="group-section">
                 <h3 className="section-title">Group Events</h3>
                 {groupData.Events && groupData.Events.length > 0 ? (
@@ -637,6 +674,7 @@ console.log("groups data:",groupData);
                             ❌ Not Going
                           </button>
                         </div>
+                        {/* Step 40: Show user's current response */}
                         {event.UserResponse === "going" && (
                           <div style={{ color: "green", marginTop: "5px" }}>
                             ✅ You're going
@@ -655,11 +693,11 @@ console.log("groups data:",groupData);
                 )}
               </div>
 
-              {/* Group Posts Section */}
+              {/* Step 41: Group Posts Section */}
               <div className="group-section">
                 <h3 className="section-title">Group Posts</h3>
 
-                {/* Create Post */}
+                {/* Step 42: Create Post Form */}
                 <form onSubmit={handleCreatePost}>
                   <textarea
                     value={postContent}
@@ -675,6 +713,7 @@ console.log("groups data:",groupData);
                     onChange={handleImageChange}
                   />
 
+                  {/* Step 43: Post Image Preview */}
                   {postImagePreview && (
                     <div style={{ margin: "10px 0" }}>
                       <Image
@@ -700,7 +739,7 @@ console.log("groups data:",groupData);
                   <button type="submit">Post</button>
                 </form>
 
-                {/* List of Posts */}
+                {/* Step 44: Display List of Posts */}
                 {groupData.Posts && groupData.Posts.length > 0 ? (
                   <ul className="post-list">
                     {groupData.Posts.map((post, index) => (
@@ -711,6 +750,7 @@ console.log("groups data:",groupData);
                         </div>
                         <p className="post-content">{post.Content}</p>
 
+                        {/* Step 45: Display Post Image if exists */}
                         {post.ImageURL && (
                           <div style={{ margin: "10px 0" }}>
                             <Image
@@ -723,7 +763,7 @@ console.log("groups data:",groupData);
                           </div>
                         )}
 
-                        {/* Comment Form with Image Support */}
+                        {/* Step 46: Comment Form with Image Support */}
                         <div className="comment-form">
                           <form
                             onSubmit={(e) => {
@@ -758,6 +798,7 @@ console.log("groups data:",groupData);
                               />
                             </div>
 
+                            {/* Step 47: Comment Image Preview */}
                             {commentImagePreviews[post.ID] && (
                               <div style={{ margin: "5px 0" }}>
                                 <Image
@@ -784,7 +825,7 @@ console.log("groups data:",groupData);
                           </form>
                         </div>
 
-                        {/* Comment List */}
+                        {/* Step 48: Display Comment List */}
                         {post.Comments && post.Comments.length > 0 ? (
                           <ul className="comment-list">
                             {post.Comments.map((comment, commentIndex) => (
@@ -795,6 +836,7 @@ console.log("groups data:",groupData);
                                   <small>{comment.CreatedAt}</small>
                                 </div>
 
+                                {/* Step 49: Display Comment Image if exists */}
                                 {comment.ImageURL && (
                                   <div style={{ margin: "5px 0" }}>
                                     <Image
@@ -821,17 +863,18 @@ console.log("groups data:",groupData);
               </div>
             </>
           ) : (
+            // Step 50: Show access denied message for non-members
             <div className="no-access-message">
               🔒 You are not a member of this group and cannot view its details.
             </div>
           )}
 
-          {/* Join Requests: only visible to Admin */}
+          {/* Step 51: Join Requests Section - Only visible to Admin */}
           {isAdmin && (
             <div className="group-section">
               <h3 className="section-title">Join Requests</h3>
               {groupData.RequestedMembers &&
-              groupData.RequestedMembers.length > 0 ? (
+                groupData.RequestedMembers.length > 0 ? (
                 <ul className="member-list">
                   {groupData.RequestedMembers.map((request, index) => (
                     <li key={index} className="request-item">
@@ -873,7 +916,7 @@ console.log("groups data:",groupData);
             <div className="group-section">
               <h3 className="section-title">Invite Users</h3>
               {groupData.InvitableUsers &&
-              groupData.InvitableUsers.length > 0 ? (
+                groupData.InvitableUsers.length > 0 ? (
                 <ul className="member-list">
                   {groupData.InvitableUsers.map((user, index) => (
                     <li key={index} className="invite-item">
