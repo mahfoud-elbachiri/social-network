@@ -54,6 +54,7 @@ type InvitableUser struct {
 	UserID   int
 	Username string
 	Invited  bool
+	Name string
 }
 
 type GroupPost struct {
@@ -1029,7 +1030,7 @@ func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
 	var invitableUsers []InvitableUser
 	if group.IsCreator || group.IsMember {
 		inviteRows, err := dvb.Query(`
-			SELECT u.id, u.nikname,
+			SELECT u.first_name , u.id, u.nikname,
 			CASE WHEN gm.status IS NOT NULL THEN 1 ELSE 0 END AS invited
 			FROM users u
 			LEFT JOIN group_members gm ON gm.user_id = u.id AND gm.group_id = ?
@@ -1045,7 +1046,7 @@ func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
 		for inviteRows.Next() {
 			var u InvitableUser
 			var invitedInt int
-			err := inviteRows.Scan(&u.UserID, &u.Username, &invitedInt)
+			err := inviteRows.Scan(&u.Name ,&u.UserID, &u.Username, &invitedInt)
 			if err != nil {
 				http.Error(w, "Error reading invitable users", http.StatusInternalServerError)
 				return
