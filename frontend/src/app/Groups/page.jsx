@@ -171,30 +171,12 @@ export default function HomePage() {
   };
 
   // Step 15: Handle sending chat messages
-  const handleSendChatMessage = async (e) => {
-    e.preventDefault();
 
+  const handleSendChatMessag = () =>{
     if (!chatInput.trim()) return;
-
-    try {
-      const res = await fetch("http://localhost:8080/group/chat", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          group_id: selectedGroup,
-          message: chatInput.trim(),
-        }),
-      });
-
-      if (res.ok) {
-        setChatInput("");
-        // Message will be added via WebSocket
-      }
-    } catch (err) {
-      console.error("Failed to send chat message", err);
-    }
-  };
+    socket.send(JSON.stringify({content:chatInput.trim(),group_id:selectedGroup,type:"groupChat"}))
+    setChatInput("")
+  }
 
   // Step 16: Handle accepting join requests
   const handleAcceptRequest = async (userId, groupId) => {
@@ -542,7 +524,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Step 35: Chat Input Form */}
-                  <form onSubmit={handleSendChatMessage} style={{
+                  <form  style={{
                     padding: '15px',
                     borderTop: '1px solid #ddd',
                     backgroundColor: '#fff',
@@ -564,7 +546,7 @@ export default function HomePage() {
                         required
                       />
                       <button
-                        type="submit"
+                        onClick={()=>handleSendChatMessag()}
                         style={{
                           padding: '10px 20px',
                           backgroundColor: '#2196F3',

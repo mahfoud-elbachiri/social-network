@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
@@ -30,7 +29,7 @@ type Message struct {
 	Receiver string `json:"receiver"`
 	Content  string `json:"content"`
 	Type     string `json:"type"`
-	GroupId  string `json:"group_id"`
+	GroupId  int    `json:"group_id"`
 	User_ID  string
 	Time     string
 	Grp      bool
@@ -90,8 +89,10 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 			BroadcastUsers()
 		} else if msg.Type == "groupChat" {
 			// Handle group chat message
+			fmt.Println(msg)
 			timestamp := time.Now().Format("2006-01-02 15:04:05")
-			groupID, _ := strconv.Atoi(msg.GroupId)
+			// groupID, _ := strconv.Atoi(msg.GroupId)
+			groupID := msg.GroupId
 			userID := db.GetId("SessionToken", cookie.Value)
 
 			// Check if user is member of the group
@@ -125,7 +126,7 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 			// Handle private messages
 			timestamp := time.Now().Format("2006-01-02 15:04:05")
 			msg.Time = timestamp
-			
+
 			err = db.InsertMessages(msg.Sender, msg.Receiver, msg.Content, msg.Time)
 			if err != nil {
 				fmt.Println("insert messages error:", err)
