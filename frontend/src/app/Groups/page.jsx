@@ -152,13 +152,22 @@ export default function HomePage() {
       setLoading(false);
     }
   };
-
+// useEffect(()=>{
+//   const  fetchDta = async()=>{
+//        const urlParams = new URLSearchParams(window.location.search);
+//     const groupId = urlParams.get("group");
+//     await fetchChatMessages(groupId,0);
+//   }
+//   fetchDta()
+   
+// },[!showChat])
   // Step 14: Fetch chat messages for the selected group
   const fetchChatMessages = async (groupId) => {
     try {
       const res = await fetch(`http://localhost:8080/group/chat?group_id=${groupId}`, {
         method: "GET",
         credentials: "include",
+        // body: JSON.stringify({ num })
       });
 
       if (res.ok) {

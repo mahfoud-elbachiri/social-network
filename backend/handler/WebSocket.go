@@ -119,7 +119,7 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 				Type:      "chat_message",
 			}
 
-			// Broadcast to group members
+			// // Broadcast to group members
 			BroadcastGroupChatMessage(groupChatMsg)
 
 		} else {

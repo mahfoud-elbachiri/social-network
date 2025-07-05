@@ -1176,23 +1176,30 @@ func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
 
 // GetGroupChatHandler retrieves all chat messages for a specific group
 func GetGroupChatHandler(w http.ResponseWriter, r *http.Request) {
+
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	// num:=r.URL.Query().Get("num")
+	// // offset, err := strconv.Atoi(num)
+	// if err != nil {
+	// 	http.Error(w, "Invalid group ID", http.StatusBadRequest)
+	// 	return
+	// }
 	// Get group ID from query parameters
 	groupIDStr := r.URL.Query().Get("group_id")
 	if groupIDStr == "" {
 		http.Error(w, "Group ID is required", http.StatusBadRequest)
 		return
 	}
-
 	groupID, err := strconv.Atoi(groupIDStr)
 	if err != nil {
 		http.Error(w, "Invalid group ID", http.StatusBadRequest)
 		return
 	}
+	
 
 	// Get current user ID from session
 	cookie, err := r.Cookie("SessionToken")

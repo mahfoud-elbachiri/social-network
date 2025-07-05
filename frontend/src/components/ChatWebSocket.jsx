@@ -14,6 +14,7 @@ export default function ChatWebSocket({ username }) {
     const socket = getSocket()
 
     const [i, setI] = useState(false)
+ 
 
     const [showEmojiPicker, setShowEmojiPicker] = useState(false)
 
@@ -21,6 +22,7 @@ export default function ChatWebSocket({ username }) {
         setInput(input + emojiObject.emoji)
         setShowEmojiPicker(false)
     };
+    const [notifications, setNotifications] = useState({});
 
     const [notification, setNotification] = useState(null)
     const [selectedUser, setSelectedUser] = useState()
@@ -152,6 +154,10 @@ export default function ChatWebSocket({ username }) {
                 if (data.sender != selectedUser && data.receiver === username) {
 
                     showNotification(data.receiver)
+                    setNotifications(prev => ({
+                        ...prev,
+                        [data.sender]: (prev[data.sender] || 0) + 1
+                    }));
                 }
             }
 
@@ -170,6 +176,16 @@ export default function ChatWebSocket({ username }) {
 
 
     }, [i, selectedUser])
+    useEffect(() => {
+        if(selectedUser){
+            setNotifications(prev=>{
+                const newNotif= {...prev};
+                newNotif[selectedUser]=0
+                return newNotif
+            })
+        }
+
+    }, [selectedUser])
 
     const sendMessage = (socket, sender, receiver) => {
 
@@ -183,11 +199,11 @@ export default function ChatWebSocket({ username }) {
     }
     // components/PopUpNotification.tsx
     // components/PopUpNotification.jsx
-    const onkkeydown = (e,socket,username,selectedUser) => {
-      if (e.key === "Enter") sendMessage(socket,username,selectedUser)
-      
+    const onkkeydown = (e, socket, username, selectedUser) => {
+        if (e.key === "Enter") sendMessage(socket, username, selectedUser)
+
     }
-    
+
 
 
     return (
@@ -202,6 +218,7 @@ export default function ChatWebSocket({ username }) {
                 <div style={{ marginBottom: '1rem' }}>
                     <h3 style={{ marginTop: "10px" }}>Chat</h3>
                 </div>
+
                 <div
                     id="contact-list"
                     style={{
@@ -229,8 +246,30 @@ export default function ChatWebSocket({ username }) {
                                                         priority
                                                         style={{ borderRadius: 50 }}
                                                     />
-                                                    <p className="users">{user.user}</p>
+                                                    <div style={{ position: 'relative' }}> 
+                                                            <p className="users">{user.user}
+                                                        {notifications[user.user] > 0 && (
+                                                            <span style={{
+                                                                position: 'absolute',
+                                                                top: '-5px',
+                                                                right: '-5px',
+                                                                backgroundColor: 'red',
+                                                                color: 'white',
+                                                                borderRadius: '50%',
+                                                                width: '20px',
+                                                                height: '20px',
+                                                                fontSize: '12px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}>
+                                                                {notifications[user.user]}
+                                                            </span>
+                                                        )}
+                                                    </p></div>
+                                               
                                                 </div>
+
                                                 <span className={user.online ? "online" : "offlin"}></span>
                                             </div>
                                         ))
@@ -291,7 +330,7 @@ export default function ChatWebSocket({ username }) {
                                 <EmojiPicker onEmojiClick={onEmojiClick} />
                             )}
 
-                            <input onKeyDown={(e)=>onkkeydown(e,socket,username,selectedUser)}onChange={(e) => setInput(e.target.value)} type="text" placeholder="Write a message..." value={input} />
+                            <input onKeyDown={(e) => onkkeydown(e, socket, username, selectedUser)} onChange={(e) => setInput(e.target.value)} type="text" placeholder="Write a message..." value={input} />
                             <button onClick={() => sendMessage(socket, username, selectedUser)} className='send'>Send</button>
                         </div>
                     </div>

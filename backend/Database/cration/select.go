@@ -766,6 +766,7 @@ func GetGroupChatMessages(groupID int) ([]GroupChatMessage, error) {
 		JOIN users u ON gcm.user_id = u.id
 		WHERE gcm.group_id = ?
 		ORDER BY gcm.timestamp ASC
+		
 	`
 
 	rows, err := DB.Query(query, groupID)
