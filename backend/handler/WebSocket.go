@@ -21,7 +21,7 @@ var (
 	clients            = make(map[*websocket.Conn]string)
 	clientsMutex       sync.RWMutex
 	broadcast          = make(chan Message)
-	broadcastGroupChat = make(chan db.GroupChatMessage)
+	// broadcastGroupChat = make(chan db.GroupChatMessage)
 )
 
 type Message struct {
@@ -89,7 +89,7 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 			BroadcastUsers()
 		} else if msg.Type == "groupChat" {
 			// Handle group chat message
-			fmt.Println(msg)
+			
 			timestamp := time.Now().Format("2006-01-02 15:04:05")
 			// groupID, _ := strconv.Atoi(msg.GroupId)
 			groupID := msg.GroupId
@@ -167,12 +167,7 @@ func BroadcastGroupChatMessage(message db.GroupChatMessage) {
 	}
 }
 
-func HandleGroupMessages() {
-	for {
-		msg := <-broadcastGroupChat
-		BroadcastGroupChatMessage(msg)
-	}
-}
+
 
 func HandleMessages() {
 	for {

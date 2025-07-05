@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	data "social-network/Database/sqlite"
 	db "social-network/Database/cration"
+	data "social-network/Database/sqlite"
 	"social-network/handler"
 	"social-network/utils"
 )
@@ -64,8 +64,6 @@ func main() {
 			switch r.Method {
 			case http.MethodGet:
 				handler.GetGroupChatHandler(w, r)
-			case http.MethodPost:
-				handler.SendGroupChatHandler(w, r)
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
@@ -92,7 +90,6 @@ func main() {
 	// WebSocket
 	router.HandleFunc("/ws", handler.WebSocketHandler) // Add WebSocket route
 	go handler.HandleMessages()                        // Start WebSocket message handler in a goroutine
-	go handler.HandleGroupMessages()
 
 	// Wrap router with CORS middleware
 	corsRouter := handler.CorsMiddleware(router)
