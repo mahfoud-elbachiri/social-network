@@ -1,25 +1,26 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
-    return [
+    const isDocker = process.env.NODE_ENV === 'production' || process.env.DOCKER_ENV === 'true';
+    const backendUrl = isDocker ? 'http://backend:8080' : 'http://localhost:8080';
+   return [
       {
         source: '/api/:path*',
-        destination: 'http://backend:8080/:path*', 
+        destination: `${backendUrl}/:path*`,
       },
-      // Add image proxy for Docker
+      // Add image proxy
       {
         source: '/avatars/:path*',
-        destination: 'http://backend:8080/avatars/:path*',
+        destination: `${backendUrl}/avatars/:path*`,
       },
       {
         source: '/avatars2/:path*',
-        destination: 'http://backend:8080/avatars2/:path*',
+        destination: `${backendUrl}/avatars2/:path*`,
       },
-  
-
-       {
+      // Add group uploads proxy
+      {
         source: '/uploads/:path*',
-        destination: 'http://backend:8080/uploads/:path*',
+        destination: `${backendUrl}/uploads/:path*`,
       },
     ];
   },
