@@ -85,12 +85,15 @@ export default function HomePage() {
 
   // Step 10: Reset unread messages when chat is opened and auto-scroll
   useEffect(() => {
-    if (showChat) {
-      setUnreadMessages(0);
+    if (showChat) setUnreadMessages(0);
+      
+      setChatMessages(prev => prev.slice(prev.length-10));
+      setHasMoreMessages(true);
+      setChatOffset(10);
       // Scroll to bottom when chat is opened
-      setTimeout(scrollToBottom, 100); // Small delay to ensure DOM is updated
-    }
-  }, [showChat]);
+      scrollToBottom(); // Small delay to ensure DOM is updated
+    
+  }, [showChat, !showChat]);
 
   // Step 11: Auto-scroll when new messages arrive
   useEffect(() => {
