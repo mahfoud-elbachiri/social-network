@@ -24,7 +24,6 @@ export default function ChatWebSocket({ username }) {
     };
     const [notifications, setNotifications] = useState({});
 
-    const [notification, setNotification] = useState(null)
     const [selectedUser, setSelectedUser] = useState()
     const [UsersList, setUsersList] = useState()
     const [input, setInput] = useState('')
@@ -107,16 +106,6 @@ export default function ChatWebSocket({ username }) {
     }, [username, selectedUser])
 
 
-    const showNotification = (sender) => {
-        let id
-        clearTimeout(id)
-        setNotification({ sender });
-
-        id = setTimeout(() => {
-            setNotification(null);
-        }, 5000);
-    }
-
     useEffect(() => {
         // const socket = new WebSocket('ws://localhost:8080/ws')
         // setSock(socket)
@@ -151,9 +140,8 @@ export default function ChatWebSocket({ username }) {
                 setMessages(prvData => [...prvData, data])
                 // console.log(data.receiver, selectedUser, data.sender)
 
-                if (data.sender != selectedUser && data.receiver === username) {
-
-                    showNotification(data.receiver)
+                // Only handle notification counts for the chat interface
+                if (data.receiver === username && data.sender !== selectedUser) {
                     setNotifications(prev => ({
                         ...prev,
                         [data.sender]: (prev[data.sender] || 0) + 1
@@ -209,11 +197,6 @@ export default function ChatWebSocket({ username }) {
     return (
 
         <>
-            {notification && (
-                <div className="popup-notification">
-                    <strong>{notification.sender}</strong> send you a message...
-                </div>
-            )}
             <aside className="contacts" style={{ paddingTop: '0' }}>
                 <div style={{ marginBottom: '1rem' }}>
                     <h3 style={{ marginTop: "10px" }}>Chat</h3>

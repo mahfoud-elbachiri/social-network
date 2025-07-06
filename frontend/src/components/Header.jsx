@@ -5,12 +5,18 @@ import { useEffect, useState } from "react";
 import { handleLogout } from '@/utils/helpers';
 import { userApi } from '@/utils/api';
 import NotificationPopup from './NotificationPopup';
+import { getSocket } from '@/sock/GetSocket';
 
 const Header = () => {
   const [userAvatar, setUserAvatar] = useState("");
   const [currentUserId, setCurrentUserId] = useState(null);
   const [showNotificationPopup, setShowNotificationPopup] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+  
+  // Chat notification states
+  const [chatNotification, setChatNotification] = useState(null);
+  const [username, setUsername] = useState("");
+  const socket = getSocket();
   useEffect(() => {
     fetchUserInfo();
     fetchNotificationCount();
@@ -22,6 +28,44 @@ const Header = () => {
     return () => clearInterval(notificationInterval);
   }, []);
 
+  // Chat notification logic
+  const showChatNotification = (sender) => {
+    let id
+    clearTimeout(id)
+    setChatNotification({ sender });
+
+    id = setTimeout(() => {
+        setChatNotification(null);
+    }, 5000);
+  }
+
+  useEffect(() => {
+    if (!username || !socket) return;
+
+    socket.onopen = () => {
+        console.log('✅ Global Chat Notifications WebSocket connected')
+    }
+
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ content: "broadcast" }));
+    }
+
+    const handleMessage = (event) => {
+        const data = JSON.parse(event.data)
+        
+        // Only handle direct messages for notifications (not group chat)
+        if (data.type !== "users" && data.receiver === username && !data.group_id && data.sender) {
+            showChatNotification(data.sender)
+        }
+    }
+
+    socket.addEventListener('message', handleMessage);
+
+    return () => {
+        socket.removeEventListener('message', handleMessage);
+    }
+  }, [username, socket]);
+
   const fetchUserInfo = async () => {
     try {
       const data = await userApi.fetchUserStatus();
@@ -31,6 +75,9 @@ const Header = () => {
         }
         if (data.user_id) {
           setCurrentUserId(data.user_id);
+        }
+        if (data.name) {
+          setUsername(data.name);
         }
       }
     } catch (error) {
@@ -121,6 +168,25 @@ const Header = () => {
           </div>
 
       <button id="logout" onClick={handleLogout}>logout</button>
+      
+      {/* Chat Notification Popup */}
+      {chatNotification && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: '#333',
+          color: 'white',
+          padding: '15px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          zIndex: 9999,
+          fontSize: '14px',
+          maxWidth: '300px'
+        }}>
+          <strong>{chatNotification.sender}</strong> sent you a message...
+        </div>
+      )}
       
       {/* Notification Popup */}
       <NotificationPopup 
