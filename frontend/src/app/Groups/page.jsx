@@ -41,6 +41,9 @@ export default function HomePage() {
   const [chatInput, setChatInput] = useState("");
   const [showChat, setShowChat] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [chatOffset, setChatOffset] = useState(0);
+  const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
 
   // Step 7: WebSocket connection state
   const [i, setI] = useState(false);
@@ -164,20 +167,42 @@ export default function HomePage() {
    
 // },[!showChat])
   // Step 14: Fetch chat messages for the selected group
-  const fetchChatMessages = async (groupId, offset) => {
+  const fetchChatMessages = async (groupId, offset, append = false) => {
     try {
+      setIsLoadingMoreMessages(true);
       const res = await fetch(`http://localhost:8080/group/chat?group_id=${groupId}&num=${offset}`, {
         method: "GET",
         credentials: "include",
-        // body: JSON.stringify({ num })
       });
 
       if (res.ok) {
         const messages = await res.json();
-        setChatMessages(messages || []);
+        
+        if (messages && messages.length > 0) {
+          if (append) {
+            // Prepend older messages to the beginning of the array
+            setChatMessages(prev => [...messages, ...prev]);
+          } else {
+            // Replace all messages (initial load)
+            setChatMessages(messages || []);
+          }
+          
+          // Update offset for next batch
+          setChatOffset(offset + 10);
+          
+          // Check if there are more messages
+          if (messages.length < 10) {
+            setHasMoreMessages(false);
+          }
+        } else {
+          // No more messages available
+          setHasMoreMessages(false);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch chat messages", err);
+    } finally {
+      setIsLoadingMoreMessages(false);
     }
   };
 
@@ -188,6 +213,37 @@ export default function HomePage() {
     socket.send(JSON.stringify({content:chatInput.trim(),group_id:selectedGroup,type:"groupChat"}))
     setChatInput("")
   }
+
+  // Step 15.5: Handle chat scroll for loading more messages
+  const handleChatScroll = async (e) => {
+    const { scrollTop } = e.target;
+    
+    // If scrolled to top and there are more messages and not already loading
+    if (scrollTop === 0 && hasMoreMessages && !isLoadingMoreMessages) {
+      // Store current scroll height to maintain scroll position
+      const previousScrollHeight = chatMessagesRef.current.scrollHeight;
+      
+      // Fetch more messages
+      await fetchChatMessages(selectedGroup, chatOffset, true);
+      
+      // Restore scroll position after new messages are loaded
+      setTimeout(() => {
+        if (chatMessagesRef.current) {
+          const newScrollHeight = chatMessagesRef.current.scrollHeight;
+          chatMessagesRef.current.scrollTop = newScrollHeight - previousScrollHeight;
+        }
+      }, 100);
+    }
+  };
+
+  // Step 15.6: Reset chat state when group changes
+  useEffect(() => {
+    if (selectedGroup) {
+      setChatMessages([]);
+      setChatOffset(0);
+      setHasMoreMessages(true);
+    }
+  }, [selectedGroup]);
 
   // Step 16: Handle accepting join requests
   const handleAcceptRequest = async (userId, groupId) => {
@@ -498,7 +554,34 @@ export default function HomePage() {
                       backgroundColor: '#fff',
                       scrollBehavior: 'smooth' // Smooth scrolling animation
                     }}
+                    onScroll={handleChatScroll} // Attach scroll handler
                   >
+                    {/* Loading indicator for older messages */}
+                    {isLoadingMoreMessages && (
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '10px',
+                        color: '#666',
+                        fontStyle: 'italic'
+                      }}>
+                        Loading more messages...
+                      </div>
+                    )}
+                    
+                    {/* No more messages indicator */}
+                    {!hasMoreMessages && chatMessages.length > 0 && (
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '10px',
+                        color: '#888',
+                        fontSize: '12px',
+                        borderBottom: '1px solid #eee',
+                        marginBottom: '10px'
+                      }}>
+                        — Beginning of conversation —
+                      </div>
+                    )}
+                    
                     {chatMessages.length > 0 ? (
                       chatMessages.map((msg, index) => (
                         <div key={index} className="chat-message" style={{
