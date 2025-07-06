@@ -7,12 +7,7 @@ import { getSocket } from "@/sock/GetSocket";
 import Header from "@/components/Header";
 
 export default function HomePage() {
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const chatContainerRef = useRef(null);
-
-
-
+  
   // Step 1: Initialize WebSocket connection and router
   const socket = getSocket();
   const chatMessagesRef = useRef(null);
@@ -159,59 +154,38 @@ export default function HomePage() {
       setLoading(false);
     }
   };
-  // useEffect(()=>{
-  //   const  fetchDta = async()=>{
-  //        const urlParams = new URLSearchParams(window.location.search);
-  //     const groupId = urlParams.get("group");
-  //     await fetchChatMessages(groupId,0);
-  //   }
-  //   fetchDta()
-
-  // },[!showChat])
+// useEffect(()=>{
+//   const  fetchDta = async()=>{
+//        const urlParams = new URLSearchParams(window.location.search);
+//     const groupId = urlParams.get("group");
+//     await fetchChatMessages(groupId,0);
+//   }
+//   fetchDta()
+   
+// },[!showChat])
   // Step 14: Fetch chat messages for the selected group
-  const fetchChatMessages = async (groupId, offsetVal) => {
+  const fetchChatMessages = async (groupId, offset) => {
     try {
-      const res = await fetch(`http://localhost:8080/group/chat?group_id=${groupId}&num=${offsetVal}`, {
+      const res = await fetch(`http://localhost:8080/group/chat?group_id=${groupId}&num=${offset}`, {
         method: "GET",
         credentials: "include",
+        // body: JSON.stringify({ num })
       });
 
       if (res.ok) {
-        const newMessages = await res.json();
-        if (newMessages.length === 0) {
-          setHasMore(false); // no more messages
-          return;
-        }
-
-        // Prepend older messages
-        setChatMessages(prev => [...newMessages, ...prev]);
+        const messages = await res.json();
+        setChatMessages(messages || []);
       }
     } catch (err) {
       console.error("Failed to fetch chat messages", err);
     }
   };
-  useEffect(() => {
-    const container = chatContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      if (container.scrollTop === 0 && hasMore) {
-        const newOffset = offset + 10;
-        setOffset(newOffset);
-        fetchChatMessages(selectedGroup, newOffset);
-      }
-    };
-
-    container.addEventListener("scroll", handleScroll);
-    return () => container.removeEventListener("scroll", handleScroll);
-  }, [offset, selectedGroup, hasMore]);
-
 
   // Step 15: Handle sending chat messages
 
-  const handleSendChatMessag = () => {
+  const handleSendChatMessag = () =>{
     if (!chatInput.trim()) return;
-    socket.send(JSON.stringify({ content: chatInput.trim(), group_id: selectedGroup, type: "groupChat" }))
+    socket.send(JSON.stringify({content:chatInput.trim(),group_id:selectedGroup,type:"groupChat"}))
     setChatInput("")
   }
 
@@ -343,7 +317,7 @@ export default function HomePage() {
   // dont edit this . for docker container
   const getGroupImageUrl = (imageURL) => {
     if (!imageURL) return null;
-
+    
     // Remove leading slash if present and use relative path
     // This will use the rewrite rules in next.config.mjs
     const cleanPath = imageURL.startsWith('/') ? imageURL.substring(1) : imageURL;
@@ -515,16 +489,14 @@ export default function HomePage() {
 
                   {/* Step 34: Chat Messages Display */}
                   <div
-                    ref={chatContainerRef}
+                    ref={chatMessagesRef}
                     className="chat-messages"
                     style={{
                       height: '300px',
                       overflowY: 'auto',
                       padding: '15px',
                       backgroundColor: '#fff',
-                      scrollBehavior: 'smooth',
-                      display: 'flex',
-                      flexDirection: 'column-reverse' // Show newest messages at the bottom
+                      scrollBehavior: 'smooth' // Smooth scrolling animation
                     }}
                   >
                     {chatMessages.length > 0 ? (
@@ -562,9 +534,8 @@ export default function HomePage() {
                     )}
                   </div>
 
-
                   {/* Step 35: Chat Input Form */}
-                  <form style={{
+                  <form  style={{
                     padding: '15px',
                     borderTop: '1px solid #ddd',
                     backgroundColor: '#fff',
@@ -586,7 +557,7 @@ export default function HomePage() {
                         required
                       />
                       <button
-                        onClick={() => handleSendChatMessag()}
+                        onClick={()=>handleSendChatMessag()}
                         style={{
                           padding: '10px 20px',
                           backgroundColor: '#2196F3',
@@ -786,8 +757,8 @@ export default function HomePage() {
                         {post.ImageURL && (
                           <div style={{ margin: "10px 0" }}>
                             <Image
-
-                              src={getGroupImageUrl(post.ImageURL)}
+                               
+                               src={getGroupImageUrl(post.ImageURL)}
                               alt="Post image"
                               width={400}
                               height={300}
@@ -873,7 +844,7 @@ export default function HomePage() {
                                 {comment.ImageURL && (
                                   <div style={{ margin: "5px 0" }}>
                                     <Image
-
+                                    
                                       src={getGroupImageUrl(comment.ImageURL)}
                                       alt="Comment image"
                                       width={150}
