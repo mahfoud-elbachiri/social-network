@@ -152,7 +152,7 @@ body {
 .sidebar,
 .contacts {
     width: 350px;
-    background: white;
+    /* background: white; */
     border-radius: 16px;
     padding: 1.5rem;
     height: fit-content;

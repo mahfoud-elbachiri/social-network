@@ -14,7 +14,7 @@ export default function ChatWebSocket({ username }) {
     const socket = getSocket()
 
     const [i, setI] = useState(false)
- 
+
 
     const [showEmojiPicker, setShowEmojiPicker] = useState(false)
 
@@ -165,10 +165,10 @@ export default function ChatWebSocket({ username }) {
 
     }, [i, selectedUser])
     useEffect(() => {
-        if(selectedUser){
-            setNotifications(prev=>{
-                const newNotif= {...prev};
-                newNotif[selectedUser]=0
+        if (selectedUser) {
+            setNotifications(prev => {
+                const newNotif = { ...prev };
+                newNotif[selectedUser] = 0
                 return newNotif
             })
         }
@@ -191,7 +191,7 @@ export default function ChatWebSocket({ username }) {
         if (e.key === "Enter") sendMessage(socket, username, selectedUser)
 
     }
-
+    const [showChat, setShowChat] = useState(false)
 
 
     return (
@@ -199,12 +199,33 @@ export default function ChatWebSocket({ username }) {
         <>
             <aside className="contacts" style={{ paddingTop: '0' }}>
                 <div style={{ marginBottom: '1rem' }}>
-                    <h3 style={{ marginTop: "10px" }}>Chat</h3>
+                    <h3 style={{ marginTop: "10px" }}>
+                        <div >
+                            <button
+                                onClick={() => setShowChat(!showChat)}
+
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
+                            >
+                                <Image
+                                    src="/send.png"
+                                    alt="send"
+                                    width={42}
+                                    height={42}
+                                    className="nav-icon"
+                                />
+                                {/* {notificationCount > 0 && (
+                                    <span className="notification-badge">
+                                      {notificationCount > 99 ? '99+' : notificationCount}
+                                    </span>
+                                  )} */}
+                            </button>
+                        </div></h3>
                 </div>
 
                 <div
                     id="contact-list"
                     style={{
+                        display: showChat ? "block" : "none",
                         height: `${typeof window !== 'undefined' ? window.innerHeight / 4 : 200}px`,
                         overflowY: 'auto',
                         border: '3px solid rgb(226, 226, 226)',
@@ -229,28 +250,28 @@ export default function ChatWebSocket({ username }) {
                                                         priority
                                                         style={{ borderRadius: 50 }}
                                                     />
-                                                    <div style={{ position: 'relative' }}> 
-                                                            <p className="users">{user.user}
-                                                        {notifications[user.user] > 0 && (
-                                                            <span style={{
-                                                                position: 'absolute',
-                                                                top: '-5px',
-                                                                right: '-5px',
-                                                                backgroundColor: 'red',
-                                                                color: 'white',
-                                                                borderRadius: '50%',
-                                                                width: '20px',
-                                                                height: '20px',
-                                                                fontSize: '12px',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center'
-                                                            }}>
-                                                                {notifications[user.user]}
-                                                            </span>
-                                                        )}
-                                                    </p></div>
-                                               
+                                                    <div style={{ position: 'relative' }}>
+                                                        <p className="users">{user.user}
+                                                            {notifications[user.user] > 0 && (
+                                                                <span style={{
+                                                                    position: 'absolute',
+                                                                    top: '-5px',
+                                                                    right: '-5px',
+                                                                    backgroundColor: 'red',
+                                                                    color: 'white',
+                                                                    borderRadius: '50%',
+                                                                    width: '20px',
+                                                                    height: '20px',
+                                                                    fontSize: '12px',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center'
+                                                                }}>
+                                                                    {notifications[user.user]}
+                                                                </span>
+                                                            )}
+                                                        </p></div>
+
                                                 </div>
 
                                                 <span className={user.online ? "online" : "offlin"}></span>

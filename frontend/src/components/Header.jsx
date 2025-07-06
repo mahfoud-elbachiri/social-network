@@ -167,6 +167,7 @@ const Header = () => {
             </button>
           </div>
 
+
       <button id="logout" onClick={handleLogout}>logout</button>
       
       {/* Chat Notification Popup */}
