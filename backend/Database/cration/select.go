@@ -753,23 +753,26 @@ func CanViewProfile(viewerID, targetUserID int) bool {
 }
 
 // GetGroupChatMessages retrieves all chat messages for a specific group
-func GetGroupChatMessages(groupID int) ([]GroupChatMessage, error) {
+func GetGroupChatMessages(groupID int , offset int) ([]GroupChatMessage, error) {
 	query := `
-		SELECT 
-			gcm.id,
-			gcm.group_id,
-			gcm.user_id,
-			u.nikname as username,
-			gcm.message,
-			gcm.timestamp
-		FROM group_chat_messages gcm
-		JOIN users u ON gcm.user_id = u.id
-		WHERE gcm.group_id = ?
-		ORDER BY gcm.timestamp ASC
-		
+		SELECT * FROM (
+	SELECT 
+		gcm.id,
+		gcm.group_id,
+		gcm.user_id,
+		u.nikname as username,
+		gcm.message,
+		gcm.timestamp
+	FROM group_chat_messages gcm
+	JOIN users u ON gcm.user_id = u.id
+	WHERE gcm.group_id = ?
+	ORDER BY gcm.id DESC
+	LIMIT 10 OFFSET ?
+) AS sub
+ORDER BY sub.id ASC	
 	`
 
-	rows, err := DB.Query(query, groupID)
+	rows, err := DB.Query(query, groupID , offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query group chat messages: %w", err)
 	}

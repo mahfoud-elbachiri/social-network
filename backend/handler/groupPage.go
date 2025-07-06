@@ -1177,17 +1177,14 @@ func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
 // GetGroupChatHandler retrieves all chat messages for a specific group
 func GetGroupChatHandler(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+
+
+	num:=r.URL.Query().Get("num")
+	offset, err := strconv.Atoi(num)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
 		return
 	}
-
-	// num:=r.URL.Query().Get("num")
-	// // offset, err := strconv.Atoi(num)
-	// if err != nil {
-	// 	http.Error(w, "Invalid group ID", http.StatusBadRequest)
-	// 	return
-	// }
 	// Get group ID from query parameters
 	groupIDStr := r.URL.Query().Get("group_id")
 	if groupIDStr == "" {
@@ -1227,7 +1224,7 @@ func GetGroupChatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get chat messages for the group
-	messages, err := db.GetGroupChatMessages(groupID)
+	messages, err := db.GetGroupChatMessages(groupID,offset)
 	if err != nil {
 		http.Error(w, "Failed to retrieve messages", http.StatusInternalServerError)
 		return
