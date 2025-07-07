@@ -213,6 +213,7 @@ export default function HomePage() {
 
   const handleSendChatMessag = () =>{
     if (!chatInput.trim()) return;
+    setChatOffset(prev => prev + 1)
     socket.send(JSON.stringify({content:chatInput.trim(),group_id:selectedGroup,type:"groupChat"}))
     setChatInput("")
   }
