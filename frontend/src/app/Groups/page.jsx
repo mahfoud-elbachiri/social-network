@@ -211,7 +211,8 @@ export default function HomePage() {
 
   // Step 15: Handle sending chat messages
 
-  const handleSendChatMessag = () =>{
+  const handleSendChatMessag = (e) =>{
+    e.preventDefault()
     if (!chatInput.trim()) return;
     setChatOffset(prev => prev + 1)
     socket.send(JSON.stringify({content:chatInput.trim(),group_id:selectedGroup,type:"groupChat"}))
@@ -644,7 +645,7 @@ export default function HomePage() {
                         required
                       />
                       <button
-                        onClick={()=>handleSendChatMessag()}
+                        onClick={(e)=>handleSendChatMessag(e)}
                         style={{
                           padding: '10px 20px',
                           backgroundColor: '#2196F3',

@@ -14,8 +14,6 @@ export default function LoginRegisterPage() {
 
             if (data?.status) {
                 router.push('/Home');
-            } else if (!data?.login || data?.error) {
-                router.push('/register');
             }
         }
 
