@@ -57,7 +57,7 @@ const CreatePostForm = ({ onPostCreated, onClose }) => {
     } else {
       setSelectedFollowers(followers.map(f => f.id));
     }
-  };  const handleSubmit = async (e) => {
+  }; const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
@@ -71,6 +71,12 @@ const CreatePostForm = ({ onPostCreated, onClose }) => {
 
     const form = new FormData(e.target);
 
+
+    if (form.get("title") === "" || form.get("content") === "") {
+      setError("Fill title and description")
+      return
+    }
+
     // Add selected followers for private posts
     if (privacy === 'private' && selectedFollowers.length > 0) {
       form.append('selected_followers', JSON.stringify(selectedFollowers));
@@ -78,7 +84,7 @@ const CreatePostForm = ({ onPostCreated, onClose }) => {
 
     try {
       const data = await postApi.createPost(form);
-      
+
       if (data && data.status) {
         onClose();
         if (onPostCreated) {
@@ -99,44 +105,44 @@ const CreatePostForm = ({ onPostCreated, onClose }) => {
       <form name="creatpost" onSubmit={handleSubmit}>
         <div className="form-group">
           <div>
-            <span 
-              className="material-icons" 
+            <span
+              className="material-icons"
               id="close"
               onClick={onClose}
-              style={{cursor: 'pointer'}}
+              style={{ cursor: 'pointer' }}
             >
               x
             </span>
             <label>Post Title</label>
-            <input 
-              type="text" 
-              name="title" 
-              className="form-control" 
-              placeholder="Enter post title" 
-              required 
+            <input
+              type="text"
+              name="title"
+              className="form-control"
+              placeholder="Enter post title"
+              required
               disabled={isSubmitting}
             />
           </div>
         </div>
         <br />
-        
+
         <div className="post-imagee">
           <label>add Image or gif (Optional)</label>
           <br />
-          <input 
-            type="file" 
-            name="avatar" 
-            accept="image/*" 
+          <input
+            type="file"
+            name="avatar"
+            accept="image/*"
             disabled={isSubmitting}
           />
         </div>
         <br />
-          <div className="radio-group-inline">
+        <div className="radio-group-inline">
           <label className="radio-option-inline">
-            <input 
-              type="radio" 
-              name="privacy" 
-              value="public" 
+            <input
+              type="radio"
+              name="privacy"
+              value="public"
               checked={privacy === 'public'}
               onChange={(e) => handlePrivacyChange(e.target.value)}
               disabled={isSubmitting}
@@ -144,10 +150,10 @@ const CreatePostForm = ({ onPostCreated, onClose }) => {
             <span> Public</span>
           </label>
           <label className="radio-option-inline">
-            <input 
-              type="radio" 
-              name="privacy" 
-              value="private" 
+            <input
+              type="radio"
+              name="privacy"
+              value="private"
               checked={privacy === 'private'}
               onChange={(e) => handlePrivacyChange(e.target.value)}
               disabled={isSubmitting}
@@ -155,10 +161,10 @@ const CreatePostForm = ({ onPostCreated, onClose }) => {
             <span> Private</span>
           </label>
           <label className="radio-option-inline">
-            <input 
-              type="radio" 
-              name="privacy" 
-              value="almost private" 
+            <input
+              type="radio"
+              name="privacy"
+              value="almost private"
               checked={privacy === 'almost private'}
               onChange={(e) => handlePrivacyChange(e.target.value)}
               disabled={isSubmitting}
@@ -176,8 +182,8 @@ const CreatePostForm = ({ onPostCreated, onClose }) => {
                 <p>Loading followers...</p>
               ) : followers.length > 0 ? (
                 <div className="select-all-container">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={handleSelectAllFollowers}
                     className="select-all-btn"
                     disabled={isSubmitting}
@@ -189,7 +195,7 @@ const CreatePostForm = ({ onPostCreated, onClose }) => {
                   </span>
                 </div>
               ) : (
-                <p style={{color: '#666', fontStyle: 'italic'}}>
+                <p style={{ color: '#666', fontStyle: 'italic' }}>
                   You don't have any followers yet.
                 </p>
               )}
@@ -207,8 +213,8 @@ const CreatePostForm = ({ onPostCreated, onClose }) => {
                         disabled={isSubmitting}
                       />
                       <div className="follower-info">
-                        <img 
-                          src={follower.avatar ? `/${follower.avatar}` : "/icon.jpg"} 
+                        <img
+                          src={follower.avatar ? `/${follower.avatar}` : "/icon.jpg"}
                           alt={follower.first_name}
                           className="follower-avatar"
                         />
@@ -237,24 +243,24 @@ const CreatePostForm = ({ onPostCreated, onClose }) => {
 
         <div className="form-group">
           <label>Post Content</label>
-          <textarea 
-            className="form-control" 
-            name="content" 
-            rows="5" 
-            placeholder="Write your post content" 
+          <textarea
+            className="form-control"
+            name="content"
+            rows="5"
+            placeholder="Write your post content"
             required
             disabled={isSubmitting}
           />
         </div>
-        
+
         {error && (
-          <p id="error-message-creatpost" style={{color: 'red'}}>
+          <p id="error-message-creatpost" style={{ color: 'red' }}>
             {error}
           </p>
         )}
-        
-        <button 
-          type="submit" 
+
+        <button
+          type="submit"
           className="submit-btn"
           disabled={isSubmitting}
         >

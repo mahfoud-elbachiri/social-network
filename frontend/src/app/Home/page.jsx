@@ -119,7 +119,14 @@ export default function Home() {
   };
 
   const handleCreateGroup = async (e) => {
+
     e.preventDefault();
+
+    if (groupForm.description == "" || groupForm.title == "") {
+      setError("fill group title and description")
+      return
+    }
+
     try {
       await fetch('http://localhost:8080/create-group', {
         method: 'POST',
@@ -186,9 +193,9 @@ export default function Home() {
     return <div>Loading posts...</div>;
   }
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  // if (error) {
+  //   return <div>Error: {error}</div>;
+  // }
 
   return (
     <div>
@@ -219,15 +226,15 @@ export default function Home() {
             <div className="groups-section">
               <div className="groups-header">
                 <h3>Groups</h3>
-                <button 
-                  onClick={() => setShowCreateGroupModal(true)} 
+                <button
+                  onClick={() => setShowCreateGroupModal(true)}
                   className="create-group-btn"
                   title="Create Group"
                 >
                   +
                 </button>
               </div>
-              
+
               <div className="groups-list">
                 {groups?.map(group => (
                   <div key={group.ID} className="group-item-sidebar">
@@ -258,13 +265,13 @@ export default function Home() {
                         <strong className="group-title">{group.Title}</strong>
                         <small className="group-description">{group.Description}</small>
                         <div className="group-actions">
-                          <button 
+                          <button
                             onClick={() => acceptInvite(group.ID)}
                             className="accept-btn-small"
                           >
                             Accept
                           </button>
-                          <button 
+                          <button
                             onClick={() => rejectInvite(group.ID)}
                             className="reject-btn-small"
                           >
@@ -276,7 +283,7 @@ export default function Home() {
                       <div className="group-content">
                         <strong className="group-title">{group.Title}</strong>
                         <small className="group-description">{group.Description}</small>
-                        <button 
+                        <button
                           onClick={() => handleJoinGroup(group.ID)}
                           className="join-btn-small"
                         >
@@ -358,6 +365,7 @@ export default function Home() {
                   required
                 />
               </label>
+              <div style={{color: 'red'}}>{error}</div>
               <div className="modal-actions">
                 <button type="submit">Create</button>
                 <button type="button" onClick={() => setShowCreateGroupModal(false)}>Cancel</button>

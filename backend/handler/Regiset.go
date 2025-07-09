@@ -40,6 +40,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 		uniqueID := time.Now().Format("20060102150405")
 
+		// add nickname if makaynch
+
+		if nickname == "" {
+			nickname = "user" + uniqueID
+		}
+
 		// Try to get the uploaded file
 		file, handler, err := r.FormFile("avatar")
 		if err == nil && handler != nil {

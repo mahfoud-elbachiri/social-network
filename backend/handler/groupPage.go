@@ -54,7 +54,7 @@ type InvitableUser struct {
 	UserID   int
 	Username string
 	Invited  bool
-	Name string
+	Name     string
 }
 
 type GroupPost struct {
@@ -1046,7 +1046,7 @@ func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
 		for inviteRows.Next() {
 			var u InvitableUser
 			var invitedInt int
-			err := inviteRows.Scan(&u.Name ,&u.UserID, &u.Username, &invitedInt)
+			err := inviteRows.Scan(&u.Name, &u.UserID, &u.Username, &invitedInt)
 			if err != nil {
 				http.Error(w, "Error reading invitable users", http.StatusInternalServerError)
 				return
@@ -1170,16 +1170,13 @@ func GroupPageHandler(w http.ResponseWriter, r *http.Request) {
 		Events:           events,
 		Posts:            posts,
 	}
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(data)
 }
 
-
 // GetGroupChatHandler retrieves all chat messages for a specific group
 func GetGroupChatHandler(w http.ResponseWriter, r *http.Request) {
-
-
-
-	num:=r.URL.Query().Get("num")
+	num := r.URL.Query().Get("num")
 	offset, err := strconv.Atoi(num)
 	if err != nil {
 		http.Error(w, "Invalid group ID", http.StatusBadRequest)
@@ -1196,7 +1193,6 @@ func GetGroupChatHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid group ID", http.StatusBadRequest)
 		return
 	}
-	
 
 	// Get current user ID from session
 	cookie, err := r.Cookie("SessionToken")
@@ -1224,7 +1220,7 @@ func GetGroupChatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get chat messages for the group
-	messages, err := db.GetGroupChatMessages(groupID,offset)
+	messages, err := db.GetGroupChatMessages(groupID, offset)
 	if err != nil {
 		http.Error(w, "Failed to retrieve messages", http.StatusInternalServerError)
 		return
@@ -1233,5 +1229,3 @@ func GetGroupChatHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(messages)
 }
-
-

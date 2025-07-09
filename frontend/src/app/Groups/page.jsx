@@ -7,8 +7,9 @@ import { getSocket } from "@/sock/GetSocket";
 import Header from "@/components/Header";
 import UserNotFound from "@/components/UserNotFound";
 
+
 export default function HomePage() {
-  
+
   // Step 1: Initialize WebSocket connection and router
   const socket = getSocket();
   const chatMessagesRef = useRef(null);
@@ -45,6 +46,8 @@ export default function HomePage() {
   const [chatOffset, setChatOffset] = useState(0);
   const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
+
+  const [creatPostError, setCreatPostError] = useState()
 
   // Step 7: WebSocket connection state
   const [i, setI] = useState(false);
@@ -87,13 +90,13 @@ export default function HomePage() {
   // Step 10: Reset unread messages when chat is opened and auto-scroll
   useEffect(() => {
     if (showChat) setUnreadMessages(0);
-      
-      setChatMessages(prev => prev.slice(prev.length-10));
-      setHasMoreMessages(true);
-      setChatOffset(10);
-      // Scroll to bottom when chat is opened
-      scrollToBottom(); // Small delay to ensure DOM is updated
-    
+
+    setChatMessages(prev => prev.slice(prev.length - 10));
+    setHasMoreMessages(true);
+    setChatOffset(10);
+    // Scroll to bottom when chat is opened
+    scrollToBottom(); // Small delay to ensure DOM is updated
+
   }, [showChat, !showChat]);
 
   // Step 11: Auto-scroll when new messages arrive
@@ -144,8 +147,20 @@ export default function HomePage() {
         credentials: "include",
       });
 
-      const data = await res.json();
-      setGroupData(data);
+      if (!res.ok) {
+        if (!data.login || data.error) {
+          router.push('/login')
+          return
+        }
+      }
+
+      const data = await res.json()
+      console.log("========++++>>>", data);
+
+
+
+
+      setGroupData(data)
       setSelectedGroup(groupId);
       setLoading(false);
 
@@ -161,15 +176,15 @@ export default function HomePage() {
       setLoading(false);
     }
   };
-// useEffect(()=>{
-//   const  fetchDta = async()=>{
-//        const urlParams = new URLSearchParams(window.location.search);
-//     const groupId = urlParams.get("group");
-//     await fetchChatMessages(groupId,0);
-//   }
-//   fetchDta()
-   
-// },[!showChat])
+  // useEffect(()=>{
+  //   const  fetchDta = async()=>{
+  //        const urlParams = new URLSearchParams(window.location.search);
+  //     const groupId = urlParams.get("group");
+  //     await fetchChatMessages(groupId,0);
+  //   }
+  //   fetchDta()
+
+  // },[!showChat])
   // Step 14: Fetch chat messages for the selected group
   const fetchChatMessages = async (groupId, offset, append = false) => {
     try {
@@ -181,7 +196,7 @@ export default function HomePage() {
 
       if (res.ok) {
         const messages = await res.json();
-        
+
         if (messages && messages.length > 0) {
           if (append) {
             // Prepend older messages to the beginning of the array
@@ -190,10 +205,10 @@ export default function HomePage() {
             // Replace all messages (initial load)
             setChatMessages(messages || []);
           }
-          
+
           // Update offset for next batch
           setChatOffset(offset + 10);
-          
+
           // Check if there are more messages
           if (messages.length < 10) {
             setHasMoreMessages(false);
@@ -212,26 +227,26 @@ export default function HomePage() {
 
   // Step 15: Handle sending chat messages
 
-  const handleSendChatMessag = (e) =>{
+  const handleSendChatMessag = (e) => {
     e.preventDefault()
     if (!chatInput.trim()) return;
     setChatOffset(prev => prev + 1)
-    socket.send(JSON.stringify({content:chatInput.trim(),group_id:selectedGroup,type:"groupChat"}))
+    socket.send(JSON.stringify({ content: chatInput.trim(), group_id: selectedGroup, type: "groupChat" }))
     setChatInput("")
   }
 
   // Step 15.5: Handle chat scroll for loading more messages
   const handleChatScroll = async (e) => {
     const { scrollTop } = e.target;
-    
+
     // If scrolled to top and there are more messages and not already loading
     if (scrollTop === 0 && hasMoreMessages && !isLoadingMoreMessages) {
       // Store current scroll height to maintain scroll position
       const previousScrollHeight = chatMessagesRef.current.scrollHeight;
-      
+
       // Fetch more messages
       await fetchChatMessages(selectedGroup, chatOffset, true);
-      
+
       // Restore scroll position after new messages are loaded
       setTimeout(() => {
         if (chatMessagesRef.current) {
@@ -379,7 +394,7 @@ export default function HomePage() {
   // dont edit this . for docker container
   const getGroupImageUrl = (imageURL) => {
     if (!imageURL) return null;
-    
+
     // Remove leading slash if present and use relative path
     // This will use the rewrite rules in next.config.mjs
     const cleanPath = imageURL.startsWith('/') ? imageURL.substring(1) : imageURL;
@@ -407,16 +422,26 @@ export default function HomePage() {
         formData.append("image", postImage);
       }
 
-      await fetch("http://localhost:8080/group/create-post", {
+      const data = await fetch("http://localhost:8080/group/create-post", {
         method: "POST",
         credentials: "include",
         body: formData,
       });
+
+
+
       setPostContent("");
       setPostImage(null);
       setPostImagePreview(null);
       fetchGroupById(selectedGroup);
+
+      if (!data.ok) {
+        setCreatPostError("Fill post")
+        return
+      }
+
     } catch (err) {
+
       console.error("Failed to create post", err);
     }
   };
@@ -573,7 +598,7 @@ export default function HomePage() {
                         Loading more messages...
                       </div>
                     )}
-                    
+
                     {/* No more messages indicator */}
                     {!hasMoreMessages && chatMessages.length > 0 && (
                       <div style={{
@@ -587,7 +612,7 @@ export default function HomePage() {
                         — Beginning of conversation —
                       </div>
                     )}
-                    
+
                     {chatMessages.length > 0 ? (
                       chatMessages.map((msg, index) => (
                         <div key={index} className="chat-message" style={{
@@ -624,7 +649,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Step 35: Chat Input Form */}
-                  <form  style={{
+                  <form style={{
                     padding: '15px',
                     borderTop: '1px solid #ddd',
                     backgroundColor: '#fff',
@@ -646,7 +671,7 @@ export default function HomePage() {
                         required
                       />
                       <button
-                        onClick={(e)=>handleSendChatMessag(e)}
+                        onClick={(e) => handleSendChatMessag(e)}
                         style={{
                           padding: '10px 20px',
                           backgroundColor: '#2196F3',
@@ -828,6 +853,22 @@ export default function HomePage() {
                     </div>
                   )}
 
+                  {creatPostError && (
+                    <div
+                      style={{
+                        color: "red",
+                        backgroundColor: "#ffe6e6",
+                        border: "1px solid red",
+                        borderRadius: "5px",
+                        padding: "8px",
+                        marginTop: "10px",
+                        maxWidth: "400px",
+                      }}
+                    >
+                      ⚠️ {creatPostError}
+                    </div>
+                  )}
+
                   <button type="submit">Post</button>
                 </form>
 
@@ -846,8 +887,8 @@ export default function HomePage() {
                         {post.ImageURL && (
                           <div style={{ margin: "10px 0" }}>
                             <Image
-                               
-                               src={getGroupImageUrl(post.ImageURL)}
+
+                              src={getGroupImageUrl(post.ImageURL)}
                               alt="Post image"
                               width={400}
                               height={300}
@@ -933,7 +974,7 @@ export default function HomePage() {
                                 {comment.ImageURL && (
                                   <div style={{ margin: "5px 0" }}>
                                     <Image
-                                    
+
                                       src={getGroupImageUrl(comment.ImageURL)}
                                       alt="Comment image"
                                       width={150}
@@ -1014,7 +1055,7 @@ export default function HomePage() {
                 <ul className="member-list">
                   {groupData.InvitableUsers.map((user, index) => (
                     <li key={index} className="invite-item">
-                      <div className="invite-username">{user.Name}</div>
+                      <div className="invite-username">{user.Username}</div>
                       {user.Invited ? (
                         <button type="button" className="invite-btn" disabled>
                           Invited
