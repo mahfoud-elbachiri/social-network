@@ -5,6 +5,7 @@ import Image from "next/image";
 import "./style.css";
 import { getSocket } from "@/sock/GetSocket";
 import Header from "@/components/Header";
+import UserNotFound from "@/components/UserNotFound";
 
 export default function HomePage() {
   
@@ -156,7 +157,7 @@ export default function HomePage() {
       const newUrl = `${window.location.pathname}?group=${groupId}`;
       window.history.pushState({ groupId }, "", newUrl);
     } catch (err) {
-      console.error(`Failed to fetch group ${groupId}`, err);
+      // console.error(`Failed to fetch group ${groupId}`, err);
       setLoading(false);
     }
   };
@@ -1048,10 +1049,14 @@ export default function HomePage() {
     return <div className="loading">Loading group details...</div>;
   }
 
-  // If no group data, redirect to home (this shouldn't normally happen due to useEffect redirect)
+  // If no group data, show UserNotFound component
   if (!groupData) {
-    router.push("/Home");
-    return null;
+    return (
+      <>
+        <Header />
+        <UserNotFound />
+      </>
+    );
   }
 
   // This return statement is never reached due to the redirects above

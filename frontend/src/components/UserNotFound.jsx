@@ -5,8 +5,8 @@ export default function UserNotFound() {
     <div className="user-not-found-container">
       <div className="user-not-found-content">
         <div className="error-code">404</div>
-        <h1>User Not Found</h1>
-        <p>Sorry, the user you're looking for doesn't exist or has been removed.</p>
+        <h1>Page Not Found</h1>
+        <p>Sorry, the user or the group you're looking for doesn't exist or has been removed.</p>
         <div className="error-actions">
           <Link href="/" className="btn btn-primary">Go Home</Link>
           <Link href="/Explore" className="btn btn-secondary">Explore Users</Link>
