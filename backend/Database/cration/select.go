@@ -567,15 +567,15 @@ func BeforInsertion(follower_id int, following_id int) bool {
 	return exist
 }
 
-// SearchUsersByName searches users by first name or last name
+// SearchUsersByName searches users by first name, last name, or full name (first + last)
 func SearchUsersByName(searchTerm string) ([]utils.UserProfile, error) {
 	query := `SELECT id, first_name, last_name, nikname, avatar, is_private 
 	          FROM users 
-	          WHERE first_name LIKE ? OR last_name LIKE ? 
+	          WHERE first_name LIKE ? OR last_name LIKE ? OR (first_name || ' ' || last_name) LIKE ?
 	          ORDER BY first_name ASC, last_name ASC;`
 
 	searchPattern := "%" + searchTerm + "%"
-	rows, err := DB.Query(query, searchPattern, searchPattern)
+	rows, err := DB.Query(query, searchPattern, searchPattern, searchPattern)
 	if err != nil {
 		return nil, err
 	}
@@ -753,7 +753,7 @@ func CanViewProfile(viewerID, targetUserID int) bool {
 }
 
 // GetGroupChatMessages retrieves all chat messages for a specific group
-func GetGroupChatMessages(groupID int , offset int) ([]GroupChatMessage, error) {
+func GetGroupChatMessages(groupID int, offset int) ([]GroupChatMessage, error) {
 	query := `
 		SELECT * FROM (
 	SELECT 
@@ -772,7 +772,7 @@ func GetGroupChatMessages(groupID int , offset int) ([]GroupChatMessage, error) 
 ORDER BY sub.id ASC	
 	`
 
-	rows, err := DB.Query(query, groupID , offset)
+	rows, err := DB.Query(query, groupID, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query group chat messages: %w", err)
 	}

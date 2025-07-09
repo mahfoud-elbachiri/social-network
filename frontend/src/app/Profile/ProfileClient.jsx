@@ -8,6 +8,7 @@ import PostCard from '@/components/PostCard';
 import ProfileStats from '@/components/ProfileStats';
 import ProfileCard from '@/components/ProfileCard';
 import PrivatePostsMessage from '@/components/PrivatePostsMessage';
+import UserNotFound from '@/components/UserNotFound';
 import { useComments } from '@/hooks/useComments';
 import { userApi } from '@/utils/api';
 import { getSocket } from "@/sock/GetSocket";
@@ -26,6 +27,7 @@ export default function ProfileClient() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userNotFound, setUserNotFound] = useState(false);
   const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [isPrivatePosts, setIsPrivatePosts] = useState(false);
@@ -77,13 +79,18 @@ export default function ProfileClient() {
         setIsOwnProfile(data.is_own_profile || false);
         setIsPrivateView(data.is_private_view || false);
         setError(null);
+        setUserNotFound(false);
       } else {
-        console.error('Profile fetch failed:', data);
-        setError(data?.error || 'Failed to load profile');
+        
+        if (data?.error === "User Not found" || data?.error === "Invalid user ID") {
+          setUserNotFound(true);
+          setError(null);
+        } 
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
       setError('Failed to load profile');
+      setUserNotFound(false);
     } finally {
       setLoading(false);
     }
@@ -105,7 +112,7 @@ export default function ProfileClient() {
             setPosts(data.posts || []);
           }
         } else {
-          console.error('Posts fetch failed:', data);
+          // console.error('Posts fetch failed:', data);
           setIsPrivatePosts(false);
           setPosts([]);
         }
@@ -145,6 +152,15 @@ export default function ProfileClient() {
       <div>
         <Header />
         <div>  </div>
+      </div>
+    );
+  }
+
+  if (userNotFound) {
+    return (
+      <div>
+        <Header />
+        <UserNotFound />
       </div>
     );
   }
