@@ -16,14 +16,13 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		message := ""
 
-		// Parse multipart form (10MB max memory)
-		err := r.ParseMultipartForm(10 << 20)
+		r.Body = http.MaxBytesReader(w, r.Body, 5<<20) // 5MB
+
+		err := r.ParseMultipartForm(5 << 20)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": "Invalid form data"})
+			http.Error(w, "File too big or invalid form", http.StatusBadRequest)
 			return
 		}
-
 		// Get form values
 		firstName := r.FormValue("firstName")
 		lastName := r.FormValue("lastName")
@@ -52,13 +51,20 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			// User uploaded a file
 			defer file.Close()
 
+			valid, msg := utils.IsValidImage(file)
+			if !valid {
+				w.WriteHeader(http.StatusUnsupportedMediaType)
+				json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": msg})
+				return
+			}
+
 			avatarDir := utils.GetImageSavePath("avatars")
 			os.MkdirAll(avatarDir, 0o755)
 
 			// Save the file to public/avatars folder
 			savePath := filepath.Join(avatarDir, uniqueID+handler.Filename)
 			newFile, err := os.Create(savePath)
-			
+
 			if err == nil {
 				// Copy the uploaded file to our folder
 				io.Copy(newFile, file)

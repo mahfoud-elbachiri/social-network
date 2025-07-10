@@ -16,6 +16,16 @@ import (
 
 func Post(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
+
+			//check size of file
+			r.Body = http.MaxBytesReader(w, r.Body, 5<<20) // 5MB
+
+			err := r.ParseMultipartForm(5 << 20)
+			if err != nil {
+				http.Error(w, "File too big or invalid form", http.StatusBadRequest)
+				return
+			}
+			
 		_, _, _, ishave := servisse.IsHaveToken(r)
 		if ishave != nil {
 			fmt.Println("token not found POST")
@@ -33,7 +43,21 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		uniqueID := time.Now().Format("20060102150405")
 
 		file, handler, err := r.FormFile("avatar")
+
+		
+
 		if err == nil && handler != nil {
+
+
+				//check image type 
+				valid, msg := utils.IsValidImage(file)
+				if !valid {
+					w.WriteHeader(http.StatusUnsupportedMediaType)
+					json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": msg})
+					return
+				}
+
+
 			defer file.Close()
 
 			avatarDir := utils.GetImageSavePath("avatars2")

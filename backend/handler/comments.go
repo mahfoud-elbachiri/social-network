@@ -57,6 +57,16 @@ func Comments(w http.ResponseWriter, r *http.Request) {
 
 func Sendcomment(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
+
+			//check file size
+			r.Body = http.MaxBytesReader(w, r.Body, 5<<20) // 5MB
+
+			err := r.ParseMultipartForm(5 << 20)
+			if err != nil {
+				http.Error(w, "File too big or invalid form", http.StatusBadRequest)
+				return
+			}
+			
 		w.Header().Set("Content-Type", "application/json")
 		_, _, _, ishave := servisse.IsHaveToken(r)
 		if ishave != nil {
@@ -72,6 +82,16 @@ func Sendcomment(w http.ResponseWriter, r *http.Request) {
 		var avatarPath string
 		file, handler, err := r.FormFile("avatar")
 		if err == nil && handler != nil {
+
+			//check image type 
+			valid, msg := utils.IsValidImage(file)
+			if !valid {
+				w.WriteHeader(http.StatusUnsupportedMediaType)
+				json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": msg})
+				return
+			}
+
+
 			defer file.Close()
 			avatarDir := utils.GetImageSavePath("avatars2")
 			os.MkdirAll(avatarDir, 0o755)

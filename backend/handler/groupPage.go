@@ -705,12 +705,14 @@ func CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 	dvb := sqlite.GetDB()
 	userID := db.GetId("sessionToken", cookie.Value)
 
+	r.Body = http.MaxBytesReader(w, r.Body, 5<<20) // 5MB
 	// Parse multipart form data (for file uploads)
 	err = r.ParseMultipartForm(10 << 20) // 10 MB max
 	if err != nil {
-		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+		http.Error(w, "File too big or invalid form", http.StatusBadRequest)
 		return
 	}
+
 
 	// Get form values
 	groupIDStr := r.FormValue("group_id")
@@ -732,6 +734,14 @@ func CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 	// Handle image upload if present
 	file, header, err := r.FormFile("image")
 	if err == nil {
+		//check image type
+	  valid, msg := utils.IsValidImage(file)
+			if !valid {
+				w.WriteHeader(http.StatusUnsupportedMediaType)
+				json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": msg})
+				return
+			}
+
 		defer file.Close()
 
 		// Validate file type
@@ -814,6 +824,15 @@ func generateRandomString(length int) string {
 }
 
 func CreateGroupCommentHandler(w http.ResponseWriter, r *http.Request) {
+	//check max of the file is 5mb
+	r.Body = http.MaxBytesReader(w, r.Body, 5<<20) // 5MB
+
+	err := r.ParseMultipartForm(5 << 20)
+	if err != nil {
+		http.Error(w, "File too big or invalid form", http.StatusBadRequest)
+		return
+	}
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -828,12 +847,7 @@ func CreateGroupCommentHandler(w http.ResponseWriter, r *http.Request) {
 	dvb := sqlite.GetDB()
 	userID := db.GetId("sessionToken", cookie.Value)
 
-	// Parse multipart form data (for file uploads)
-	err = r.ParseMultipartForm(10 << 20) // 10 MB max
-	if err != nil {
-		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
-		return
-	}
+
 
 	// Get form values
 	postIDStr := r.FormValue("post_id")
@@ -862,6 +876,15 @@ func CreateGroupCommentHandler(w http.ResponseWriter, r *http.Request) {
 	// Handle image upload if present
 	file, header, err := r.FormFile("image")
 	if err == nil {
+		fmt.Println("8888")
+			//check image type
+			valid, msg := utils.IsValidImage(file)
+			if !valid {
+				w.WriteHeader(http.StatusUnsupportedMediaType)
+				json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "message": msg})
+				return
+			}
+
 		defer file.Close()
 
 		// Validate file type

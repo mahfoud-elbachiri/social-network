@@ -5,6 +5,7 @@ export const useComments = (setPosts) => {
   const [showComments, setShowComments] = useState({});
   const [comments, setComments] = useState({});
   const [loadingComments, setLoadingComments] = useState({});
+ 
 
   const fetchCommentsForPost = async (postId) => {
     setLoadingComments(prev => ({ ...prev, [postId]: true }));
@@ -26,7 +27,7 @@ export const useComments = (setPosts) => {
       setLoadingComments(prev => ({ ...prev, [postId]: false }));
     }
   };
-
+//fetch comment before open the toggle
   const handleComment = async (e) => {
     const postId = e.target.getAttribute('posteid');
     
@@ -38,7 +39,8 @@ export const useComments = (setPosts) => {
     if (!showComments[postId] && !comments[postId]) {
       await fetchCommentsForPost(postId);
     }
-  };  const handleSendComment = async (postId, commentText, avatar = null) => {
+  };  
+  const handleSendComment = async (postId, commentText, avatar = null) => {
     // Validation: Either text content or image must be provided (or both)
     if (!commentText.trim() && !avatar) return;
 
@@ -59,9 +61,12 @@ export const useComments = (setPosts) => {
           );
         }
       } else {
-        console.error('Error sending comment:', data?.error);
+        alert("error image type")
+        console.log('Error sending comment:', data?.error);
       }
     } catch (error) {
+      alert("error image type")
+
       console.error('Error sending comment:', error);
     }
   };

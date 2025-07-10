@@ -9,7 +9,7 @@ const PostCard = ({
   comments, 
   loadingComments, 
   onCommentClick, 
-  onSendComment 
+  onSendComment,
 }) => {
   return (
     <div className="post" postid={post.ID}>

@@ -49,6 +49,8 @@ export default function HomePage() {
 
   const [creatPostError, setCreatPostError] = useState()
 
+  const [creatComeError, setCreatComeError] = useState()
+
   // Step 7: WebSocket connection state
   const [i, setI] = useState(false);
 
@@ -414,6 +416,12 @@ export default function HomePage() {
   // Step 24: Handle creating new posts
   const handleCreatePost = async (e) => {
     e.preventDefault();
+
+    if (postContent === "") {
+      setCreatPostError("Fill description of the post")
+      return
+    }
+
     try {
       const formData = new FormData();
       formData.append("content", postContent);
@@ -436,8 +444,12 @@ export default function HomePage() {
       fetchGroupById(selectedGroup);
 
       if (!data.ok) {
-        setCreatPostError("Fill post")
+
+        setCreatPostError(data.statusText)
+
         return
+      } else {
+        setCreatPostError("")
       }
 
     } catch (err) {
@@ -448,6 +460,12 @@ export default function HomePage() {
 
   // Step 25: Handle creating comments on posts
   const handleCreateComment = async (postId, content) => {
+
+    if (content === "") {
+      setCreatComeError("Fill comment")
+      return
+    }
+
     try {
       const formData = new FormData();
       formData.append("post_id", postId);
@@ -459,11 +477,20 @@ export default function HomePage() {
         formData.append("image", commentImages[postId]);
       }
 
-      await fetch("http://localhost:8080/group/create-comment", {
+      const data = await fetch("http://localhost:8080/group/create-comment", {
         method: "POST",
         credentials: "include",
         body: formData,
       });
+
+      if (!data.ok) {
+
+        setCreatComeError(data.statusText)
+
+        return
+      } else {
+        setCreatComeError("")
+      }
 
       // Clear comment input and image
       setCommentInputs({ ...commentInputs, [postId]: "" });
@@ -899,6 +926,23 @@ export default function HomePage() {
 
                         {/* Step 46: Comment Form with Image Support */}
                         <div className="comment-form">
+
+                          {creatComeError && (
+                            <div
+                              style={{
+                                color: "red",
+                                backgroundColor: "#ffe6e6",
+                                border: "1px solid red",
+                                borderRadius: "5px",
+                                padding: "8px",
+                                marginTop: "10px",
+                                maxWidth: "400px",
+                              }}
+                            >
+                              ⚠️ {creatComeError}
+                            </div>
+                          )}
+
                           <form
                             onSubmit={(e) => {
                               e.preventDefault();
@@ -908,6 +952,9 @@ export default function HomePage() {
                               );
                             }}
                           >
+
+
+
                             <input
                               type="text"
                               value={commentInputs[post.ID] || ""}

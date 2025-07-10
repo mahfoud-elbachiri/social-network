@@ -31,7 +31,8 @@ export default function Home() {
     comments,
     loadingComments,
     handleComment,
-    handleSendComment
+    handleSendComment,
+    ErrorComment
   } = useComments(setPosts);
 
   useEffect(() => {
@@ -326,6 +327,7 @@ export default function Home() {
                   loadingComments={loadingComments}
                   onCommentClick={handleComment}
                   onSendComment={handleSendComment}
+                  ErrorComment = {ErrorComment}
                 />
               ))
             ) : (
