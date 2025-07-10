@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import "./style.css"
+
 
 import Header from '@/components/Header';
 import PostCard from '@/components/PostCard';
