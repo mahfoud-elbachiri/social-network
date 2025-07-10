@@ -72,7 +72,7 @@ const CreatePostForm = ({ onPostCreated, onClose }) => {
     const form = new FormData(e.target);
 
 
-    if (form.get("title") === "" || form.get("content") === "") {
+    if (form.get("title").trim() === "" || form.get("content").trim() === "") {
       setError("Fill title and description")
       return
     }

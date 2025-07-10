@@ -123,7 +123,7 @@ export default function Home() {
 
     e.preventDefault();
 
-    if (groupForm.description == "" || groupForm.title == "") {
+    if (groupForm.description.trim() == "" || groupForm.title.trim() == "") {
       setError("fill group title and description")
       return
     }
@@ -354,6 +354,7 @@ export default function Home() {
                 Title:
                 <input
                   type="text"
+                  maxLength={100}
                   value={groupForm.title}
                   onChange={(e) => setGroupForm({ ...groupForm, title: e.target.value })}
                   required
@@ -362,6 +363,7 @@ export default function Home() {
               <label>
                 Description:
                 <textarea
+                maxLength={100}
                   value={groupForm.description}
                   onChange={(e) => setGroupForm({ ...groupForm, description: e.target.value })}
                   required

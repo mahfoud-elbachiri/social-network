@@ -32,6 +32,8 @@ export default function ChatWebSocket({ username }) {
     const [oldMessages, setOldMessages] = useState([])
     const [yes, setYes] = useState()
 
+    const [offset , setOffset] = useState(0)
+
     const messagesEndRef = useRef(null)
     const messagesContainerRef = useRef(null);
 
@@ -40,18 +42,19 @@ export default function ChatWebSocket({ username }) {
     }, [messages, yes]);
 
     useEffect(() => {
+        setOffset(0)
         if (selectedUser) {
-            getOldMessages(username, selectedUser, 0)
+            getOldMessages(username, selectedUser, 0 , true)
             setMessages([])
         }
     }, [selectedUser]);
 
 
-    const getOldMessages = async (sender, receiver, num = 1) => {
+    const getOldMessages = async (sender, receiver, offset , firstime = true) => {
         try {
             const response = await fetch("http://localhost:8080/getChats", {
                 method: 'POST',
-                body: JSON.stringify({ sender, receiver, num }),
+                body: JSON.stringify({ sender, receiver, offset , firstime }),
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json'
@@ -61,7 +64,7 @@ export default function ChatWebSocket({ username }) {
             const data = await response.json();
 
             if (data) {
-                if (num === 0) {
+                if (firstime) {
                     setYes(true)
                     setOldMessages(data)
                 } else {
@@ -85,7 +88,7 @@ export default function ChatWebSocket({ username }) {
             if (container.scrollTop <= 10) {
                 const prevScrollHeight = container.scrollHeight
 
-                getOldMessages(username, selectedUser)
+                getOldMessages(username, selectedUser , offset , false)
 
                 requestAnimationFrame(() => {
                     const newScrollHeight = container.scrollHeight
@@ -103,7 +106,7 @@ export default function ChatWebSocket({ username }) {
             container.removeEventListener("scroll", debouncedScroll)
         }
 
-    }, [username, selectedUser])
+    }, [username, selectedUser,offset])
 
 
     useEffect(() => {
@@ -176,7 +179,7 @@ export default function ChatWebSocket({ username }) {
     }, [selectedUser])
 
     const sendMessage = (socket, sender, receiver) => {
-
+        setOffset(prev => prev + 1)
         if (input.trim() === "") {
             return
         }
@@ -209,10 +212,9 @@ export default function ChatWebSocket({ username }) {
                                 <Image
                                     src="/send.png"
                                     alt="send"
-                                    width={32}
-                                    height={32}
+                                    width={42}
+                                    height={42}
                                     className="nav-icon"
-                                    style={{ marginTop: '15px' }}
                                 />
                                 {/* {notificationCount > 0 && (
                                     <span className="notification-badge">
@@ -335,7 +337,7 @@ export default function ChatWebSocket({ username }) {
                                 <EmojiPicker onEmojiClick={onEmojiClick} />
                             )}
 
-                            <input onKeyDown={(e) => onkkeydown(e, socket, username, selectedUser)} onChange={(e) => setInput(e.target.value)} type="text" placeholder="Write a message..." value={input} />
+                            <input onKeyDown={(e) => onkkeydown(e, socket, username, selectedUser)} onChange={(e) => setInput(e.target.value)} maxLength={1000} type="text" placeholder="Write a message..." value={input} />
                             <button onClick={() => sendMessage(socket, username, selectedUser)} className='send'>Send</button>
                         </div>
                     </div>

@@ -81,6 +81,7 @@ const CommentSection = ({
       </div>      {/* Comment Input */}
       <div className="input-wrapper">
         <textarea 
+        maxLength={100}
           placeholder="Write a comment..." 
           className="comment-input" 
           data-idpost={postId}

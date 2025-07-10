@@ -319,6 +319,11 @@ export default function HomePage() {
     e.preventDefault();
     setEventError('');
 
+    if (eventForm.title.trim() === "" || eventForm.description.trim() === "" ) {
+      setEventError("❌ Fill form !!")
+      return
+    }
+
     try {
       const res = await fetch('http://localhost:8080/group/create-event', {
         method: 'POST',
@@ -417,7 +422,7 @@ export default function HomePage() {
   const handleCreatePost = async (e) => {
     e.preventDefault();
 
-    if (postContent === "") {
+    if (postContent.trim() === "") {
       setCreatPostError("Fill description of the post")
       return
     }
@@ -461,7 +466,7 @@ export default function HomePage() {
   // Step 25: Handle creating comments on posts
   const handleCreateComment = async (postId, content) => {
 
-    if (content === "") {
+    if (content.trim() === "") {
       setCreatComeError("Fill comment")
       return
     }
@@ -685,6 +690,7 @@ export default function HomePage() {
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <input
                         type="text"
+                        maxLength={1000}
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         placeholder="Type your message..."
@@ -742,6 +748,7 @@ export default function HomePage() {
                   <label>Title:</label>
                   <input
                     type="text"
+                    maxLength={100}
                     value={eventForm.title}
                     onChange={(e) =>
                       setEventForm({ ...eventForm, title: e.target.value })
@@ -751,6 +758,7 @@ export default function HomePage() {
                   <br />
                   <label>Description:</label>
                   <textarea
+                  maxLength={100}
                     value={eventForm.description}
                     onChange={(e) =>
                       setEventForm({
@@ -957,6 +965,7 @@ export default function HomePage() {
 
                             <input
                               type="text"
+                              maxLength={100}
                               value={commentInputs[post.ID] || ""}
                               onChange={(e) =>
                                 setCommentInputs({
