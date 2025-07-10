@@ -194,6 +194,7 @@ const Header = () => {
         isOpen={showNotificationPopup}
         onClose={() => setShowNotificationPopup(false)}
         onNotificationUpdate={handleNotificationUpdate}
+        notificationCount={notificationCount}
       />
     </header>
   );

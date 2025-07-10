@@ -50,8 +50,7 @@ export default function LoginRegisterPage() {
       <div id="login-container">
         <div className="info-side">
           <h2>Welcome back!</h2>
-          <p>Log in to access your account</p>
-          <p>Take advantage of all our exclusive services and features.</p>
+          <p>To social network</p>
         </div>
         <div className="login-form">
           <h1>Login</h1>

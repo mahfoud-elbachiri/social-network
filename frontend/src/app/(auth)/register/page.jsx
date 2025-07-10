@@ -106,12 +106,9 @@ export default function LoginRegisterPage() {
             <div id="register-container">
                 <div className="info-side">
                     <h2>Create an account</h2>
-                    <p>Join us and enjoy all the benefits of our platform</p>
+                    <p>Join the social network</p>
                     <ul className="feature-list">
-                        <li>Customer Service 24/7</li>
-                        <li>Interface simple et intuitive</li>
-                        <li>Protection of your personal data</li>
-                        <li>Regular feature updates</li>
+                        
                     </ul>
                 </div>
                 <div className="register">

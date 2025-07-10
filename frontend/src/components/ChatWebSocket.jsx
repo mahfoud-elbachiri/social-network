@@ -209,9 +209,10 @@ export default function ChatWebSocket({ username }) {
                                 <Image
                                     src="/send.png"
                                     alt="send"
-                                    width={42}
-                                    height={42}
+                                    width={32}
+                                    height={32}
                                     className="nav-icon"
+                                    style={{ marginTop: '15px' }}
                                 />
                                 {/* {notificationCount > 0 && (
                                     <span className="notification-badge">

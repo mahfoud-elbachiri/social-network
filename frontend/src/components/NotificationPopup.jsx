@@ -3,22 +3,28 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import './NotificationPopup.css';
 
-const NotificationPopup = ({ isOpen, onClose, onNotificationUpdate }) => {
+const NotificationPopup = ({ isOpen, onClose, onNotificationUpdate, notificationCount }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [prevNotificationCount, setPrevNotificationCount] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
+      // Fetch notifications when popup opens
       fetchNotifications();
-      
-      const notificationInterval = setInterval(() => {
-        fetchNotifications();
-      }, 3000); 
-
-      return () => clearInterval(notificationInterval);
     }
   }, [isOpen]);
+
+  // Fetch notifications only when count changes
+  useEffect(() => {
+    if (isOpen && notificationCount !== null && prevNotificationCount !== null) {
+      if (notificationCount !== prevNotificationCount) {
+        fetchNotifications();
+      }
+    }
+    setPrevNotificationCount(notificationCount);
+  }, [notificationCount, isOpen, prevNotificationCount]);
 
   const fetchNotifications = async () => {
     setLoading(true);
