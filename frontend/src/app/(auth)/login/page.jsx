@@ -3,6 +3,7 @@
 import { statuts } from '@/utils/statuts'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import styles from './login.module.css'
 
 export default function LoginRegisterPage() {
 
@@ -16,7 +17,7 @@ export default function LoginRegisterPage() {
 
       if (data?.status) {
         router.push('/Home');
-      } 
+      }
     }
 
     checkStatus()
@@ -43,30 +44,28 @@ export default function LoginRegisterPage() {
     router.push('/register')
   }
 
-
-
   return (
     <>
-      <div id="login-container">
-        <div className="info-side">
+      <div className={styles.container}>
+        <div className={styles.infoSide}>
           <h2>Welcome back!</h2>
           <p>To social network</p>
         </div>
-        <div className="login-form">
+        <div className={styles.loginForm}>
           <h1>Login</h1>
-          <form id="login-form" onSubmit={handleLogin}>
-            <div className="form-group">
+          <form onSubmit={handleLogin}>
+            <div className={styles.formGroup}>
               <label>Nickname / Email</label>
               <input type="text" name="email" placeholder="Nickname or Email" required />
             </div>
-            <div className="form-group">
+            <div className={styles.formGroup}>
               <label>Password</label>
               <input type="password" name="password" placeholder="••••••••" required />
             </div>
-            {loginError && <p id="error-log">{loginError}</p>}
-            <button type="submit" id="login-btn" >Login</button>
-            <div className="register-link">
-              Pas encore de compte? <button type="button" id="resgesterlogin" onClick={redirect}>Create an account</button>
+            {loginError && <p className={styles.errorMessage}>{loginError}</p>}
+            <button type="submit" className={styles.loginBtn}>Login</button>
+            <div className={styles.registerLink}>
+              Pas encore de compte? <button type="button" className={styles.registerBtn} onClick={redirect}>Create an account</button>
             </div>
           </form>
         </div>
@@ -74,7 +73,5 @@ export default function LoginRegisterPage() {
 
     </>
   )
-
-
 
 }

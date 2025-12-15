@@ -1,0 +1,246 @@
+.container {
+    display: flex;
+    max-width: 1000px;
+    margin: 50px auto;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.infoSide {
+    background: #ff8800;
+    color: white;
+    padding: 40px;
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.infoSide h2 {
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.infoSide p {
+    font-size: 16px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.featureList {
+    list-style: none;
+    padding: 0;
+}
+
+.featureList li {
+    margin-bottom: 12px;
+    padding-left: 25px;
+    position: relative;
+}
+
+.featureList li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: white;
+}
+
+.registerForm {
+    padding: 40px;
+    width: 60%;
+}
+
+.registerForm h1 {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.nameRow {
+    display: flex;
+    gap: 20px;
+}
+
+.nameRow .formGroup {
+    flex: 1;
+}
+
+.formGroup {
+    margin-bottom: 20px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 8px;
+    color: #555;
+    font-size: 14px;
+}
+
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
+    outline: none;
+    border-color: #0080ff;
+}
+
+.formGroup select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+}
+
+.radioGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.radioOption {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.radioOption:hover {
+    border-color: #0080ff;
+    background-color: rgba(0, 128, 255, 0.05);
+}
+
+.radioOption input[type="radio"] {
+    width: auto;
+    margin: 0;
+    accent-color: #0080ff;
+}
+
+.radioOption span {
+    font-size: 14px;
+    color: #555;
+}
+
+.radioOption input[type="radio"]:checked+span {
+    color: #0080ff;
+    font-weight: 500;
+}
+
+.radioGroupInline {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.radioOptionInline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.radioOptionInline input[type="radio"] {
+    width: auto;
+    margin: 0;
+    accent-color: #0080ff;
+}
+
+.radioOptionInline span {
+    font-size: 14px;
+    color: #555;
+}
+
+.radioOptionInline input[type="radio"]:checked+span {
+    color: #0080ff;
+    font-weight: 500;
+}
+
+.errorMessage {
+    color: #dc2626;
+    font-size: 14px;
+    margin-bottom: 15px;
+    min-height: 20px;
+    text-align: center;
+}
+
+.createBtn {
+    width: 100%;
+    padding: 12px;
+    background: white;
+    color: black;
+    border: 1px solid #0080ff;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-bottom: 15px;
+}
+
+.createBtn:hover {
+    background: #0080ff;
+    color: white;
+}
+
+.haveAccount {
+    display: block;
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.loginBtn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid #0080ff;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: black;
+    font-size: 16px;
+}
+
+.loginBtn:hover {
+    background: #0080ff;
+    color: white;
+}
+
+@media (max-width: 992px) {
+    .container {
+        flex-direction: column;
+        margin: 20px;
+    }
+
+    .infoSide,
+    .registerForm {
+        width: 100%;
+    }
+
+    .infoSide {
+        padding: 30px;
+        text-align: center;
+    }
+
+    .registerForm {
+        padding: 30px;
+    }
+}

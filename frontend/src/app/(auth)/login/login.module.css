@@ -1,0 +1,135 @@
+.container {
+    display: flex;
+    max-width: 1000px;
+    margin: 50px auto;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.infoSide {
+    background: #ff7300;
+    color: white;
+    padding: 40px;
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.infoSide h2 {
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.infoSide p {
+    font-size: 16px;
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.loginForm {
+    padding: 40px;
+    width: 60%;
+}
+
+.loginForm h1 {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.formGroup {
+    margin-bottom: 20px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 8px;
+    color: #555;
+    font-size: 14px;
+}
+
+.formGroup input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.formGroup input:focus {
+    outline: none;
+    border-color: #0080ff;
+}
+
+.errorMessage {
+    color: #dc2626;
+    font-size: 14px;
+    margin-bottom: 15px;
+    min-height: 20px;
+    text-align: center;
+}
+
+.loginBtn {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #0080ff;
+    background: white;
+    color: rgb(34, 33, 33);
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.loginBtn:hover {
+    background: #0080ff;
+    color: white;
+}
+
+.registerLink {
+    text-align: center;
+    margin-top: 20px;
+    color: #666;
+    font-size: 14px;
+}
+
+.registerBtn {
+    color: #0080ff;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    margin-left: 5px;
+}
+
+.registerBtn:hover {
+    color: #0080ff;
+    text-decoration: underline;
+}
+
+@media (max-width: 992px) {
+    .container {
+        flex-direction: column;
+        margin: 20px;
+    }
+
+    .infoSide,
+    .loginForm {
+        width: 100%;
+    }
+
+    .infoSide {
+        padding: 30px;
+        text-align: center;
+    }
+
+    .loginForm {
+        padding: 30px;
+    }
+}

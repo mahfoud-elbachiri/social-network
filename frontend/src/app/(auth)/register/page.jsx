@@ -2,6 +2,7 @@
 import { statuts } from "@/utils/statuts"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import styles from './register.module.css'
 
 export default function LoginRegisterPage() {
     const [registerError, setRegisterError] = useState("")
@@ -103,32 +104,32 @@ export default function LoginRegisterPage() {
 
     return (
         <div>
-            <div id="register-container">
-                <div className="info-side">
+            <div className={styles.container}>
+                <div className={styles.infoSide}>
                     <h2>Create an account</h2>
                     <p>Join the social network</p>
-                    <ul className="feature-list">
-                        
+                    <ul className={styles.featureList}>
+
                     </ul>
                 </div>
-                <div className="register">
+                <div className={styles.registerForm}>
                     <h1>Create Your Account</h1>
-                    <form id="register-form" onSubmit={handleRegister}>
-                        <div className="name-row">
-                            <div className="form-group">
+                    <form onSubmit={handleRegister}>
+                        <div className={styles.nameRow}>
+                            <div className={styles.formGroup}>
                                 <label>First Name</label>
                                 <input type="text" name="firstName" placeholder="John" required />
                             </div>
-                            <div className="form-group">
+                            <div className={styles.formGroup}>
                                 <label>Last Name</label>
                                 <input type="text" name="lastName" placeholder="Doe" required />
                             </div>
                         </div>
-                        <div className="form-group">
+                        <div className={styles.formGroup}>
                             <label>Age</label>
                             <input type="number" name="age" placeholder="25" required />
                         </div>
-                        <div className="form-group">
+                        <div className={styles.formGroup}>
                             <label>Gender</label>
                             <select name="gender" required>
                                 <option value="">Select gender</option>
@@ -136,46 +137,47 @@ export default function LoginRegisterPage() {
                                 <option value="female">Female</option>
                             </select>
                         </div>
-                        <div className="form-group">
+                        <div className={styles.formGroup}>
                             <label>Nickname (Optional)</label>
                             <input type="text" name="nickname" placeholder="johndoe" />
                         </div>
-                        <div className="form-group">
+                        <div className={styles.formGroup}>
                             <label>Email Address</label>
                             <input type="email" name="email" placeholder="john@example.com" required />
                         </div>
-                        <div className="form-group">
+                        <div className={styles.formGroup}>
                             <label>Password</label>
                             <input type="password" name="password" placeholder="••••••••" required />
                         </div>
-                        <div className="form-group">
+                        <div className={styles.formGroup}>
                             <label>Avatar/Image (Optional)</label>
                             <input type="file" name="avatar" accept="image/*" />
                         </div>
-                        <div className="form-group">
+                        <div className={styles.formGroup}>
                             <label>About Me (Optional)</label>
                             <textarea name="about_me" placeholder="Tell us about yourself..." rows="3" />
                         </div>
-                        <div className="form-group">
+                        <div className={styles.formGroup}>
                             <label>Account Privacy :</label>
-                            <div className="radio-group-inline">
-                                <label className="radio-option-inline">
+                            <div className={styles.radioGroupInline}>
+                                <label className={styles.radioOptionInline}>
                                     <input type="radio" name="is_private" value="false" defaultChecked />
                                     <span> Public</span>
                                 </label>
-                                <label className="radio-option-inline">
+                                <label className={styles.radioOptionInline}>
                                     <input type="radio" name="is_private" value="true" />
                                     <span> Private</span>
                                 </label>
                             </div>
                         </div>
-                        {registerError && <p id="error-reg">{registerError}</p>}
-                        <button type="submit" id="creat-btn" >Create Account</button>
-                        <span className="have">Already have an account?</span>
-                        <button type="button" id="log" onClick={redirect}>Login</button>
+                        {registerError && <p className={styles.errorMessage}>{registerError}</p>}
+                        <button type="submit" className={styles.createBtn} >Create Account</button>
+                        <span className={styles.haveAccount}>Already have an account?</span>
+                        <button type="button" className={styles.loginBtn} onClick={redirect}>Login</button>
                     </form>
                 </div>
             </div>
         </div>
     )
 }
+
