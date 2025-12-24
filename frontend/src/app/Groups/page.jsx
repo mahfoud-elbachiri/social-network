@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import "./style.css";
 import { getSocket } from "@/sock/GetSocket";
-import Header from "@/components/Header";
+import Sidebar from "@/components/Sidebar";
 import UserNotFound from "@/components/UserNotFound";
 
 
@@ -117,8 +117,10 @@ export default function HomePage() {
       if (groupId) {
         fetchGroupById(parseInt(groupId));
       } else {
-        // Redirect to Home if no group ID is provided
-        router.push("/Home");
+        // No group ID - just show loading finished state
+        setSelectedGroup(null);
+        setGroupData(null);
+        setLoading(false);
       }
     };
 
@@ -128,9 +130,8 @@ export default function HomePage() {
     if (groupId) {
       fetchGroupById(parseInt(groupId));
     } else {
-      // Redirect to Home if no group ID is provided
-      router.push("/Home");
-      return;
+      // No group ID provided - just finish loading
+      setLoading(false);
     }
 
     // Listen for browser back/forward buttons
@@ -319,7 +320,7 @@ export default function HomePage() {
     e.preventDefault();
     setEventError('');
 
-    if (eventForm.title.trim() === "" || eventForm.description.trim() === "" ) {
+    if (eventForm.title.trim() === "" || eventForm.description.trim() === "") {
       setEventError("❌ Fill form !!")
       return
     }
@@ -532,7 +533,7 @@ export default function HomePage() {
 
     return (
       <>
-        <Header />
+        <Sidebar />
 
         <div className="group-page-container">
           {/* Step 29: Back Navigation */}
@@ -758,7 +759,7 @@ export default function HomePage() {
                   <br />
                   <label>Description:</label>
                   <textarea
-                  maxLength={100}
+                    maxLength={100}
                     value={eventForm.description}
                     onChange={(e) =>
                       setEventForm({
@@ -1146,12 +1147,24 @@ export default function HomePage() {
     return <div className="loading">Loading group details...</div>;
   }
 
-  // If no group data, show UserNotFound component
-  if (!groupData) {
+  // If no group data and not loading, show a message to select a group
+  if (!groupData && !loading) {
     return (
       <>
-        <Header />
-        <UserNotFound />
+        <Sidebar />
+        <div className="group-page-container">
+          <div className="group-header">
+            <h2>👥 Groups</h2>
+            <p className="group-description">
+              Select a group from the sidebar on the Home page to view its details, or use the Back to Home button below.
+            </p>
+          </div>
+          <div className="back-nav">
+            <button onClick={() => router.push("/Home")} className="back-btn">
+              ← Back to Home
+            </button>
+          </div>
+        </div>
       </>
     );
   }

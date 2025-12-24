@@ -25,6 +25,7 @@ export default function ChatWebSocket({ username }) {
     const [notifications, setNotifications] = useState({});
 
     const [selectedUser, setSelectedUser] = useState()
+    const [selectedUserAvatar, setSelectedUserAvatar] = useState(null)
     const [UsersList, setUsersList] = useState()
     const [input, setInput] = useState('')
     // const [sock, setSock] = useState()
@@ -32,7 +33,7 @@ export default function ChatWebSocket({ username }) {
     const [oldMessages, setOldMessages] = useState([])
     const [yes, setYes] = useState()
 
-    const [offset , setOffset] = useState(0)
+    const [offset, setOffset] = useState(0)
 
     const messagesEndRef = useRef(null)
     const messagesContainerRef = useRef(null);
@@ -44,17 +45,17 @@ export default function ChatWebSocket({ username }) {
     useEffect(() => {
         setOffset(0)
         if (selectedUser) {
-            getOldMessages(username, selectedUser, 0 , true)
+            getOldMessages(username, selectedUser, 0, true)
             setMessages([])
         }
     }, [selectedUser]);
 
 
-    const getOldMessages = async (sender, receiver, offset , firstime = true) => {
+    const getOldMessages = async (sender, receiver, offset, firstime = true) => {
         try {
             const response = await fetch("http://localhost:8080/getChats", {
                 method: 'POST',
-                body: JSON.stringify({ sender, receiver, offset , firstime }),
+                body: JSON.stringify({ sender, receiver, offset, firstime }),
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json'
@@ -88,7 +89,7 @@ export default function ChatWebSocket({ username }) {
             if (container.scrollTop <= 10) {
                 const prevScrollHeight = container.scrollHeight
 
-                getOldMessages(username, selectedUser , offset , false)
+                getOldMessages(username, selectedUser, offset, false)
 
                 requestAnimationFrame(() => {
                     const newScrollHeight = container.scrollHeight
@@ -106,7 +107,7 @@ export default function ChatWebSocket({ username }) {
             container.removeEventListener("scroll", debouncedScroll)
         }
 
-    }, [username, selectedUser,offset])
+    }, [username, selectedUser, offset])
 
 
     useEffect(() => {
@@ -201,13 +202,13 @@ export default function ChatWebSocket({ username }) {
 
         <>
             <aside className="contacts" style={{ paddingTop: '0' }}>
-                <div style={{ marginBottom: '1rem' }}>
+                <div style={{ }}>
                     <h3 style={{ marginTop: "10px" }}>
                         <div >
                             <button
                                 onClick={() => setShowChat(!showChat)}
 
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
+                                style={{ marginTop: '10px', background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
                             >
                                 <Image
                                     src="/send.png"
@@ -229,11 +230,12 @@ export default function ChatWebSocket({ username }) {
                     id="contact-list"
                     style={{
                         display: showChat ? "block" : "none",
-                        height: `${typeof window !== 'undefined' ? window.innerHeight / 4 : 200}px`,
+                        height: '200px',
                         overflowY: 'auto',
-                        border: '3px solid rgb(226, 226, 226)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
                         padding: '15px',
-                        borderRadius: '20px'
+                        borderRadius: '12px',
+                        backgroundColor: '#131313'
                     }}
                 >
                     {/* Contact list content */}
@@ -243,7 +245,10 @@ export default function ChatWebSocket({ username }) {
                                 {u.username === username ? (
                                     u.sort?.length > 0 ? (
                                         u.sort.filter(us => us.user !== username).map((user, i) => (
-                                            <div key={i} className="list" onClick={() => setSelectedUser(user.user)}>
+                                            <div key={i} className="list" onClick={() => {
+                                                setSelectedUser(user.user)
+                                                setSelectedUserAvatar(user.avatar)
+                                            }}>
                                                 <div>
                                                     <Image
                                                         src={user.avatar ? `/${user.avatar}` : "/icon.jpg"}
@@ -298,7 +303,22 @@ export default function ChatWebSocket({ username }) {
                 {selectedUser ?
                     <div id='chat-{selectedUser}' className="chat-box">
 
-                        <h3 className='tagg'>Chat with {selectedUser}  <button className='close-chat' onClick={() => setSelectedUser(null)}>x</button> </h3>
+                        <div className='chat-header-bar'>
+                            <div className='chat-user-info'>
+                                <Image
+                                    src={selectedUserAvatar ? `/${selectedUserAvatar}` : "/icon.jpg"}
+                                    alt={selectedUser}
+                                    width={36}
+                                    height={36}
+                                    style={{ borderRadius: '50%' }}
+                                />
+                                <span className='chat-username'>{selectedUser}</span>
+                            </div>
+                            <button className='close-chat' onClick={() => {
+                                setSelectedUser(null)
+                                setSelectedUserAvatar(null)
+                            }}>×</button>
+                        </div>
                         <div className="messages" ref={messagesContainerRef}>
 
                             {/* old message */}
@@ -331,11 +351,20 @@ export default function ChatWebSocket({ username }) {
 
                         <div className="chat-input">
 
-                            <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="emoji-button" >😊</button>
+                            <div style={{ position: 'relative' }}>
+                                <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="emoji-button" >😊</button>
 
-                            {showEmojiPicker && (
-                                <EmojiPicker onEmojiClick={onEmojiClick} />
-                            )}
+                                {showEmojiPicker && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        bottom: '50px',
+                                        left: '0',
+                                        zIndex: 1002
+                                    }}>
+                                        <EmojiPicker onEmojiClick={onEmojiClick} theme="dark" />
+                                    </div>
+                                )}
+                            </div>
 
                             <input onKeyDown={(e) => onkkeydown(e, socket, username, selectedUser)} onChange={(e) => setInput(e.target.value)} maxLength={1000} type="text" placeholder="Write a message..." value={input} />
                             <button onClick={() => sendMessage(socket, username, selectedUser)} className='send'>Send</button>

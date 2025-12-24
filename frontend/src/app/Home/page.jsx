@@ -4,12 +4,13 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 
-import Header from '@/components/Header';
+import Sidebar from '@/components/Sidebar';
 import PostCard from '@/components/PostCard';
 import CreatePostForm from '@/components/CreatePostForm';
 import { useComments } from '@/hooks/useComments';
 import { userApi, postApi } from '@/utils/api'
 import ChatWebSocket from "@/components/ChatWebSocket";
+import styles from './home.module.css';
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -199,111 +200,19 @@ export default function Home() {
   // }
 
   return (
-    <div>
-      <Header />
+    <div className={styles.pageWrapper}>
+      <Sidebar onCreatePost={() => setShowCreatePost(true)} />
 
       <div className="container">
         {/* Left Sidebar Container */}
-        <div className="left-sidebar-container">
-          {/* User Profile & Groups Sidebar */}
-          <aside className="sidebar">
-            {/* User Profile Section */}
-            <Link href={`/Profile?id=${currentUserId}`} style={{ textDecoration: 'none' }}>
-              <div className="contact">
-                <Image
-                  src={userAvatar ? `/${userAvatar}` : "/icon.jpg"}
-                  alt="User Avatar"
-                  width={28}
-                  height={28}
-                  priority
-                  style={{ borderRadius: 50 }}
-                />
-                <span>{username}</span>
-                <span className="online-indicator"></span>
-              </div>
-            </Link>
 
-            {/* Groups Section */}
-            <div className="groups-section">
-              <div className="groups-header">
-                <h3>Groups</h3>
-                <button
-                  onClick={() => setShowCreateGroupModal(true)}
-                  className="create-group-btn"
-                  title="Create Group"
-                >
-                  +
-                </button>
-              </div>
-
-              <div className="groups-list">
-                {groups?.map(group => (
-                  <div key={group.ID} className="group-item-sidebar">
-                    {group.IsCreator ? (
-                      <Link href={`/Groups?group=${group.ID}`} className="group-link">
-                        <div className="group-content">
-                          <strong className="group-title">{group.Title}</strong>
-                          <small className="group-description">{group.Description}</small>
-                          <span className="group-status admin">Admin</span>
-                        </div>
-                      </Link>
-                    ) : group.IsMember ? (
-                      <Link href={`/Groups?group=${group.ID}`} className="group-link">
-                        <div className="group-content">
-                          <strong className="group-title">{group.Title}</strong>
-                          <small className="group-description">{group.Description}</small>
-                          <span className="group-status member">Member</span>
-                        </div>
-                      </Link>
-                    ) : group.IsRequested ? (
-                      <div className="group-content">
-                        <strong className="group-title">{group.Title}</strong>
-                        <small className="group-description">{group.Description}</small>
-                        <span className="group-status pending">Pending</span>
-                      </div>
-                    ) : group.IsInvited ? (
-                      <div className="group-content">
-                        <strong className="group-title">{group.Title}</strong>
-                        <small className="group-description">{group.Description}</small>
-                        <div className="group-actions">
-                          <button
-                            onClick={() => acceptInvite(group.ID)}
-                            className="accept-btn-small"
-                          >
-                            Accept
-                          </button>
-                          <button
-                            onClick={() => rejectInvite(group.ID)}
-                            className="reject-btn-small"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="group-content">
-                        <strong className="group-title">{group.Title}</strong>
-                        <small className="group-description">{group.Description}</small>
-                        <button
-                          onClick={() => handleJoinGroup(group.ID)}
-                          className="join-btn-small"
-                        >
-                          Join
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </aside>
-        </div>
 
         {/* Main Content */}
         <main className="main-content" id="main-content">
-          {/* Create Post Button */}
-          <div className="create-post">
-            <button onClick={() => setShowCreatePost(true)}>+ Create a post</button>
+          {/* Feed Header */}
+          <div className={styles.feedHeader}>
+            <h1>Your 🌟 Feed Today</h1>
+            <p>Latest posts from your followings and more</p>
           </div>
 
           {/* Create Post Form */}
@@ -327,7 +236,7 @@ export default function Home() {
                   loadingComments={loadingComments}
                   onCommentClick={handleComment}
                   onSendComment={handleSendComment}
-                  ErrorComment = {ErrorComment}
+                  ErrorComment={ErrorComment}
                 />
               ))
             ) : (
@@ -341,13 +250,107 @@ export default function Home() {
         {/* Chat Sidebar */}
         <div className="side-chat">
           <ChatWebSocket username={username} />
+          <div className={styles['left-sidebar-container']}>
+            {/* User Profile & Groups Sidebar */}
+            <aside className="sidebar">
+              {/* User Profile Section */}
+              <Link href={`/Profile?id=${currentUserId}`} style={{ textDecoration: 'none' }}>
+                <div className="contact">
+                  <Image
+                    src={userAvatar ? `/${userAvatar}` : "/icon.jpg"}
+                    alt="User Avatar"
+                    width={28}
+                    height={28}
+                    priority
+                    style={{ borderRadius: 50 }}
+                  />
+                  <span>{username}</span>
+                  <span className="online-indicator"></span>
+                </div>
+              </Link>
+
+              {/* Groups Section */}
+              <div className="groups-section">
+                <div className={styles['groups-header']}>
+                  <h3>Groups</h3>
+                  <button
+                    onClick={() => setShowCreateGroupModal(true)}
+                    className={styles['create-group-btn']}
+                    title="Create Group"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <div className={styles['groups-list']}>
+                  {groups?.map(group => (
+                    <div key={group.ID} className={styles['group-item-sidebar']}>
+                      {group.IsCreator ? (
+                        <Link href={`/Groups?group=${group.ID}`} className={styles['group-link']}>
+                          <div className={styles['group-content']}>
+                            <strong className={styles['group-title']}>{group.Title}</strong>
+                            <small className={styles['group-description']}>{group.Description}</small>
+                            <span className={`${styles['group-status']} ${styles.admin}`}>Admin</span>
+                          </div>
+                        </Link>
+                      ) : group.IsMember ? (
+                        <Link href={`/Groups?group=${group.ID}`} className={styles['group-link']}>
+                          <div className={styles['group-content']}>
+                            <strong className={styles['group-title']}>{group.Title}</strong>
+                            <small className={styles['group-description']}>{group.Description}</small>
+                            <span className={`${styles['group-status']} ${styles.member}`}>Member</span>
+                          </div>
+                        </Link>
+                      ) : group.IsRequested ? (
+                        <div className={styles['group-content']}>
+                          <strong className={styles['group-title']}>{group.Title}</strong>
+                          <small className={styles['group-description']}>{group.Description}</small>
+                          <span className={`${styles['group-status']} ${styles.pending}`}>Pending</span>
+                        </div>
+                      ) : group.IsInvited ? (
+                        <div className={styles['group-content']}>
+                          <strong className={styles['group-title']}>{group.Title}</strong>
+                          <small className={styles['group-description']}>{group.Description}</small>
+                          <div className={styles['group-actions']}>
+                            <button
+                              onClick={() => acceptInvite(group.ID)}
+                              className={styles['accept-btn-small']}
+                            >
+                              Accept
+                            </button>
+                            <button
+                              onClick={() => rejectInvite(group.ID)}
+                              className={styles['reject-btn-small']}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={styles['group-content']}>
+                          <strong className={styles['group-title']}>{group.Title}</strong>
+                          <small className={styles['group-description']}>{group.Description}</small>
+                          <button
+                            onClick={() => handleJoinGroup(group.ID)}
+                            className={styles['join-btn-small']}
+                          >
+                            Join
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
 
       {/* Create Group Modal */}
       {showCreateGroupModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className={styles['modal-overlay']}>
+          <div className={styles['modal-content']}>
             <form onSubmit={handleCreateGroup}>
               <h2>Create a New Group</h2>
               <label>
@@ -363,14 +366,14 @@ export default function Home() {
               <label>
                 Description:
                 <textarea
-                maxLength={100}
+                  maxLength={100}
                   value={groupForm.description}
                   onChange={(e) => setGroupForm({ ...groupForm, description: e.target.value })}
                   required
                 />
               </label>
-              <div style={{color: 'red'}}>{error}</div>
-              <div className="modal-actions">
+              <div style={{ color: 'red' }}>{error}</div>
+              <div className={styles['modal-actions']}>
                 <button type="submit">Create</button>
                 <button type="button" onClick={() => setShowCreateGroupModal(false)}>Cancel</button>
               </div>

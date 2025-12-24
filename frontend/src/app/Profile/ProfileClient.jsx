@@ -1,20 +1,20 @@
 'use client';
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useSearchParams } from 'next/navigation';
+import { Grid3X3, Users, UserCheck, Mail, Calendar, User, Lock, Globe, MessageCircle } from 'lucide-react';
 
-
-import Header from '@/components/Header';
+import styles from './profile.module.css';
+import Sidebar from '@/components/Sidebar';
 import PostCard from '@/components/PostCard';
-import ProfileStats from '@/components/ProfileStats';
-import ProfileCard from '@/components/ProfileCard';
+import FollowButton from '@/components/FollowButton';
+import FollowList from '@/components/Followlist';
 import PrivatePostsMessage from '@/components/PrivatePostsMessage';
 import UserNotFound from '@/components/UserNotFound';
 import { useComments } from '@/hooks/useComments';
 import { userApi } from '@/utils/api';
 import { getSocket } from "@/sock/GetSocket";
-
-
-import { useSearchParams } from 'next/navigation';
 
 
 export default function ProfileClient() {
@@ -33,13 +33,13 @@ export default function ProfileClient() {
   const [isPrivatePosts, setIsPrivatePosts] = useState(false);
   const [isPrivateView, setIsPrivateView] = useState(false);
 
-  //const [targetUserId, setTargetUserId] = useState(null);
-
-  // useEffect(() => {
-  //   const urlParams = new URLSearchParams(window.location.search);
-  //   const idFromUrl = urlParams.get('id');
-  //   setTargetUserId(idFromUrl || null);
-  // }, [targetUserId]);
+  // Follow data
+  const [followData, setFollowData] = useState({
+    followers: { count: 0 },
+    following: { count: 0 }
+  });
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupTab, setPopupTab] = useState('followers');
 
   const [i, setI] = useState(false)
 
@@ -68,6 +68,7 @@ export default function ProfileClient() {
   useEffect(() => {
     fetchProfile();
     fetchPosts();
+    fetchFollowData();
   }, [targetUserId]);
 
   const fetchProfile = async () => {
@@ -81,11 +82,11 @@ export default function ProfileClient() {
         setError(null);
         setUserNotFound(false);
       } else {
-        
+
         if (data?.error === "User Not found" || data?.error === "Invalid user ID") {
           setUserNotFound(true);
           setError(null);
-        } 
+        }
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -98,81 +99,97 @@ export default function ProfileClient() {
 
   const fetchPosts = async () => {
     try {
-      if (targetUserId) {
-        const data = await userApi.fetchPostsOfUser(targetUserId);
-
-        if (data && data.status) {
-          if (data.is_private) {
-            // This is a private profile that we can't access
-            setIsPrivatePosts(true);
-            setPosts([]);
-          } else {
-            // Normal posts or empty posts from a public profile
-            setIsPrivatePosts(false);
-            setPosts(data.posts || []);
-          }
-        } else {
-          // console.error('Posts fetch failed:', data);
-          setIsPrivatePosts(false);
-          setPosts([]);
-        }
+      const data = await userApi.fetchPostsOfUser(targetUserId);
+      if (data && data.status) {
+        const postsArray = data.posts || [];
+        setPosts(postsArray);
+        setIsPrivatePosts(false);
+      } else if (data && data.error === "private") {
+        setIsPrivatePosts(true);
+        setPosts([]);
+      } else {
+        setPosts([]);
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
-      setIsPrivatePosts(false);
       setPosts([]);
     }
   };
 
+  const fetchFollowData = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/follow-data?id=${targetUserId}`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data && data.status) {
+        setFollowData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching follow data:', error);
+    }
+  };
+
   const togglePrivacy = async () => {
-    if (updatingPrivacy || !isOwnProfile) return;
+    if (!profile || updatingPrivacy) return;
 
     setUpdatingPrivacy(true);
     try {
-      const data = await userApi.updatePrivacy(!profile.is_private);
+      const response = await fetch('http://localhost:8080/updateUserPrivacy', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_private: !profile.is_private })
+      });
 
+      const data = await response.json();
       if (data && data.status) {
-        setProfile(prev => ({
-          ...prev,
-          is_private: !prev.is_private
-        }));
-      } else {
-        setError(data?.error || 'Failed to update privacy setting');
+        setProfile(prev => ({ ...prev, is_private: !prev.is_private }));
       }
     } catch (error) {
       console.error('Error updating privacy:', error);
-      setError('Failed to update privacy setting');
     } finally {
       setUpdatingPrivacy(false);
     }
   };
 
+  const openPopup = (tab) => {
+    if (!isPrivatePosts) {
+      setPopupTab(tab);
+      setShowPopup(true);
+    }
+  };
+
+  // Loading state
   if (loading) {
     return (
-      <div>
-        <Header />
-        <div>  </div>
+      <div className={styles.pageWrapper}>
+        <Sidebar />
+        <div className={styles.profileContainer}>
+          <div className={styles.loadingState}>Loading profile...</div>
+        </div>
       </div>
     );
   }
 
+  // User not found
   if (userNotFound) {
     return (
-      <div>
-        <Header />
+      <div className={styles.pageWrapper}>
+        <Sidebar />
         <UserNotFound />
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div>
-        <Header />
-        <div className="container">
-          <main className="main-content">
-            <div>Error: {error}</div>
-          </main>
+      <div className={styles.pageWrapper}>
+        <Sidebar />
+        <div className={styles.profileContainer}>
+          <div className={styles.errorState}>Error: {error}</div>
         </div>
       </div>
     );
@@ -180,38 +197,139 @@ export default function ProfileClient() {
 
   if (!profile) {
     return (
-      <div>
-        <Header />
-        <div>Profile not found</div>
+      <div className={styles.pageWrapper}>
+        <Sidebar />
+        <div className={styles.profileContainer}>
+          <div className={styles.errorState}>Profile not found</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <Header />
+    <div className={styles.pageWrapper}>
+      <Sidebar />
 
-      <div className="container">
-        {/* Profile Info Sidebar */}
-        <aside className="sidebar">
-          <ProfileCard
-            profile={profile}
-            isOwnProfile={isOwnProfile}
-            onPrivacyToggle={togglePrivacy}
-            updatingPrivacy={updatingPrivacy}
-            isPrivateView={isPrivateView}
-            isPrivatePosts={isPrivatePosts}
-            targetid={targetUserId}
-          />
-        </aside>
+      <div className={styles.profileContainer}>
+        {/* Profile Header Section */}
+        <div className={styles.profileHeader}>
+          {/* Cover Image */}
+          <div className={styles.coverImage}></div>
 
-        {/* Main Content - Posts */}
-        <main className="main-content" id="main-content">
-          <div className="profile-posts-header">
-            <h3>Posts by {profile.first_name} {isPrivatePosts ? '(Private)' : isPrivateView && !isOwnProfile ? '(Private)' : `(${posts.length})`}</h3>
+          {/* Profile Info */}
+          <div className={styles.profileInfo}>
+            {/* Avatar */}
+            <div className={styles.avatarWrapper}>
+              <Image
+                src={profile.avatar ? `/${profile.avatar}` : "/icon.jpg"}
+                alt="Profile Avatar"
+                width={120}
+                height={120}
+                priority
+                className={styles.avatar}
+              />
+            </div>
+
+            {/* Main Info */}
+            <div className={styles.mainInfo}>
+              <div className={styles.nameRow}>
+                <h1 className={styles.displayName}>
+                  {profile.first_name} {profile.last_name}
+                </h1>
+                <span className={styles.username}>@{profile.nickname}</span>
+
+                {/* Privacy Badge */}
+                <span className={`${styles.privacyBadge} ${profile.is_private ? styles.private : styles.public}`}>
+                  {profile.is_private ? <><Lock size={14} /> Private</> : <><Globe size={14} /> Public</>}
+                </span>
+              </div>
+
+              {/* Bio/About */}
+              {profile.about_me && (
+                <p className={styles.bio}>{profile.about_me}</p>
+              )}
+
+              {/* Quick Info */}
+              <div className={styles.quickInfo}>
+                {profile.email && (
+                  <span className={styles.infoItem}>
+                    <Mail size={16} />
+                    {profile.email}
+                  </span>
+                )}
+                {profile.age && (
+                  <span className={styles.infoItem}>
+                    <Calendar size={16} />
+                    {profile.age} years old
+                  </span>
+                )}
+                {profile.gender && (
+                  <span className={styles.infoItem}>
+                    <User size={16} />
+                    {profile.gender}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Actions & Stats */}
+            <div className={styles.actionsColumn}>
+              {/* Action Buttons */}
+              <div className={styles.actionButtons}>
+                {isOwnProfile ? (
+                  <button
+                    className={styles.editBtn}
+                    onClick={togglePrivacy}
+                    disabled={updatingPrivacy}
+                  >
+                    {updatingPrivacy ? 'Updating...' : (profile.is_private ? 'Make Public' : 'Make Private')}
+                  </button>
+                ) : (
+                  <>
+                    <FollowButton targetUserid={targetUserId} isPrivateView={isPrivateView} />
+                    <button className={styles.messageBtn}>
+                      <MessageCircle size={18} />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Stats Row */}
+              <div className={styles.statsRow}>
+                <div className={styles.statItem}>
+                  <Grid3X3 size={18} />
+                  <strong>{posts.length}</strong>
+                  <span>Posts</span>
+                </div>
+                <div
+                  className={`${styles.statItem} ${!isPrivatePosts ? styles.clickable : ''}`}
+                  onClick={() => openPopup('followers')}
+                >
+                  <Users size={18} />
+                  <strong>{followData.followers?.count || 0}</strong>
+                  <span>Followers</span>
+                </div>
+                <div
+                  className={`${styles.statItem} ${!isPrivatePosts ? styles.clickable : ''}`}
+                  onClick={() => openPopup('following')}
+                >
+                  <UserCheck size={18} />
+                  <strong>{followData.following?.count || 0}</strong>
+                  <span>Following</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Posts Section */}
+        <div className={styles.postsSection}>
+          <div className={styles.postsHeader}>
+            <Grid3X3 size={20} />
+            <h2>Posts</h2>
           </div>
 
-          <div className="posts-container">
+          <div className={styles.postsGrid}>
             {isPrivatePosts ? (
               <PrivatePostsMessage />
             ) : (
@@ -229,23 +347,24 @@ export default function ProfileClient() {
                     />
                   ))
                 ) : (
-                  <div className="post">
-                    <p>No posts found for this user</p>
+                  <div className={styles.noPosts}>
+                    <Grid3X3 size={48} />
+                    <p>No posts yet</p>
                   </div>
                 )}
               </>
             )}
           </div>
-        </main>
-
-        <ProfileStats
-          postsCount={posts.length}
-          isPrivateView={isPrivateView}
-          isPrivatePosts={isPrivatePosts}
-          isOwnProfile={isOwnProfile}
-          targetUserId={targetUserId}
-        />
+        </div>
       </div>
+
+      {/* Follow List Popup */}
+      <FollowList
+        isOpen={showPopup}
+        onClose={() => setShowPopup(false)}
+        activeTab={popupTab}
+        targetUserId={targetUserId}
+      />
     </div>
   );
 }

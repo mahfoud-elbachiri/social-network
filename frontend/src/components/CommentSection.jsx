@@ -2,14 +2,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from 'react';
+import { Send, ImagePlus, X } from 'lucide-react';
 import { formatDate, getProfileLink } from '../utils/helpers';
 
-const CommentSection = ({ 
-  postId, 
-  showComments, 
-  comments, 
-  loadingComments, 
-  onSendComment, 
+const CommentSection = ({
+  postId,
+  showComments,
+  comments,
+  loadingComments,
+  onSendComment,
 }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -29,93 +30,59 @@ const CommentSection = ({
   const clearImage = () => {
     setSelectedImage(null);
     setImagePreview(null);
-    // Clear the file input
     const fileInput = document.getElementById(`comment-file-${postId}`);
     if (fileInput) fileInput.value = '';
   };
 
   return (
-    <>
-      {/* Comments Section */}
-      <div className="comments-section">
-        {loadingComments[postId] ? (
-          <div className="loading-comments">Loading comments...</div>
-        ) : (
-          <>
-            {comments[postId] && comments[postId].length > 0 ? (
-              <div className="comments-list">
-                {comments[postId].map((comment) => (
-                  <div key={comment.ID} className="comment-item">                    <div className="comment-header">
-                      <Link href={getProfileLink(comment.UserID)} style={{textDecoration: 'none', color: 'inherit'}}>
-                        <strong style={{cursor: 'pointer'}}>{comment.Username}</strong>
-                      </Link>
-                      <span className="comment-date">
-                        {formatDate(comment.CreatedAt)}
-                      </span>
-                    </div>
-                    <p className="comment-text">{comment.Content}</p>
-                    {comment.Avatar && (
-                      <div className="comment-image">
-                        <Image 
-                          src={`/${comment.Avatar}`} 
-                          alt="Comment attachment" 
-                          width={200} 
-                          height={200} 
-                          style={{
-                            maxWidth: '100%',
-                            height: 'auto',
-                            borderRadius: '8px',
-                            marginTop: '8px'
-                          }}
-                        />
-                      </div>
-                    )}
+    <div className="comments-section">
+      {/* Comments List */}
+      {loadingComments[postId] ? (
+        <div className="loading-comments">Loading comments...</div>
+      ) : (
+        <>
+          {comments[postId] && comments[postId].length > 0 ? (
+            <div className="comments-list">
+              {comments[postId].map((comment) => (
+                <div key={comment.ID} className="comment-item">
+                  <div className="comment-header">
+                    <Link href={getProfileLink(comment.UserID)} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <strong>{comment.Username}</strong>
+                    </Link>
+                    <span className="comment-date">
+                      {formatDate(comment.CreatedAt)}
+                    </span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="no-comments">No comments yet</div>
-            )}
-          </>
-        )}
-      </div>      {/* Comment Input */}
-      <div className="input-wrapper">
-        <textarea 
-        maxLength={100}
-          placeholder="Write a comment..." 
-          className="comment-input" 
-          data-idpost={postId}
-          id={`comment-textarea-${postId}`}
-        />
-        
-        {/* Image Preview */}
-        {imagePreview && (
-          <div className="image-preview-wrapper">
-            <div className="image-preview">
-              <Image 
-                src={imagePreview} 
-                alt="Preview" 
-                width={100} 
-                height={100} 
-                style={{
-                  maxWidth: '100px',
-                  height: 'auto',
-                  borderRadius: '8px'
-                }}
-              />
-              <button 
-                className="remove-image-btn"
-                onClick={clearImage}
-                type="button"
-              >
-                ×
-              </button>
+                  <p className="comment-text">{comment.Content}</p>
+                  {comment.Avatar && (
+                    <div className="comment-image">
+                      <Image
+                        src={`/${comment.Avatar}`}
+                        alt="Comment attachment"
+                        width={200}
+                        height={200}
+                        style={{
+                          maxWidth: '100%',
+                          height: 'auto',
+                          borderRadius: '8px',
+                          marginTop: '8px'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="no-comments">No comments yet</div>
+          )}
+        </>
+      )}
 
-        <div className="comment-actions">
-          {/* File Input */}
+      {/* Comment Input Area */}
+      <div className="comment-input-wrapper">
+        <div className="comment-input-row">
+          {/* Hidden File Input */}
           <input
             type="file"
             id={`comment-file-${postId}`}
@@ -123,21 +90,30 @@ const CommentSection = ({
             onChange={handleImageSelect}
             style={{ display: 'none' }}
           />
-          
-          <button 
-            className="image-upload-btn"
+
+          {/* Image Upload Button */}
+          <button
+            className="comment-icon-btn"
             onClick={() => document.getElementById(`comment-file-${postId}`).click()}
             type="button"
+            title="Add image"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeWidth="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5" strokeWidth="2"/>
-              <polyline points="21,15 16,10 5,21" strokeWidth="2"/>
-            </svg>
+            <ImagePlus size={20} />
           </button>
 
-          <button 
-            className="send-button"
+          {/* Textarea */}
+          <textarea
+            maxLength={100}
+            placeholder="Write a comment..."
+            className="comment-textarea"
+            data-idpost={postId}
+            id={`comment-textarea-${postId}`}
+            rows={1}
+          />
+
+          {/* Send Button */}
+          <button
+            className="comment-send-btn"
             onClick={(e) => {
               const textarea = document.getElementById(`comment-textarea-${postId}`);
               if (textarea && (textarea.value.trim() || selectedImage)) {
@@ -147,15 +123,38 @@ const CommentSection = ({
                 clearImage();
               }
             }}
+            title="Send comment"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M22 2L11 13" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M22 2L15 22L11 13L2 9L22 2Z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <Send size={18} />
           </button>
         </div>
+
+        {/* Image Preview */}
+        {imagePreview && (
+          <div className="comment-image-preview">
+            <Image
+              src={imagePreview}
+              alt="Preview"
+              width={80}
+              height={80}
+              style={{
+                width: '80px',
+                height: '80px',
+                objectFit: 'cover',
+                borderRadius: '8px'
+              }}
+            />
+            <button
+              className="comment-remove-image"
+              onClick={clearImage}
+              type="button"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 

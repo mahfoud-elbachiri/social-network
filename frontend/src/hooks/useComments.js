@@ -5,14 +5,14 @@ export const useComments = (setPosts) => {
   const [showComments, setShowComments] = useState({});
   const [comments, setComments] = useState({});
   const [loadingComments, setLoadingComments] = useState({});
- 
+
 
   const fetchCommentsForPost = async (postId) => {
     setLoadingComments(prev => ({ ...prev, [postId]: true }));
-    
+
     try {
       const data = await commentApi.fetchComments(postId);
-      
+
       if (data && (data.error || data.status === false)) {
         console.error('Error fetching comments:', data.error);
       } else {
@@ -27,19 +27,24 @@ export const useComments = (setPosts) => {
       setLoadingComments(prev => ({ ...prev, [postId]: false }));
     }
   };
-//fetch comment before open the toggle
+  //fetch comment before open the toggle
   const handleComment = async (e) => {
-    const postId = e.target.getAttribute('posteid');
-    
+    const postId = e.currentTarget.getAttribute('posteid');
+
+    if (!postId) {
+      console.error('No postId found on element');
+      return;
+    }
+
     setShowComments(prev => ({
       ...prev,
       [postId]: !prev[postId]
     }));
-    
+
     if (!showComments[postId] && !comments[postId]) {
       await fetchCommentsForPost(postId);
     }
-  };  
+  };
   const handleSendComment = async (postId, commentText, avatar = null) => {
     // Validation: Either text content or image must be provided (or both)
     if (!commentText.trim() && !avatar) return;
@@ -49,12 +54,12 @@ export const useComments = (setPosts) => {
 
       if (data && data.status) {
         await fetchCommentsForPost(postId);
-        
+
         // Update post comment count
         if (setPosts) {
-          setPosts(prevPosts => 
-            prevPosts.map(post => 
-              post.ID == postId 
+          setPosts(prevPosts =>
+            prevPosts.map(post =>
+              post.ID == postId
                 ? { ...post, Nembre: post.Nembre + 1 }
                 : post
             )

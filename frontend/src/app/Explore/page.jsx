@@ -1,11 +1,12 @@
 'use client';
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Header from '@/components/Header';
+import Sidebar from '@/components/Sidebar';
 import FollowButton from "@/components/FollowButton";
 import { useRouter } from 'next/navigation';
 import { userApi } from '../../utils/api';
 import { getSocket } from "@/sock/GetSocket";
+import styles from './explore.module.css';
 
 
 export default function Explore() {
@@ -116,26 +117,32 @@ export default function Explore() {
   }
 
   return (
-    <div>
-      <Header />
+    <div className={styles.pageWrapper}>
+      <Sidebar />
 
       <div className="container">
         <main className="main-content">
+          {/* Page Header */}
+          <div className={styles.pageHeader}>
+            <h1>🔍 Explore</h1>
+            <p>Discover and connect with people</p>
+          </div>
+
           {/* Search Section */}
-          <div className="search-section">
-            <form onSubmit={handleSearch} className="search-form">
-              <div className="search-input-wrapper">
+          <div className={styles['search-section']}>
+            <form onSubmit={handleSearch} className={styles['search-form']}>
+              <div className={styles['search-input-wrapper']}>
                 <input
                   type="text"
                   name="search"
                   placeholder="Search users by first or last name..."
-                  className="search-input"
+                  className={styles['search-input']}
                 />
-                <div className="search-buttons">
-                  <button type="submit" className="search-btn" >
+                <div className={styles['search-buttons']}>
+                  <button type="submit" className={styles['search-btn']} >
                     🔍 Search
                   </button>
-                  <button type="button" onClick={handleClearSearch} className="clear-btn">
+                  <button type="button" onClick={handleClearSearch} className={styles['clear-btn']}>
                     ✖️ Clear
                   </button>
                 </div>
@@ -143,12 +150,12 @@ export default function Explore() {
             </form>
           </div>
 
-          <div className="users-container">
+          <div className={styles['users-container']}>
             {users.length > 0 ? (
-              <div className="users-grid">
+              <div className={styles['users-grid']}>
                 {users.map((user) => (
-                  <div key={user.id} className="user-card">
-                    <div className="user-info" onClick={(e) => handleCardClick(user.id, e)}>
+                  <div key={user.id} className={styles['user-card']}>
+                    <div className={styles['user-info']} onClick={(e) => handleCardClick(user.id, e)}>
                       <Image
                         src={user.avatar ? `/${user.avatar}` : "/icon.jpg"}
                         alt={`${user.nickname || user.first_name} avatar`}
@@ -157,7 +164,7 @@ export default function Explore() {
                         priority
                         style={{ borderRadius: 50 }}
                       />
-                      <div className="user-details">
+                      <div className={styles['user-details']}>
                         <h3>
                           {user.nickname ? `@${user.nickname}` : `${user.first_name} ${user.last_name}`}
                         </h3>
@@ -175,7 +182,7 @@ export default function Explore() {
                 ))}
               </div>
             ) : (
-              <div className="no-users">
+              <div className={styles['no-users']}>
                 <p>No users found</p>
               </div>
             )}
