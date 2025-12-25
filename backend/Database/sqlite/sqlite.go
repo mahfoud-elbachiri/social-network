@@ -9,7 +9,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	sqlite3 "github.com/golang-migrate/migrate/v4/database/sqlite"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 var (
@@ -30,7 +30,7 @@ func GetDB() *sql.DB {
 		fmt.Printf("Using database path: %s\n", databasePath)
 		fmt.Printf("Using migrations path: %s\n", migrationsPath)
 
-		db, err = sql.Open("sqlite3", databasePath)
+		db, err = sql.Open("sqlite", databasePath)
 		if err != nil {
 			log.Fatalln("Error opening DB:", err)
 		}

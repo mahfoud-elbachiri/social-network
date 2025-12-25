@@ -5,6 +5,7 @@ import "./chat.css"
 import { getSocket } from '@/sock/GetSocket'
 import EmojiPicker from 'emoji-picker-react'
 import Image from 'next/image'
+import { SquarePen } from 'lucide-react'
 
 
 
@@ -202,21 +203,16 @@ export default function ChatWebSocket({ username }) {
 
         <>
             <aside className="contacts" style={{ paddingTop: '0' }}>
-                <div style={{ }}>
+                <div style={{}}>
                     <h3 style={{ marginTop: "10px" }}>
-                        <div >
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                             <button
                                 onClick={() => setShowChat(!showChat)}
 
-                                style={{ marginTop: '10px', background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', color: 'white' }}
                             >
-                                <Image
-                                    src="/send.png"
-                                    alt="send"
-                                    width={42}
-                                    height={42}
-                                    className="nav-icon"
-                                />
+                                <SquarePen size={24} />
+                                <span style={{ fontSize: '18px', fontWeight: 'bold' }}>Messages</span>
                                 {/* {notificationCount > 0 && (
                                     <span className="notification-badge">
                                       {notificationCount > 99 ? '99+' : notificationCount}
@@ -380,5 +376,5 @@ function debounce(func, delay = 500) {
     return function (...args) {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), delay);
-    };
+    }
 }
