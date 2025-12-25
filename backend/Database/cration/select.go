@@ -240,6 +240,17 @@ func GetUserInfo(id int) (string, string) {
 	return name, avatar
 }
 
+// GetUserFullInfo returns first name, last name, nickname and avatar for a user
+func GetUserFullInfo(id int) (firstName, lastName, nickname, avatar string) {
+	quire := "SELECT first_name, last_name, nikname, avatar FROM users WHERE id = ?"
+	err := DB.QueryRow(quire, id).Scan(&firstName, &lastName, &nickname, &avatar)
+	if err != nil {
+		fmt.Println("Error getting user full info:", err)
+		return "", "", "", ""
+	}
+	return firstName, lastName, nickname, avatar
+}
+
 func GetUser(id int) string {
 	var name string
 	quire := "SELECT nikname FROM users WHERE id = ?"
@@ -308,14 +319,17 @@ func GetPostes(str int, end int, userid int) ([]utils.Postes, error) {
 		}
 
 		post.Nembre, err = LenghtComent(post.ID)
-		post.Username = GetUser(post.UserID)
+
+		// Get user's full info including first name, last name, nickname and avatar
+		firstName, lastName, nickname, userAvatar := GetUserFullInfo(post.UserID)
+		post.Username = nickname
+		post.FirstName = firstName
+		post.LastName = lastName
+		post.UserAvatar = userAvatar
+
 		if post.Username == "" {
 			return nil, err
 		}
-
-		// Get user's avatar
-		_, userAvatar := GetUserInfo(post.UserID)
-		post.UserAvatar = userAvatar
 
 		postes = append(postes, post)
 	}
@@ -344,14 +358,17 @@ func GetPostsByUserId(userId int, viewerID int) ([]utils.Postes, error) {
 		}
 
 		post.Nembre, err = LenghtComent(post.ID)
-		post.Username = GetUser(post.UserID)
+
+		// Get user's full info including first name, last name, nickname and avatar
+		firstName, lastName, nickname, userAvatar := GetUserFullInfo(post.UserID)
+		post.Username = nickname
+		post.FirstName = firstName
+		post.LastName = lastName
+		post.UserAvatar = userAvatar
+
 		if post.Username == "" {
 			return nil, err
 		}
-
-		// Get user's avatar
-		_, userAvatar := GetUserInfo(post.UserID)
-		post.UserAvatar = userAvatar
 
 		postes = append(postes, post)
 	}
@@ -407,7 +424,13 @@ func SelectComments(postid int, userid int) ([]utils.CommentPost, error) {
 			return nil, err
 		}
 
-		comment.Username = GetUser(comment.UserID)
+		// Get user's full info including first name, last name, nickname and avatar
+		firstName, lastName, nickname, userAvatar := GetUserFullInfo(comment.UserID)
+		comment.Username = nickname
+		comment.FirstName = firstName
+		comment.LastName = lastName
+		comment.UserAvatar = userAvatar
+
 		comments = append(comments, comment)
 	}
 

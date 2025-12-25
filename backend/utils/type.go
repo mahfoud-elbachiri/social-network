@@ -4,6 +4,8 @@ type Postes struct {
 	ID         int
 	UserID     int
 	Username   string
+	FirstName  string // User's first name
+	LastName   string // User's last name
 	UserAvatar string // User's profile avatar
 	Title      string
 	Content    string
@@ -34,14 +36,17 @@ type Comment struct {
 }
 
 type CommentPost struct {
-	ID        int
-	PostID    int
-	UserID    int
-	Content   string
-	CreatedAt string
-	Username  string
-	Have      string
-	Avatar    string // Comment image
+	ID         int
+	PostID     int
+	UserID     int
+	Content    string
+	CreatedAt  string
+	Username   string
+	FirstName  string // User's first name
+	LastName   string // User's last name
+	UserAvatar string // User's profile avatar
+	Have       string
+	Avatar     string // Comment image
 }
 
 type Jsncomment struct {

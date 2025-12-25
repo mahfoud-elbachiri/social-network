@@ -1112,14 +1112,20 @@ nav a:hover {
 
 .comment-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     margin-bottom: 0.5rem;
+    gap: 0;
 }
 
 .comment-header strong {
     color: var(--primary-color);
     font-weight: 600;
+}
+
+.comment-author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .comment-date {

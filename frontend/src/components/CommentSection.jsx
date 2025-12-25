@@ -46,12 +46,24 @@ const CommentSection = ({
               {comments[postId].map((comment) => (
                 <div key={comment.ID} className="comment-item">
                   <div className="comment-header">
-                    <Link href={getProfileLink(comment.UserID)} style={{ textDecoration: 'none', color: 'inherit' }}>
-                      <strong>{comment.Username}</strong>
+                    <Link href={getProfileLink(comment.UserID)}>
+                      <Image
+                        src={comment.UserAvatar ? `/${comment.UserAvatar}` : "/icon.jpg"}
+                        alt="Commenter Avatar"
+                        width={32}
+                        height={32}
+                        priority
+                        style={{ borderRadius: '50%', cursor: 'pointer', marginRight: '10px' }}
+                      />
                     </Link>
-                    <span className="comment-date">
-                      {formatDate(comment.CreatedAt)}
-                    </span>
+                    <div className="comment-author-info">
+                      <Link href={getProfileLink(comment.UserID)} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <strong>{comment.FirstName} {comment.LastName}</strong>
+                      </Link>
+                      <span className="comment-date">
+                        {formatDate(comment.CreatedAt)}
+                      </span>
+                    </div>
                   </div>
                   <p className="comment-text">{comment.Content}</p>
                   {comment.Avatar && (

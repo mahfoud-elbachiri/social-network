@@ -28,7 +28,7 @@ const PostCard = ({
         </Link>
         <div className="post-header-text">
           <Link href={getProfileLink(post.UserID)} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <span className="post-author-name">{post.Username}</span>
+            <span className="post-author-name">{post.FirstName} {post.LastName}</span>
           </Link>
           <span className="post-date">{formatDate(post.CreatedAt)}</span>
           {/* Privacy indicator */}
