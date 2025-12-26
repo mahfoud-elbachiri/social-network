@@ -6,6 +6,7 @@ import "./style.css";
 import { getSocket } from "@/sock/GetSocket";
 import Sidebar from "@/components/Sidebar";
 import UserNotFound from "@/components/UserNotFound";
+import ChatWebSocket from "@/components/ChatWebSocket";
 
 
 export default function HomePage() {
@@ -53,6 +54,9 @@ export default function HomePage() {
 
   // Step 7: WebSocket connection state
   const [i, setI] = useState(false);
+
+  // Step 7.1: Username state for chat
+  const [username, setUsername] = useState('User');
 
   // Step 8: Function to scroll chat to bottom
   const scrollToBottom = () => {
@@ -134,6 +138,9 @@ export default function HomePage() {
       setLoading(false);
     }
 
+    // Fetch username for chat
+    fetchUserStatus();
+
     // Listen for browser back/forward buttons
     window.addEventListener("popstate", handlePopState);
 
@@ -141,6 +148,22 @@ export default function HomePage() {
       window.removeEventListener("popstate", handlePopState);
     };
   }, [router]);
+
+  // Step 12.1: Fetch user status for chat
+  const fetchUserStatus = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/statuts', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data && data.status && data.name) {
+        setUsername(data.name);
+      }
+    } catch (error) {
+      console.error('Error fetching user status:', error);
+    }
+  };
 
   // Step 13: Fetch group data by ID
   const fetchGroupById = async (groupId) => {
@@ -1147,28 +1170,268 @@ export default function HomePage() {
     return <div className="loading">Loading group details...</div>;
   }
 
-  // If no group data and not loading, show a message to select a group
+  // If no group data and not loading, show groups list
   if (!groupData && !loading) {
+    return <GroupsListView router={router} username={username} />;
+  }
+
+  // This return statement is never reached due to the redirects above
+  return null;
+}
+
+// Groups List View Component
+function GroupsListView({ router, username }) {
+  const [groups, setGroups] = useState([]);
+  const [loadingGroups, setLoadingGroups] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [groupForm, setGroupForm] = useState({ title: '', description: '' });
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const fetchGroups = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/groupPage', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      setGroups(data.Groups || []);
+      setLoadingGroups(false);
+    } catch (err) {
+      console.error('Failed to fetch groups', err);
+      setLoadingGroups(false);
+    }
+  };
+
+  const handleCreateGroup = async (e) => {
+    e.preventDefault();
+    setFormError('');
+
+    if (groupForm.title.trim() === '' || groupForm.description.trim() === '') {
+      setFormError('Please fill in both title and description');
+      return;
+    }
+
+    try {
+      await fetch('http://localhost:8080/create-group', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(groupForm),
+      });
+      setShowCreateModal(false);
+      setGroupForm({ title: '', description: '' });
+      fetchGroups();
+    } catch (err) {
+      console.error('Failed to create group', err);
+      setFormError('Failed to create group');
+    }
+  };
+
+  const handleJoinGroup = async (groupId) => {
+    try {
+      await fetch('http://localhost:8080/join-group', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: groupId }),
+      });
+      fetchGroups();
+    } catch (err) {
+      console.error('Failed to join group', err);
+    }
+  };
+
+  const acceptInvite = async (groupId) => {
+    try {
+      await fetch('http://localhost:8080/group/accept-invite', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: groupId }),
+      });
+      fetchGroups();
+    } catch (err) {
+      console.error('Failed to accept invite', err);
+    }
+  };
+
+  const rejectInvite = async (groupId) => {
+    try {
+      await fetch('http://localhost:8080/group/reject-invite', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: groupId }),
+      });
+      fetchGroups();
+    } catch (err) {
+      console.error('Failed to reject invite', err);
+    }
+  };
+
+  const getStatusBadge = (group) => {
+    if (group.IsCreator) {
+      return <span className="group-badge admin">👑 Admin</span>;
+    } else if (group.IsMember) {
+      return <span className="group-badge member">✓ Member</span>;
+    } else if (group.IsRequested) {
+      return <span className="group-badge pending">⏳ Pending</span>;
+    } else if (group.IsInvited) {
+      return <span className="group-badge invited">📩 Invited</span>;
+    }
+    return null;
+  };
+
+  if (loadingGroups) {
     return (
       <>
         <Sidebar />
-        <div className="group-page-container">
-          <div className="group-header">
-            <h2>👥 Groups</h2>
-            <p className="group-description">
-              Select a group from the sidebar on the Home page to view its details, or use the Back to Home button below.
-            </p>
+        <div className="groups-page-layout">
+          <div className="group-page-container">
+            <div className="loading-state">Loading groups...</div>
           </div>
-          <div className="back-nav">
-            <button onClick={() => router.push("/Home")} className="back-btn">
-              ← Back to Home
-            </button>
+          <div className="side-chat">
+            <ChatWebSocket key={username} username={username} />
           </div>
         </div>
       </>
     );
   }
 
-  // This return statement is never reached due to the redirects above
-  return null;
+  return (
+    <>
+      <Sidebar />
+      <div className="groups-page-layout">
+        <div className="group-page-container">
+          {/* Page Header */}
+          <div className="groups-list-header">
+            <div className="header-content">
+              <h1>👥 Discover Groups</h1>
+              <p>Connect with communities that share your interests</p>
+            </div>
+            <button
+              className="create-group-main-btn"
+              onClick={() => setShowCreateModal(true)}
+            >
+              + Create New Group
+            </button>
+          </div>
+
+          {/* Groups Grid */}
+          <div className="groups-grid">
+            {groups && groups.length > 0 ? (
+              groups.map((group) => (
+                <div key={group.ID} className="group-card">
+                  <div className="group-card-header">
+                    <div className="group-icon">
+                      {group.Title.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="group-card-info">
+                      <h3>{group.Title}</h3>
+                      {getStatusBadge(group)}
+                    </div>
+                  </div>
+
+                  <p className="group-card-description">{group.Description}</p>
+
+                  <div className="group-card-actions">
+                    {group.IsCreator || group.IsMember ? (
+                      <button
+                        className="view-group-btn"
+                        onClick={() => window.location.href = `/Groups?group=${group.ID}`}
+                      >
+                        View Group →
+                      </button>
+                    ) : group.IsRequested ? (
+                      <button className="pending-btn" disabled>
+                        Request Pending
+                      </button>
+                    ) : group.IsInvited ? (
+                      <div className="invite-actions">
+                        <button
+                          className="accept-invite-btn"
+                          onClick={() => acceptInvite(group.ID)}
+                        >
+                          ✓ Accept
+                        </button>
+                        <button
+                          className="reject-invite-btn"
+                          onClick={() => rejectInvite(group.ID)}
+                        >
+                          ✗ Decline
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className="join-group-btn"
+                        onClick={() => handleJoinGroup(group.ID)}
+                      >
+                        Join Group
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-groups-state">
+                <div className="empty-icon">🔍</div>
+                <h3>No Groups Yet</h3>
+                <p>Be the first to create a group and start building a community!</p>
+                <button
+                  className="create-first-group-btn"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  Create Your First Group
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Chat Sidebar */}
+        <div className="side-chat">
+          <ChatWebSocket key={username} username={username} />
+        </div>
+      </div>
+
+      {/* Create Group Modal */}
+      {showCreateModal && (
+        <div className="modal">
+          <form onSubmit={handleCreateGroup}>
+            <h2>Create a New Group</h2>
+            <label>
+              Group Title
+              <input
+                type="text"
+                maxLength={100}
+                value={groupForm.title}
+                onChange={(e) => setGroupForm({ ...groupForm, title: e.target.value })}
+                placeholder="Enter group name..."
+                required
+              />
+            </label>
+            <label>
+              Description
+              <textarea
+                maxLength={200}
+                value={groupForm.description}
+                onChange={(e) => setGroupForm({ ...groupForm, description: e.target.value })}
+                placeholder="What's your group about?"
+                required
+              />
+            </label>
+            {formError && <div className="form-error">{formError}</div>}
+            <div className="modal-buttons">
+              <button type="submit">Create Group</button>
+              <button type="button" onClick={() => setShowCreateModal(false)}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+    </>
+  );
 }

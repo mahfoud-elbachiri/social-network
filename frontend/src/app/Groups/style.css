@@ -1106,3 +1106,386 @@ body {
 .chat-input .send:hover {
     background-color: #357ab8;
 }
+
+/* ===========================
+   GROUPS PAGE LAYOUT WITH CHAT SIDEBAR
+=========================== */
+
+.groups-page-layout {
+    display: flex;
+    gap: 2rem;
+    padding-left: 260px;
+    padding-right: 1rem;
+    padding-top: 1rem;
+    min-height: 100vh;
+}
+
+.groups-page-layout .group-page-container {
+    flex: 1;
+    max-width: 900px;
+    padding-left: 0;
+}
+
+.groups-page-layout .side-chat {
+    width: 320px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 1rem;
+    height: fit-content;
+    max-height: calc(100vh - 2rem);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .groups-page-layout {
+        flex-direction: column;
+        padding-left: 80px;
+    }
+
+    .groups-page-layout .side-chat {
+        display: none;
+    }
+
+    .groups-page-layout .group-page-container {
+        max-width: 100%;
+    }
+}
+
+/* ===========================
+   GROUPS LIST VIEW STYLES
+=========================== */
+
+.groups-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.groups-list-header .header-content h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 0.25rem 0;
+}
+
+.groups-list-header .header-content p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.create-group-main-btn {
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, var(--primary-color), #22c55e);
+    color: var(--background-color);
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(195, 255, 0, 0.25);
+}
+
+.create-group-main-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(195, 255, 0, 0.35);
+}
+
+.groups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+
+.group-card {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.group-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), #22c55e);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.group-card:hover::before {
+    transform: scaleX(1);
+}
+
+.group-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary-color);
+}
+
+.group-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.group-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary-color), #22c55e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--background-color);
+    font-size: 1.25rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.group-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.group-card-info h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.25rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.group-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.group-badge.admin {
+    background: rgba(251, 191, 36, 0.15);
+    color: #f59e0b;
+}
+
+.group-badge.member {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.group-badge.pending {
+    background: rgba(251, 191, 36, 0.15);
+    color: #f59e0b;
+}
+
+.group-badge.invited {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.group-card-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin: 0 0 1rem 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.group-card-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.view-group-btn {
+    flex: 1;
+    padding: 0.6rem 0.75rem;
+    background: var(--primary-color);
+    color: var(--background-color);
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.view-group-btn:hover {
+    background: var(--primary-hover);
+}
+
+.join-group-btn {
+    flex: 1;
+    padding: 0.6rem 0.75rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.join-group-btn:hover {
+    background: #2563eb;
+}
+
+.pending-btn {
+    flex: 1;
+    padding: 0.6rem 0.75rem;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: not-allowed;
+}
+
+.invite-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex: 1;
+}
+
+.accept-invite-btn {
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    background: #22c55e;
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.accept-invite-btn:hover {
+    background: #16a34a;
+}
+
+.reject-invite-btn {
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.reject-invite-btn:hover {
+    background: #dc2626;
+}
+
+.empty-groups-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    border: 2px dashed var(--border-color);
+}
+
+.empty-groups-state .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+}
+
+.empty-groups-state h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.empty-groups-state p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0 0 1.25rem 0;
+}
+
+.create-first-group-btn {
+    padding: 0.75rem 1.5rem;
+    background: var(--primary-color);
+    color: var(--background-color);
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.create-first-group-btn:hover {
+    background: var(--primary-hover);
+}
+
+.loading-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.form-error {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 0.6rem;
+    border-radius: var(--border-radius);
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.modal-buttons button {
+    flex: 1;
+}
+
+.modal-buttons button[type="button"] {
+    background: var(--text-muted);
+}
+
+/* Responsive adjustments for groups list */
+@media (max-width: 768px) {
+    .groups-list-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .groups-grid {
+        grid-template-columns: 1fr;
+    }
+}

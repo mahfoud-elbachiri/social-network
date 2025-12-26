@@ -134,6 +134,15 @@ const Sidebar = ({ onCreatePost }) => {
         return "Evening";
     };
 
+    const toggleContactList = () => {
+        const contactList = document.getElementById('contact-list');
+        if (contactList) {
+            contactList.style.display = contactList.style.display === 'block' ? 'none' : 'block';
+        }
+        // Reset message count when opening messages
+        setMessageCount(0);
+    };
+
     const navItems = [
         { href: '/Home', icon: Home, label: 'Feed', active: pathname === '/Home' },
         { href: '/Explore', icon: Search, label: 'Search', active: pathname === '/Explore' },
@@ -150,7 +159,8 @@ const Sidebar = ({ onCreatePost }) => {
             icon: MessageCircle,
             label: 'Messages',
             active: false,
-            badge: messageCount
+            badge: messageCount,
+            onClick: toggleContactList
         },
         { href: `/Profile?id=${currentUserId}`, icon: User, label: 'Profile', active: pathname === '/Profile' },
         { href: '/Groups', icon: Users, label: 'Groups', active: pathname?.startsWith('/Groups') },
